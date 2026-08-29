@@ -153,6 +153,8 @@ def main():
             step = step.strip()
             if step.startswith("sleep"):
                 time.sleep(float(step[5:]))
+            elif step.startswith("fire") and len(step) > 4:
+                mon.joy(JOY_FIRE); time.sleep(float(step[4:])); mon.joy(0)
             elif step == "fire":
                 mon.joy(JOY_FIRE); time.sleep(0.4); mon.joy(0)
             elif step.startswith("left"):
