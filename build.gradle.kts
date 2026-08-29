@@ -18,6 +18,7 @@ retroProject {
     includes = arrayOf(
         "src/kickass/tony.asm",
         "src/kickass/tony-room.asm",
+        "src/kickass/tony-pillars.asm",
         "src/kickass/splash-zzap.asm",
         "src/kickass/intro.asm"
         )
