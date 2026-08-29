@@ -28,6 +28,7 @@ from PIL import Image
 STX = 0x02
 API = 0x02
 
+CMD_MEM_GET = 0x01
 CMD_JOYPORT_SET = 0xA2
 CMD_DISPLAY_GET = 0x84
 CMD_PALETTE_GET = 0x85
@@ -76,6 +77,18 @@ class BinMon:
             if rid == self.req:
                 return rtype, err, rbody
 
+    def mem(self, start, end):
+        rtype, err, body = self.cmd(
+            CMD_MEM_GET, struct.pack("<BHHBH", 0, start, end, 0, 0))
+        assert err == 0, f"mem_get error {err}"
+        self.cmd(CMD_EXIT)
+        return body[2:]  # skip u16 length
+
+    def player_pos(self):
+        """Sprite 0 position = Tony (X including MSB, Y)."""
+        d = self.mem(0xD000, 0xD010)
+        return d[0] | (256 if d[0x10] & 1 else 0), d[1]
+
     def joy(self, pressed):
         # drive both control ports (ids 0 and 1); value = idle lines minus
         # the pressed bits; then resume emulation
@@ -114,8 +127,10 @@ class BinMon:
 
 
 def main():
-    prg, outdir, prefix = sys.argv[1], sys.argv[2], sys.argv[3]
-    script = (sys.argv[4] if len(sys.argv) > 4 else
+    args = [a for a in sys.argv[1:] if a != "--nowarp"]
+    warp = "--nowarp" not in sys.argv
+    prg, outdir, prefix = args[0], args[1], args[2]
+    script = (args[3] if len(args) > 3 else
               "sleep8,shot-boot,fire,sleep5,shot-title,fire,sleep8,shot-game,"
               "left2.0,shot-walk").split(",")
     port = 6502
@@ -127,8 +142,8 @@ def main():
          "-default", "-binarymonitor",
          "-binarymonitoraddress", f"ip4://127.0.0.1:{port}",
          "-controlport1device", "37", "-controlport2device", "37",
-         "-sounddev", "dummy", "-warp",
-         "-autostartprgmode", "1", "-autostart", prg],
+         "-sounddev", "dummy"] + (["-warp"] if warp else []) +
+        ["-autostartprgmode", "1", "-autostart", prg],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         start_new_session=True)
     try:
@@ -146,6 +161,40 @@ def main():
                 mon.joy(JOY_RIGHT); time.sleep(float(step[5:] or 1)); mon.joy(0)
             elif step.startswith("up"):
                 mon.joy(JOY_UP); time.sleep(float(step[2:] or 1)); mon.joy(0)
+            elif step.startswith("fl"):  # jump left
+                mon.joy(JOY_FIRE | JOY_LEFT); time.sleep(float(step[2:] or 0.4)); mon.joy(0)
+            elif step.startswith("fr"):  # jump right
+                mon.joy(JOY_FIRE | JOY_RIGHT); time.sleep(float(step[2:] or 0.4)); mon.joy(0)
+            elif step.startswith("wsp"):  # wsp<N>lt<X>/gt<X>: wait for sprite N
+                n, cond = int(step[3]), step[4:6]
+                val = int(step[6:])
+                for _ in range(400):
+                    d = mon.mem(0xD000, 0xD010)
+                    x = d[2 * n] | (256 if d[0x10] & (1 << n) else 0)
+                    if (cond == "lt" and x < val) or (cond == "gt" and x > val):
+                        break
+                    time.sleep(0.05)
+                print(f"  {step}: sprite {n} at x={x}")
+            elif step.startswith("gox"):  # walk to sprite X with feedback
+                target = int(step[3:])
+                for _ in range(200):
+                    x, y = mon.player_pos()
+                    if abs(x - target) < 5:
+                        break
+                    mon.joy(JOY_LEFT if x > target else JOY_RIGHT)
+                    time.sleep(0.06)
+                mon.joy(0)
+                print(f"  gox{target}: at {mon.player_pos()}")
+            elif step.startswith("goy"):  # climb to sprite Y with feedback
+                target = int(step[3:])
+                for _ in range(200):
+                    x, y = mon.player_pos()
+                    if abs(y - target) < 5:
+                        break
+                    mon.joy(JOY_UP if y > target else JOY_DOWN)
+                    time.sleep(0.06)
+                mon.joy(0)
+                print(f"  goy{target}: at {mon.player_pos()}")
             elif step.startswith("shot-"):
                 name = f"{outdir}/{prefix}-{step[5:]}.png"
                 im = mon.display()

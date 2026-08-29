@@ -37,7 +37,7 @@
 .segmentdef Code [start=LDR_MAIN_START_ADDRESS]
 .segmentdef Movable [startAfter="Code"]
 
-.file [name="./tony.prg", segments="Code, Movable", modify="BasicUpstart", _start=LDR_MAIN_START_ADDRESS]
+.file [name="./tony-room.prg", segments="Code, Movable", modify="BasicUpstart", _start=LDR_MAIN_START_ADDRESS]
 
 .var music = LoadSid("TonyLevelA000_V2.sid")
 
@@ -70,7 +70,7 @@ startAfter:
     jsr blankScreen
     seq_setUp(0, 0, 0, 0)
     jsr init
-    jsr startTitle
+    jsr startRoomDirect
     jmp startLevel
 
 init: {
@@ -283,6 +283,19 @@ startGame: {
     rts
 }
 
+startRoomDirect: {
+    jsr blankScreen
+    lda #0
+    sta gameTitleScreen
+    sta joyAccumulator
+    sta joyDelayCounter
+    sta joyPreviousValue
+    jsr drawScreen
+    jsr showEyes
+    jsr showScreen
+    rts
+}
+
 setColors: {
     ldy colorScheme
     ldx #0
@@ -452,7 +465,7 @@ startLevel: {
         lda #1
         sta gameTitleScreen
 
-        jsr startTitle
+        jsr startRoomDirect
         jmp startLevel
     }
 }
@@ -3600,7 +3613,7 @@ endOfCode:
 
 // temporarily...
 levelDataStart:
-    #import "level/demo/data.asm"
+    #import "level/custom/data.asm"
 levelDataEnd:
 
 endOfNonMovable:

@@ -400,4 +400,4 @@
 .label SCHEME_EMBER_DIMMED = LIGHT_RED
 
 .label MAX_COLOR_SCHEME = 7
-.label DEFAULT_COLOR_SCHEME = 6 // ember
+.label DEFAULT_COLOR_SCHEME = 0 // classic (ember remains selectable as scheme 7)

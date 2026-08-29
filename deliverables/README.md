@@ -3,6 +3,13 @@
 Mission: become the resident expert on the Tony C64 demo codebase and prove
 control by shipping modified, playable PRG builds.
 
+- **`VAULT.md`** — "The Idol Vault": a custom single-screen board as its own
+  standalone PRG (`prg/tony-vault.prg`, 37,732 B) — one sealed room, original
+  Tony, no rest-of-the-game. Screenshots in `screenshots/vault-*.png`.
+  Note: the working tree now carries the regular look again (original Tony
+  art, classic scheme default); the three Phase-2 edit builds remain archived
+  in `prg/` and their sources in git history.
+
 - **`ASSET-MAP.md`** — Phase 1: where every asset class lives, its format, and
   how it flows through the build (sprites, charsets, level maps, color
   schemes, enemy data, music).

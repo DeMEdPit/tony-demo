@@ -14,9 +14,10 @@ plugins {
 retroProject {
     dialect = AssemblerType.KickAssembler
     dialectVersion = "5.25"
-    libDirs = arrayOf(".ra/deps/c64lib", "build/charpad", "build/spritepad", "build/goattracker", "build/sprites", "build/goattracker", "src/music")
+    libDirs = arrayOf(".ra/deps/c64lib", "build/charpad", "build/spritepad", "build/goattracker", "build/sprites", "build/goattracker", "src/music", "src/level-custom")
     includes = arrayOf(
-        "src/kickass/tony.asm", 
+        "src/kickass/tony.asm",
+        "src/kickass/tony-room.asm",
         "src/kickass/splash-zzap.asm",
         "src/kickass/intro.asm"
         )
