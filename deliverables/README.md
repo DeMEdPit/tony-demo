@@ -3,6 +3,12 @@
 Mission: become the resident expert on the Tony C64 demo codebase and prove
 control by shipping modified, playable PRG builds.
 
+- **`TRAINER.md`** — the three trainer builds for the ROM-free minimal64
+  target: `prg/tony-trainer-kernal.prg` (stock, 56,480 B),
+  `prg/tony-trainer-romfree.prg` (menu via the game's own font, 56,520 B),
+  `prg/tony-trained-nomenu.prg` (no menu, infinite lives baked, 55,770 B).
+  Verified on a natively-compiled minimal64 (`tools/m64-harness/`) plus a
+  static ROM-reference scan (`tools/check_romfree.py`).
 - **`VAULT.md`** — "The Idol Vault": a custom single-screen board as its own
   standalone PRG (`prg/tony-vault.prg`, 37,732 B) — one sealed room, original
   Tony, no rest-of-the-game. Screenshots in `screenshots/vault-*.png`.

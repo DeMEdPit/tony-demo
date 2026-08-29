@@ -20,6 +20,8 @@ retroProject {
         "src/kickass/tony-room.asm",
         "src/kickass/tony-pillars.asm",
         "src/kickass/tony-buddy.asm",
+        "src/kickass/tony-trained.asm",
+        "src/kickass/tony-trainer-romfree.asm",
         "src/kickass/splash-zzap.asm",
         "src/kickass/intro.asm"
         )

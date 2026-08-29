@@ -33,3 +33,6 @@ gradle-app.setting
 
 # python
 __pycache__/
+tools/m64-harness/.build-src/
+tools/m64-harness/m64run
+*.ppm
