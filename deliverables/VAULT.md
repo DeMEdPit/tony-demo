@@ -1,6 +1,6 @@
 # The Idol Vault — a custom single-screen board
 
-**`deliverables/prg/tony-vault.prg` — 37,732 bytes, load address `$0801`
+**`deliverables/prg/c64-roms-required/tony-vault.prg` — 37,732 bytes, load address `$0801`
 (`SYS 2240`).** A standalone build containing exactly ONE sealed room and the
 full game engine: original-look Tony, classic grey scheme, the regular music,
 physics, animation, score/lives dashboard. There is no title screen and no

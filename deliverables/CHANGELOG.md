@@ -93,5 +93,5 @@ binary monitor with joystick I/O simulation):
   empty middle vs crowned golem + new chained platform.
 - `*-game2.png` — same scene a few seconds later (enemy/effect animation).
 
-Reproduce: `python3 tools/c64shot.py deliverables/prg/tony-edit3-level.prg out modded`
+Reproduce: `python3 tools/c64shot.py deliverables/prg/c64-roms-required/tony-edit3-level.prg out modded`
 (defaults need `x64sc`, C64 ROMs, `xvfb-run`; see tools/c64shot.py docstring).

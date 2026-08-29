@@ -19,7 +19,7 @@ itself**, headless, with scripted input and framebuffer screenshots.
   *invisibly* (`screenshots/` — the stock build shows a black menu screen,
   yet fire skips it and the game plays perfectly: `stock-m64-title.png`).
 
-## The three files (`deliverables/prg/`)
+## The three files (`deliverables/prg/`, sorted by target: the two new builds sit in `minimal64/`, the kernal one in `c64-roms-required/`)
 
 | File | bytes | what it is |
 |---|---|---|
