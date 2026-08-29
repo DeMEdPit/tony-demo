@@ -7,6 +7,7 @@ Produces:
   src/kickass/physics-tall.asm      - physics fork: collision scanning
                                       extended from 20 to 25 rows
   src/kickass/tony-buddy.asm        - one-room variant with:
+      * NO boot menu: loads straight into the chamber (menu module dropped)
       * NO dashboard: the raster split is removed, the playfield runs the
         full 25 rows, the floor sits at the bottom of the screen
       * a green buddy Tony on sprites 5+6 wearing the player's own frames:
@@ -77,6 +78,25 @@ def sub(old, new, count=1):
 
 # physics with 25-row collision scanning
 sub('#import "physics.asm"', '#import "physics-tall.asm"')
+
+# no boot menu: load straight into the chamber (the stock menu is invisible
+# on ROM-less targets anyway); the cheat state still needs its explicit zero
+sub("""    cli
+    jsr cheatMenu
+    jsr blankScreen""",
+    """    cli
+    lda #0
+    sta gameCheatState
+    jsr blankScreen""")
+sub("""_menuBegin:
+#import "cheatmenu.asm"
+_menuEnd:
+
+.assert "Cheatmenu cannot overlap with IO memory", _menuEnd < $D000, true
+
+
+""", "")
+sub('.print "Cheatmenu location $" + toHexString(_menuBegin) + " - $" + toHexString(_menuEnd - 1)\n', "")
 
 # no dashboard: drop the raster split, let the playfield run all 25 rows;
 # move the second IRQ below the lowest sprite lines (floor sprites end ~248)

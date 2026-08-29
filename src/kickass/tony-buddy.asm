@@ -65,7 +65,8 @@ startAfter:
     c64lib_configureMemory(c64lib.RAM_IO_RAM)
     c64lib_setVICBank(3)
     cli
-    jsr cheatMenu
+    lda #0
+    sta gameCheatState
     jsr blankScreen
     seq_setUp(0, 0, 0, 0)
     jsr init
@@ -3888,13 +3889,6 @@ musicData:
     // .fill 8*1024 - music.size, random()*256 // filler to the whole 8kb
 musicDataEnd:
 
-_menuBegin:
-#import "cheatmenu.asm"
-_menuEnd:
-
-.assert "Cheatmenu cannot overlap with IO memory", _menuEnd < $D000, true
-
-
 dasboardCharset:
     .import binary "dashboard-charset.bin"
 dashboardCharsetEnd:
@@ -3960,7 +3954,6 @@ endOfTony:
 .print "Music size = " + music.size
 .print "Music init address = $" + toHexString(music.init)
 .print "Music play address = $" + toHexString(music.play)
-.print "Cheatmenu location $" + toHexString(_menuBegin) + " - $" + toHexString(_menuEnd - 1)
 
 .print "--- movables ---"
 
