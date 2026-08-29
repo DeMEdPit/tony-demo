@@ -52,7 +52,7 @@ start:
 
 copperList: // must fit into a single page
     c64lib_copperEntry(40, c64lib.IRQH_JSR, <doEachFrameTop, >doEachFrameTop)
-    dashboardColor: c64lib_copperEntry(213, c64lib.IRQH_DASHBOARD_CUTOFF, SCHEME_CLASSIC_DARK, %00010100)
+    dashboardColor: c64lib_copperEntry(213, c64lib.IRQH_DASHBOARD_CUTOFF, SCHEME_EMBER_DARK, %00010100)
     c64lib_copperEntry(220, c64lib.IRQH_JSR, <doEachFrameVisual, >doEachFrameVisual)
     c64lib_copperLoop()
 copperListEnd:
@@ -89,7 +89,7 @@ init: {
     sta c64lib.CONTROL_2
     lda #%00000010
     sta c64lib.MEMORY_CONTROL
-    ldx #0
+    ldx #DEFAULT_COLOR_SCHEME
     stx colorScheme
     lda colorLights, x
     sta currentColor
@@ -3528,7 +3528,7 @@ enemiesCounter:             .byte 0
 enemiesToObjects:           .fill ANI_MAX_ACTORS, 0
 enemiesCounters:            .fill ANI_MAX_ACTORS, 0
 // fade effect
-currentColor:               .byte SCHEME_CLASSIC_LIGHT
+currentColor:               .byte SCHEME_EMBER_LIGHT
 fadeCounter:                .byte 0
 // actual player position in columns
 playerColX:                 .byte 0
@@ -3539,8 +3539,8 @@ targetCharset:              .lohifill 256, TEXT_CHARSET_MEM + i*8
 // auxiliary data structures
 chamberLines:               .lohifill 20, SCREEN_MEM_0 + 40*i // indexed start of screen lines for faster collision detection
 // color ramps
-fadeOut:                    .byte SCHEME_CLASSIC_DARK, DARK_GREY, GREY
-fadeIn:                     .byte SCHEME_CLASSIC_LIGHT, GREY, DARK_GREY, BLACK
+fadeOut:                    .byte SCHEME_EMBER_DARK, DARK_GREY, GREY
+fadeIn:                     .byte SCHEME_EMBER_LIGHT, GREY, DARK_GREY, BLACK
 waitFor:                    .byte 0
 // effects & aux mechanics
 effectCounter:              .byte 0
@@ -3564,11 +3564,11 @@ ntscCounter:                .byte 0
 // eyes buffer
 eyesColor:                  .byte BLACK
 // color schemes
-colorScheme:                .byte 0
-colorLights:                .byte SCHEME_CLASSIC_LIGHT,     SCHEME_AMBER_LIGHT,     SCHEME_GREEN_LIGHT,     SCHEME_BLUE_LIGHT,     SCHEME_C64_LIGHT,   SCHEME_C128_LIGHT
-colorDarks:                 .byte SCHEME_CLASSIC_DARK,      SCHEME_AMBER_DARK,      SCHEME_GREEN_DARK,      SCHEME_BLUE_DARK,      SCHEME_C64_DARK,    SCHEME_C128_DARK
-colorBright:                .byte SCHEME_CLASSIC_BRIGHT,    SCHEME_AMBER_BRIGHT,    SCHEME_GREEN_BRIGHT,    SCHEME_BLUE_BRIGHT,    SCHEME_C64_BRIGHT,  SCHEME_C128_BRIGHT
-colorDimmed:                .byte SCHEME_CLASSIC_DIMMED,    SCHEME_AMBER_DIMMED,    SCHEME_GREEN_DIMMED,    SCHEME_BLUE_DIMMED,    SCHEME_C64_DIMMED,  SCHEME_C128_DIMMED
+colorScheme:                .byte DEFAULT_COLOR_SCHEME
+colorLights:                .byte SCHEME_CLASSIC_LIGHT,     SCHEME_AMBER_LIGHT,     SCHEME_GREEN_LIGHT,     SCHEME_BLUE_LIGHT,     SCHEME_C64_LIGHT,   SCHEME_C128_LIGHT,  SCHEME_EMBER_LIGHT
+colorDarks:                 .byte SCHEME_CLASSIC_DARK,      SCHEME_AMBER_DARK,      SCHEME_GREEN_DARK,      SCHEME_BLUE_DARK,      SCHEME_C64_DARK,    SCHEME_C128_DARK,   SCHEME_EMBER_DARK
+colorBright:                .byte SCHEME_CLASSIC_BRIGHT,    SCHEME_AMBER_BRIGHT,    SCHEME_GREEN_BRIGHT,    SCHEME_BLUE_BRIGHT,    SCHEME_C64_BRIGHT,  SCHEME_C128_BRIGHT, SCHEME_EMBER_BRIGHT
+colorDimmed:                .byte SCHEME_CLASSIC_DIMMED,    SCHEME_AMBER_DIMMED,    SCHEME_GREEN_DIMMED,    SCHEME_BLUE_DIMMED,    SCHEME_C64_DIMMED,  SCHEME_C128_DIMMED, SCHEME_EMBER_DIMMED
 // texts
 
 .macro textC(value) {

@@ -30,3 +30,6 @@ gradle-app.setting
 
 # intermediate data
 *.bin
+
+# python
+__pycache__/
