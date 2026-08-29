@@ -52,8 +52,7 @@ start:
 
 copperList: // must fit into a single page
     c64lib_copperEntry(40, c64lib.IRQH_JSR, <doEachFrameTop, >doEachFrameTop)
-    dashboardColor: c64lib_copperEntry(213, c64lib.IRQH_DASHBOARD_CUTOFF, SCHEME_CLASSIC_DARK, %00010100)
-    c64lib_copperEntry(220, c64lib.IRQH_JSR, <doEachFrameVisual, >doEachFrameVisual)
+    c64lib_copperEntry(255, c64lib.IRQH_JSR, <doEachFrameVisual, >doEachFrameVisual)
     c64lib_copperLoop()
 copperListEnd:
 
@@ -290,8 +289,6 @@ startRoomDirect: {
     sta joyAccumulator
     sta joyDelayCounter
     sta joyPreviousValue
-    jsr drawScreen
-    jsr showEyes
     jsr showScreen
     rts
 }
@@ -314,8 +311,7 @@ loop1:
     bne loop1
 
     ldx #0
-    lda colorLights, y
-    // sta c64lib.BG_COL_0
+    lda colorDarks, y // tall room: rows 20-24 are playfield now
 loop2:
     sta c64lib.COLOR_RAM + 800, x
     inx
@@ -1791,9 +1787,10 @@ showEnemies: {
 // ---------------------------------------------------------------------
 // Buddy Tony: a friendly green clone on sprites 5+6, wearing the player's
 // own animation frames. Follows the player with a personal-space
-// hysteresis, faces him, and hops whenever the player leaves the ground.
+// hysteresis, faces him, hops whenever the player leaves the ground, and
+// idles with the real 6-phase breathing/look-around cycle.
 .label BUDDY_COLOR    = GREEN
-.label BUDDY_FLOOR_Y  = 166
+.label BUDDY_FLOOR_Y  = 206 // feet on the tall room's floor (row 23)
 .label BUDDY_MIN_XLO  = 64  // inner face of the left pillar
 .label BUDDY_MAX_XLO  = 24  // 280 = $0118: lo byte limit while hi = 1
 .label BUDDY_STOP_AT  = 40  // rest when closer than this
@@ -1955,7 +1952,7 @@ buddyUpdate: {
     adc #21
     sta c64lib.SPRITE_6_Y
 
-    // pose: hop / walk cycle / idle, in the facing direction
+    // pose: hop / walk cycle / breathing idle, in the facing direction
     lda buddyHop
     beq notHopping
         lda buddyFacing
@@ -1998,14 +1995,37 @@ buddyUpdate: {
             pla
             jmp setPose
     standing:
+        // the real idle: 6 phases at the player's own idle tempo
+        inc buddyDelay
+        lda buddyDelay
+        cmp #15
+        bcc idleShow
+        lda #0
+        sta buddyDelay
+        inc buddyPhase
+    idleShow:
+        lda buddyPhase
+        cmp #6
+        bcc idleOk
+        lda #0
+        sta buddyPhase
+    idleOk:
+        ldx buddyPhase
         lda buddyFacing
-        beq !+
-            lda idlingRightAnimationTL
-            ldx idlingRightAnimationBL
+        beq idleL
+            lda idlingRightAnimationTL, x
+            pha
+            lda idlingRightAnimationBL, x
+            tax
+            pla
             jmp setPose
-        !:
-        lda idlingLeftAnimationTL
-        ldx idlingLeftAnimationBL
+        idleL:
+            lda idlingLeftAnimationTL, x
+            pha
+            lda idlingLeftAnimationBL, x
+            tax
+            pla
+            jmp setPose
     setPose:
         sta SCREEN_MEM_0 + 1016 + 5
         stx SCREEN_MEM_0 + 1016 + 6
@@ -2043,7 +2063,6 @@ nextColorScheme: {
     lda colorDarks, x
     sta fadeIn + 3
     sta fadeOut
-    sta dashboardColor + 2
     jsr setColors
     lda c64lib.CONTROL_1
     ora #%00010000
@@ -2386,7 +2405,7 @@ decodeRoom: {
 translateRoom: {
     ldx #0
     loop:
-        .for (var i = 0; i <= 3; i++) 
+        .for (var i = 0; i <= 4; i++) 
         {
             ldy SCREEN_MEM_0 + i*200, x
             lda roomCharsDecodingBuffer, y
@@ -3740,7 +3759,7 @@ showScreen: {
 #import "graph-text.asm"
 #import "animations.asm"
 #import "io.asm"
-#import "physics.asm"
+#import "physics-tall.asm"
 #import "sequencer.asm"
 #import "static-objects.asm"
 #import "actors.asm"
@@ -3794,7 +3813,7 @@ playerColY:                 .byte 0
 sourceCharset:              .lohifill 256, demoLevelCharset + i*8
 targetCharset:              .lohifill 256, TEXT_CHARSET_MEM + i*8
 // auxiliary data structures
-chamberLines:               .lohifill 20, SCREEN_MEM_0 + 40*i // indexed start of screen lines for faster collision detection
+chamberLines:               .lohifill 25, SCREEN_MEM_0 + 40*i // indexed start of screen lines for faster collision detection
 // color ramps
 fadeOut:                    .byte SCHEME_CLASSIC_DARK, DARK_GREY, GREY
 fadeIn:                     .byte SCHEME_CLASSIC_LIGHT, GREY, DARK_GREY, BLACK

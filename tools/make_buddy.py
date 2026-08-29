@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Generate the "Buddy" variant: the Colonnade plus a green follower Tony.
+"""Generate the "Buddy" variant: the tall Colonnade plus a green follower Tony.
 
 Produces:
-  src/kickass/level/buddy/data.asm  - pillar room, two bats (sprites 3+4;
-                                      sprites 5+6 belong to the buddy)
-  src/kickass/tony-buddy.asm        - one-room variant with the buddy AI:
-      * buddy = enemy-slot sprites 5+6 wearing Tony's animation frames,
-        colored green every frame (independent of the color scheme)
-      * follows the player with a personal-space hysteresis, faces him,
-        and does a canned hop whenever the player leaves the ground
-      * enemy collision check masked to the bats only, so touching the
-        buddy is harmless (the engine reads any enemy sprite-sprite
-        contact as a player hit)
+  src/kickass/level/buddy/data.asm  - tall pillar room (40x25), two bats
+                                      (sprites 3+4; 5+6 belong to the buddy)
+  src/kickass/physics-tall.asm      - physics fork: collision scanning
+                                      extended from 20 to 25 rows
+  src/kickass/tony-buddy.asm        - one-room variant with:
+      * NO dashboard: the raster split is removed, the playfield runs the
+        full 25 rows, the floor sits at the bottom of the screen
+      * a green buddy Tony on sprites 5+6 wearing the player's own frames:
+        follows with personal-space hysteresis, faces the player, hops when
+        he jumps, and idles with the real 6-phase breathing animation
+      * enemy collision masked to the bats, so touching the buddy is safe
 
 Run from repo root: python3 tools/make_buddy.py
 """
@@ -24,9 +25,16 @@ src = open("src/kickass/level/pillars/data.asm").read()
 src = src.replace(
     '// "The Colonnade" - an empty sealed chamber: floor, ceiling, two big\n'
     '// pillars for walls, and bats high above. Map: tools/build_pillar_room.py.',
-    '// "The Colonnade + Buddy" - the empty pillar chamber with two bats up\n'
-    '// high (sprites 3+4). Sprites 5+6 are taken by the green buddy Tony,\n'
-    '// which is engine code in tony-buddy.asm, not a level object.')
+    '// "The Colonnade + Buddy" - the TALL pillar chamber (full 25 rows, no\n'
+    '// dashboard) with two bats up high (sprites 3+4). Sprites 5+6 carry the\n'
+    '// green buddy Tony, which is engine code in tony-buddy.asm, not a level\n'
+    '// object. Map: tools/build_tall_room.py.')
+old = 'level_pack("pillar-room.bin"'
+assert src.count(old) == 1
+src = src.replace(old, 'level_pack("pillar-room-tall.bin"')
+old = "level_startPositionY:   .byte 150   // feet on the floor (row 18)"
+assert src.count(old) == 1
+src = src.replace(old, "level_startPositionY:   .byte 180   // drops to the floor at row 23")
 old = """        objectExt(SO_BAT, 0, 5, 3, 0),      // three bats gliding up high, each
         objectExt(SO_BAT, 0, 16, 5, 1),     // in its own air territory - enemy
         objectExt(SO_BAT, 0, 27, 4, 2)      // sprites must never touch each other"""
@@ -48,39 +56,87 @@ os.makedirs("src/kickass/level/buddy", exist_ok=True)
 open("src/kickass/level/buddy/data.asm", "w").write(src)
 print("wrote src/kickass/level/buddy/data.asm")
 
+# ------------------------------------------------------------- physics fork
+phys = open("src/kickass/physics.asm").read()
+assert phys.count("cmp #CLSN_LAST_ROW") == 3
+phys = phys.replace("cmp #CLSN_LAST_ROW", "cmp #25 // tall room: scan all 25 rows")
+open("src/kickass/physics-tall.asm", "w").write(phys)
+print("wrote src/kickass/physics-tall.asm")
+
 # ------------------------------------------------------------- game variant
 subprocess.run(["python3", "tools/make_variant.py", "tony-buddy", "level/buddy"],
                check=True)
 src = open("src/kickass/tony-buddy.asm").read()
 
+
+def sub(old, new, count=1):
+    global src
+    assert src.count(old) == count, f"anchor not found ({count}x): {old[:60]!r}"
+    src = src.replace(old, new)
+
+
+# physics with 25-row collision scanning
+sub('#import "physics.asm"', '#import "physics-tall.asm"')
+
+# no dashboard: drop the raster split, let the playfield run all 25 rows;
+# move the second IRQ below the lowest sprite lines (floor sprites end ~248)
+sub("""    dashboardColor: c64lib_copperEntry(213, c64lib.IRQH_DASHBOARD_CUTOFF, SCHEME_CLASSIC_DARK, %00010100)
+    c64lib_copperEntry(220, c64lib.IRQH_JSR, <doEachFrameVisual, >doEachFrameVisual)""",
+    "    c64lib_copperEntry(255, c64lib.IRQH_JSR, <doEachFrameVisual, >doEachFrameVisual)")
+sub("""    lda colorDarks, x
+    sta fadeIn + 3
+    sta fadeOut
+    sta dashboardColor + 2
+    jsr setColors""",
+    """    lda colorDarks, x
+    sta fadeIn + 3
+    sta fadeOut
+    jsr setColors""")
+
+# ink dark on the former dashboard rows too (setColors bottom loop)
+sub("""    ldx #0
+    lda colorLights, y
+    // sta c64lib.BG_COL_0
+loop2:""",
+    """    ldx #0
+    lda colorDarks, y // tall room: rows 20-24 are playfield now
+loop2:""")
+
+# room decode/draw across all 25 rows
+sub("""translateRoom: {
+    ldx #0
+    loop:
+        .for (var i = 0; i <= 3; i++) """,
+    """translateRoom: {
+    ldx #0
+    loop:
+        .for (var i = 0; i <= 4; i++) """)
+sub("chamberLines:               .lohifill 20, SCREEN_MEM_0 + 40*i",
+    "chamberLines:               .lohifill 25, SCREEN_MEM_0 + 40*i")
+
 # hostile collisions: bats only (sprites 3+4); the buddy on 5+6 is friendly
-old = """    lda actorCollisions
+sub("""    lda actorCollisions
     beq !+
-        // kill the enemy from the screen (only works for sprites)"""
-new = """    lda actorCollisions
+        // kill the enemy from the screen (only works for sprites)""",
+    """    lda actorCollisions
     and #%00011000 // bats only - the buddy on sprites 5+6 is friendly
     beq !+
-        // kill the enemy from the screen (only works for sprites)"""
-assert src.count(old) == 1
-src = src.replace(old, new)
+        // kill the enemy from the screen (only works for sprites)""")
 
 # hooks: init with the level, update once per frame
-old = "    jsr initPlayerPosition\n    jsr ani_init"
-assert src.count(old) == 1
-src = src.replace(old, "    jsr initPlayerPosition\n    jsr buddyInit\n    jsr ani_init")
-old = "    jsr playEffects\n    jsr moveActors"
-assert src.count(old) == 1
-src = src.replace(old, "    jsr playEffects\n    jsr moveActors\n    jsr buddyUpdate")
+sub("    jsr initPlayerPosition\n    jsr ani_init",
+    "    jsr initPlayerPosition\n    jsr buddyInit\n    jsr ani_init")
+sub("    jsr playEffects\n    jsr moveActors",
+    "    jsr playEffects\n    jsr moveActors\n    jsr buddyUpdate")
 
 # the top-of-frame interrupt repaints all sprite colors before the buddy's
-# scanlines are rasterized - re-apply green there, or he shows up grey
-old = """    lda eyesColor
+# scanlines are rasterized - apply his green there
+sub("""    lda eyesColor
     sta c64lib.SPRITE_7_COLOR
 
     c64lib_debugBorderEnd()
-    jsr playMusic"""
-assert src.count(old) == 1
-src = src.replace(old, """    lda eyesColor
+    jsr playMusic""",
+    """    lda eyesColor
     sta c64lib.SPRITE_7_COLOR
     lda #BUDDY_COLOR
     sta c64lib.SPRITE_5_COLOR
@@ -89,12 +145,37 @@ src = src.replace(old, """    lda eyesColor
     c64lib_debugBorderEnd()
     jsr playMusic""")
 
+# boot straight into the room without dashboard drawing or the eyes sprite
+sub("""startRoomDirect: {
+    jsr blankScreen
+    lda #0
+    sta gameTitleScreen
+    sta joyAccumulator
+    sta joyDelayCounter
+    sta joyPreviousValue
+    jsr drawScreen
+    jsr showEyes
+    jsr showScreen
+    rts
+}""",
+    """startRoomDirect: {
+    jsr blankScreen
+    lda #0
+    sta gameTitleScreen
+    sta joyAccumulator
+    sta joyDelayCounter
+    sta joyPreviousValue
+    jsr showScreen
+    rts
+}""")
+
 BUDDY = """// ---------------------------------------------------------------------
 // Buddy Tony: a friendly green clone on sprites 5+6, wearing the player's
 // own animation frames. Follows the player with a personal-space
-// hysteresis, faces him, and hops whenever the player leaves the ground.
+// hysteresis, faces him, hops whenever the player leaves the ground, and
+// idles with the real 6-phase breathing/look-around cycle.
 .label BUDDY_COLOR    = GREEN
-.label BUDDY_FLOOR_Y  = 166
+.label BUDDY_FLOOR_Y  = 206 // feet on the tall room's floor (row 23)
 .label BUDDY_MIN_XLO  = 64  // inner face of the left pillar
 .label BUDDY_MAX_XLO  = 24  // 280 = $0118: lo byte limit while hi = 1
 .label BUDDY_STOP_AT  = 40  // rest when closer than this
@@ -256,7 +337,7 @@ buddyUpdate: {
     adc #21
     sta c64lib.SPRITE_6_Y
 
-    // pose: hop / walk cycle / idle, in the facing direction
+    // pose: hop / walk cycle / breathing idle, in the facing direction
     lda buddyHop
     beq notHopping
         lda buddyFacing
@@ -299,14 +380,37 @@ buddyUpdate: {
             pla
             jmp setPose
     standing:
+        // the real idle: 6 phases at the player's own idle tempo
+        inc buddyDelay
+        lda buddyDelay
+        cmp #15
+        bcc idleShow
+        lda #0
+        sta buddyDelay
+        inc buddyPhase
+    idleShow:
+        lda buddyPhase
+        cmp #6
+        bcc idleOk
+        lda #0
+        sta buddyPhase
+    idleOk:
+        ldx buddyPhase
         lda buddyFacing
-        beq !+
-            lda idlingRightAnimationTL
-            ldx idlingRightAnimationBL
+        beq idleL
+            lda idlingRightAnimationTL, x
+            pha
+            lda idlingRightAnimationBL, x
+            tax
+            pla
             jmp setPose
-        !:
-        lda idlingLeftAnimationTL
-        ldx idlingLeftAnimationBL
+        idleL:
+            lda idlingLeftAnimationTL, x
+            pha
+            lda idlingLeftAnimationBL, x
+            tax
+            pla
+            jmp setPose
     setPose:
         sta SCREEN_MEM_0 + 1016 + 5
         stx SCREEN_MEM_0 + 1016 + 6
@@ -328,8 +432,7 @@ buddyDelay:   .byte 0
 hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
 
 nextColorScheme: {"""
-assert src.count("nextColorScheme: {") == 1
-src = src.replace("nextColorScheme: {", BUDDY)
+sub("nextColorScheme: {", BUDDY)
 
 open("src/kickass/tony-buddy.asm", "w").write(src)
 print("wrote src/kickass/tony-buddy.asm")

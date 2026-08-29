@@ -22,9 +22,10 @@
  * SOFTWARE.
  */
 
-// "The Colonnade + Buddy" - the empty pillar chamber with two bats up
-// high (sprites 3+4). Sprites 5+6 are taken by the green buddy Tony,
-// which is engine code in tony-buddy.asm, not a level object.
+// "The Colonnade + Buddy" - the TALL pillar chamber (full 25 rows, no
+// dashboard) with two bats up high (sprites 3+4). Sprites 5+6 carry the
+// green buddy Tony, which is engine code in tony-buddy.asm, not a level
+// object. Map: tools/build_tall_room.py.
 
 #import "../../_constants.asm"
 #import "../../_load-util.asm"
@@ -35,7 +36,7 @@
 
 level_startRoom:        .byte 0
 level_startPositionX:   .word 184   // centre of the room
-level_startPositionY:   .byte 150   // feet on the floor (row 18)
+level_startPositionY:   .byte 180   // drops to the floor at row 23
 level_startState:       .byte STATE_ON_GROUND_LEFT
 
 .var _level_roomPtrs = List()
@@ -113,7 +114,7 @@ level_startState:       .byte STATE_ON_GROUND_LEFT
 
 // THE COLONNADE - the one and only chamber; all exits sealed.
 chamberColonnade: // 0
-    _level_pack("pillar-room.bin", NO, NO, NO, NO, List().add(
+    _level_pack("pillar-room-tall.bin", NO, NO, NO, NO, List().add(
         objectExt(SO_BAT, 0, 5, 3, 0),      // two bats, each in its own air
         objectExt(SO_BAT, 0, 27, 4, 1)      // territory (sprites must not touch)
     ))
