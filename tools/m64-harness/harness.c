@@ -87,6 +87,23 @@ int main(int argc, char **argv) {
         } else if (!strncmp(cmd, "peek:", 5)) {
             uint16_t a = (uint16_t)strtoul(cmd + 5, NULL, 16);
             printf("peek $%04x = $%02x\n", a, m64_cpuRead(a));
+        } else if (!strncmp(cmd, "dump:", 5)) {   /* dump:ADDRHEX:LENHEX:FILE  raw CPU-visible bytes */
+            uint16_t a = (uint16_t)strtoul(cmd + 5, NULL, 16);
+            char *l = strchr(cmd + 5, ':');
+            uint32_t n = l ? (uint32_t)strtoul(l + 1, NULL, 16) : 0;
+            char *path = l ? strchr(l + 1, ':') : NULL;
+            if (path) {
+                FILE *o = fopen(path + 1, "wb");
+                for (uint32_t i = 0; i < n && o; i++) fputc(m64_cpuRead((uint16_t)(a + i)), o);
+                if (o) fclose(o);
+                printf("dump $%04x +%u -> %s\n", a, n, path + 1);
+            }
+        } else if (!strncmp(cmd, "poke:", 5)) {   /* poke:ADDRHEX:VALHEX */
+            uint16_t a = (uint16_t)strtoul(cmd + 5, NULL, 16);
+            char *v = strchr(cmd + 5, ':');
+            uint8_t val = (uint8_t)strtoul(v ? v + 1 : "0", NULL, 16);
+            m64_cpuWrite(a, val);
+            printf("poke $%04x <- $%02x\n", a, val);
         }
     }
     return 0;

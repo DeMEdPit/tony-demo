@@ -1,0 +1,91 @@
+{
+ "name": "The Ring",
+ "base_prgHash": "0x5bcd208f63ac255ffc391c4abeb7b8f701061ac896008607ef414c24c880f34d",
+ "patched_keccak256": "0x188685de5323236ef41e4cc7c1b9310ac66bac5bebef7bf8bd88b2e7a2d83272",
+ "entry": 27,
+ "rooms": [
+  16,
+  27
+ ],
+ "scheme": "AMBER",
+ "cheat_byte": 0,
+ "spec": {
+  "name": "The Ring",
+  "entry": 27,
+  "scheme": "AMBER",
+  "cheat": 0,
+  "exits": {
+   "27": {
+    "E": 16
+   },
+   "16": {
+    "E": 27
+   }
+  }
+ },
+ "walls": [],
+ "patch_bytes": 48,
+ "records": [
+  {
+   "addr": "$9553",
+   "offset": 36180,
+   "old": "12",
+   "new": "1b",
+   "why": "title gate -> room 27"
+  },
+  {
+   "addr": "$950A",
+   "offset": 36107,
+   "old": "11",
+   "new": "1b",
+   "why": "room 16 E exit -> 27"
+  },
+  {
+   "addr": "$9546",
+   "offset": 36167,
+   "old": "0f",
+   "new": "ff",
+   "why": "room 16 W exit -> sealed"
+  },
+  {
+   "addr": "$9515",
+   "offset": 36118,
+   "old": "1c",
+   "new": "10",
+   "why": "room 27 E exit -> 16"
+  },
+  {
+   "addr": "$9551",
+   "offset": 36178,
+   "old": "1a",
+   "new": "ff",
+   "why": "room 27 W exit -> sealed"
+  },
+  {
+   "addr": "$0965",
+   "offset": 358,
+   "old": "02",
+   "new": "01",
+   "why": "boot colour scheme AMBER"
+  },
+  {
+   "addr": "$08F8",
+   "offset": 249,
+   "old": "20e12b",
+   "new": "2062b4",
+   "why": "boot: jsr stub (was jsr blankScreen)"
+  },
+  {
+   "addr": "$B462",
+   "offset": 44131,
+   "old": "a99b8d11d0a908",
+   "new": "a900852d4ce12b",
+   "why": "stub in dead menu: lda #$00; sta $2D; jmp blankScreen"
+  }
+ ],
+ "hex": "8d5400011b8d0b00011b8d470001ff8d160001108d520001ff016600010100f900032062b4ac630007a900852d4ce12b",
+ "credits": [
+  "Tony: Born for Adventure - code Maciej Malecki, graphics Rafal Dudek, music Sami Juntunen (MIT)",
+  "runtime: minimal64 by nopsta (GPL-2.0)"
+ ]
+}

@@ -1,0 +1,92 @@
+{
+ "name": "The Escher Corridor",
+ "base_prgHash": "0x5bcd208f63ac255ffc391c4abeb7b8f701061ac896008607ef414c24c880f34d",
+ "patched_keccak256": "0x796ab85ef26721cb725429e29b54b429f601e72a07be3e6bd06aef78a08f26d5",
+ "entry": 26,
+ "rooms": [
+  2,
+  26
+ ],
+ "scheme": "C64",
+ "cheat_byte": 4,
+ "spec": {
+  "name": "The Escher Corridor",
+  "entry": 26,
+  "scheme": "C64",
+  "cheat": 4,
+  "exits": {
+   "26": {
+    "E": 2
+   },
+   "2": {
+    "E": 2,
+    "W": 2
+   }
+  }
+ },
+ "walls": [],
+ "patch_bytes": 48,
+ "records": [
+  {
+   "addr": "$9553",
+   "offset": 36180,
+   "old": "12",
+   "new": "1a",
+   "why": "title gate -> room 26"
+  },
+  {
+   "addr": "$94FC",
+   "offset": 36093,
+   "old": "03",
+   "new": "02",
+   "why": "room 2 E exit -> 2"
+  },
+  {
+   "addr": "$9538",
+   "offset": 36153,
+   "old": "01",
+   "new": "02",
+   "why": "room 2 W exit -> 2"
+  },
+  {
+   "addr": "$9514",
+   "offset": 36117,
+   "old": "1b",
+   "new": "02",
+   "why": "room 26 E exit -> 2"
+  },
+  {
+   "addr": "$9550",
+   "offset": 36177,
+   "old": "19",
+   "new": "ff",
+   "why": "room 26 W exit -> sealed"
+  },
+  {
+   "addr": "$0965",
+   "offset": 358,
+   "old": "02",
+   "new": "04",
+   "why": "boot colour scheme C64"
+  },
+  {
+   "addr": "$08F8",
+   "offset": 249,
+   "old": "20e12b",
+   "new": "2062b4",
+   "why": "boot: jsr stub (was jsr blankScreen)"
+  },
+  {
+   "addr": "$B462",
+   "offset": 44131,
+   "old": "a99b8d11d0a908",
+   "new": "a904852d4ce12b",
+   "why": "stub in dead menu: lda #$04; sta $2D; jmp blankScreen"
+  }
+ ],
+ "hex": "8d5400011a8cfd0001028d390001028d150001028d510001ff016600010400f900032062b4ac630007a904852d4ce12b",
+ "credits": [
+  "Tony: Born for Adventure - code Maciej Malecki, graphics Rafal Dudek, music Sami Juntunen (MIT)",
+  "runtime: minimal64 by nopsta (GPL-2.0)"
+ ]
+}

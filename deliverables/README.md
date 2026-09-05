@@ -35,8 +35,22 @@ romfree trainer (own-font menu, or menu removed).
 | `tony-vault.prg` | 37,732 | "The Idol Vault" custom single-screen board |
 | `tony-colonnade.prg` | 37,448 | "The Colonnade" empty pillar chamber with three bats |
 
+## `onchain/` — patches over the mainnet PRG
+
+`tony-token-edition.prg` is the exact PRG the Ethereum PoC721 token serves
+(`prg()`, keccak256 `0x5bcd208f…`), with its byte-exact symbol file and the
+engine's runtime collision map of all 30 rooms (`runtime-collision.json`).
+`castles/` holds three sample "mini castles" — 48–58-byte patch sets over
+those bytes, each with its patched PRG and a JSON of the exact records, all
+play-tested on minimal64. Generator `tools/onchain_castle.py`, play-tester
+`tools/verify_castle.py`, capture `tools/capture_runtime_rooms.py`.
+Everything is documented in **`ONCHAIN-CASTLES.md`**.
+
 ## Documents
 
+- **`ONCHAIN-CASTLES.md`** — the on-chain PRG's patch map (offsets of every
+  table), the castle patch scheme, the three verified samples, and two
+  measured findings about the deployed bytes.
 - **`TRAINER.md`** — the trainer builds and the full ROM-free verification
   (on-target runs + static scan).
 - **`VAULT.md`** — the Idol Vault board: design, route, how it's made.
