@@ -25,6 +25,10 @@ tools/m64-harness/m64run through a plan derived from the spec:
   seal    for every sealed E/W exit with a standable edge floor: walk into it;
           "wall" mode keeps Tony in the room, in bounds, alive; "void" mode
           costs exactly one life and keeps him in the room
+  sky     for every ladder that reaches the top edge under a sealed N exit: stand at
+          its foot, hold UP (Tony must stay in the room, inside the playfield, still
+          on the ladder), then hold DOWN (he must come back down) - the first
+          player's "stuck at the top of the ladder" scenario
   guard   the edge-guard bytes are intact after play (nothing overwrote the padding after the BASIC line)
 
 Room jumps use the engine's own transition (poke roomChange + direction), and
@@ -187,6 +191,30 @@ def main():
                       script, lambda p: p[0] == target, shot=f"{slug}-drop-{room}")
             elif d == "N":
                 print(f"  [skip] room {room} N exit: no automated climb-out test")
+
+    STATE, ON_LADDER = 0x39D3, 0x07            # physPlayerState; measured: 7 while climbing
+    for r in sorted(rooms):
+        n_exit = spec["exits"].get(str(r), {}).get("N", oc.NO)
+        if n_exit != oc.NO or not base.top_ladder[r]:
+            continue
+        c = sorted(base.top_ladder[r])[0]
+        L = 0
+        while L + 1 < oc.H and base.mat(r, L + 1, c) & oc.LADDER:
+            L += 1                              # last ladder row from the top
+        if L + 1 >= oc.H or not (base.mat(r, L + 1, c) & oc.WALL):
+            # measured (room 25): a ladder hanging from the top edge with nothing under
+            # its last rung cannot be grabbed from below - it was only ever an entrance
+            # from the room above.  Nothing to climb, nothing to get stuck on.
+            print(f"  [skip] sky: room {r} ladder at column {c} (rows 0-{L}) hangs over open space - unreachable from below")
+            continue
+        script = boot + invincible + jump(r) + place(x_of_col(c), y_of_floor(L + 1)) + [
+            "joy:1:200", f"peek:{CHAMBER:x}", f"peek:{Y:x}", f"peek:{STATE:x}",
+            "joy:2:150", f"peek:{CHAMBER:x}", f"peek:{Y:x}", f"peek:{LIVES:x}"]
+        check(f"sky: room {r} ladder at column {c} (rows 0-{L}) hold UP -> held at the top, still climbing; "
+              f"hold DOWN -> comes back down",
+              script, lambda p: (p[0] == r and p[1] >= oc.LIMITS["NORTH"] and p[2] == ON_LADDER
+                                 and p[3] == r and p[4] >= p[1] + 16 and p[5] == INITIAL_LIVES),
+              shot=f"{slug}-sky-{r}")
 
     for edit in meta.get("walls", spec.get("walls", [])):
         r = edit["room"]

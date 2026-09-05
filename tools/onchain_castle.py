@@ -297,8 +297,8 @@ class Tony:
         return bool(floors) and all(self.arrive_ok(b, opp, F) for F in floors)
 
     def pluggable(self, r):
-        """Unwired vertical openings of r can be walled off without growing its RLE3 block."""
-        cells = plug_cells(self, r, top=bool(self.top_ladder[r]), bottom=bool(self.bottom[r]))
+        """An unwired floor hole of r can be walled off without growing its RLE3 block."""
+        cells = plug_cells(self, r, bottom=bool(self.bottom[r]))
         if not cells:
             return True
         grid = [row[:] for row in self.rooms[r]]
@@ -430,10 +430,12 @@ def edge_stub(mode):
     byte just read from level_roomExits{N,E,S,W}[room] and roomChangeDirection set.
     A real exit: store it and return (what the original tail did).  A sealed exit
     ($FF): push Tony back inside the playfield on the side he tried to leave, then
-    in "void" mode take a life (once - never while he is already dying)."""
+    in "void" mode take a life (once - never while he is already dying) - except at
+    the TOP edge, which is always a wall: the only way up there is a ladder, and a
+    ladder that kills you at its last rung is not a hazard anyone can see."""
     lo, hi = lambda v: bytes([v & 0xFF]), lambda v: bytes([v >> 8])
     abs_ = lambda a: a.to_bytes(2, "little")
-    STA, LDA_IMM, LDA_ABS, CMP_IMM, JMP, JSR, RTS, BIT_ABS = b"\x8d", b"\xa9", b"\xad", b"\xc9", b"\x4c", b"\x20", b"\x60", b"\x2c"
+    STA, LDA_IMM, LDA_ABS, CMP_IMM, JMP, JSR, RTS = b"\x8d", b"\xa9", b"\xad", b"\xc9", b"\x4c", b"\x20", b"\x60"
     BNE, BEQ = 0xD0, 0xF0
     X, Y = A["physPlayerX"], A["physPlayerY"]
     items = [
@@ -449,10 +451,10 @@ def edge_stub(mode):
         ("label", "toApply2"), JMP + b"\x00\x00",
         ("label", "notE"),
         CMP_IMM + bytes([DIRECTION["NORTH"]]), ("br", BNE, "south"),
-        LDA_IMM + lo(LIMITS["NORTH"] + 2),
-        BIT_ABS,                                             # swallows the next lda #imm
-        ("label", "south"), LDA_IMM + lo(LIMITS["SOUTH"] - 2),
-        STA + abs_(Y),
+        LDA_IMM + lo(LIMITS["NORTH"] + 2), STA + abs_(Y),      # top edge: always a wall
+        JSR + abs_(A["physResetActorPosition"]), JSR + abs_(A["updatePlayerPosition"]),
+        RTS,
+        ("label", "south"), LDA_IMM + lo(LIMITS["SOUTH"] - 2), STA + abs_(Y),
         ("label", "apply"),
         JSR + abs_(A["physResetActorPosition"]), JSR + abs_(A["updatePlayerPosition"]),
         ("label", "mode"), LDA_IMM + bytes([EDGE_MODES[mode]]), ("br", BEQ, "done"),
@@ -510,12 +512,15 @@ def build_castle(t, spec):
                 raise SystemExit(f"room {room} {d} exit -> {target} leaves the castle")
             p.set(A["level_roomExits" + d] + room, bytes([target]),
                   f"room {room} {d} exit -> {'sealed' if target == NO else target}")
-    # measured: a bottom opening with a sealed S exit drops Tony out of bounds onto the
-    # dashboard rows, and a ladder into a sealed N exit is untested - wall them off
+    # measured: a bottom opening with a sealed S exit drops Tony out of bounds (in "wall"
+    # mode the guard would hold him falling in the hole forever) - so floor holes are
+    # filled with wall.  Ladders into a sealed sky are NOT capped: measured, a wall cap
+    # makes the physics read Tony as standing at the top of the ladder and DOWN becomes a
+    # duck - the first player got stuck there.  The guard alone holds him at the top in
+    # the climbing state and he can climb back down.
     walls = list(spec.get("walls", []))
     for room, ex in sorted(exits.items()):
-        cells = plug_cells(t, room, top=ex["N"] == NO and bool(t.top_ladder[room]),
-                           bottom=ex["S"] == NO and bool(t.bottom[room]))
+        cells = plug_cells(t, room, bottom=ex["S"] == NO and bool(t.bottom[room]))
         if cells:
             walls.append(dict(room=room, cells=cells, auto=True))
     if spec.get("scheme") is not None:
@@ -687,10 +692,11 @@ def sample_specs(t):
     return [ring, well, escher]
 
 
-def plug_cells(t, r, top=False, bottom=False):
-    """Wall cells that close the openings in the top two / bottom two rows of room r,
-    using the room's most common wall char of that edge row (falls back to any wall
-    char in the room)."""
+def plug_cells(t, r, bottom=False):
+    """Wall cells that fill the floor holes in the bottom two rows of room r, using the
+    room's most common wall char of that row (falls back to any wall char in the room).
+    (An earlier version also capped top-edge ladders with wall; that traps Tony at the
+    top - see build_castle.)"""
     def wall_char(row):
         c = Counter(t.rooms[r][row][x] for x in range(W) if t.mat(r, row, x) & WALL)
         if not c:
@@ -701,10 +707,6 @@ def plug_cells(t, r, top=False, bottom=False):
         ch = wall_char(H - 1)
         cells += [[row, c, ch] for row in (H - 2, H - 1) for c in range(W)
                   if not (t.mat(r, row, c) & WALL) and any(c in (w, w + 1) for w in t.bottom[r])]
-    if top:
-        ch = wall_char(0)
-        cells += [[row, c, ch] for row in (0, 1) for c in range(W)
-                  if (t.mat(r, row, c) & LADDER) and any(c in (w, w + 1) for w in t.top_ladder[r])]
     return cells
 
 

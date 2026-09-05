@@ -41,11 +41,12 @@ romfree trainer (own-font menu, or menu removed).
 (`prg()`, keccak256 `0x5bcd208f…`), with its byte-exact symbol file and the
 engine's runtime collision map of all 30 rooms (`runtime-collision.json`).
 `castles/` holds three sample "mini castles" — patch sets over those bytes
-(a few hundred bytes to ~1.2 KB each: rewired exits, colour scheme, the
-cheat-state fix, a 75-byte edge guard, and a rewritten room block where a
-ladder or floor hole had to be capped), each with its patched PRG and a JSON
-of the exact records, all play-tested on minimal64 including the "walk out of
-the entry room" scenario the first player hit. Generator
+(143–168 bytes each: rewired exits, colour scheme, the cheat-state fix and an
+84-byte edge guard; a room block is rewritten only when a floor hole must be
+filled), each with its patched PRG and a JSON of the exact records, all
+play-tested on minimal64 including the two scenarios the first player hit:
+walking out of the entry room, and climbing a ladder that used to lead to
+another room and back down. Generator
 `tools/onchain_castle.py`, play-tester `tools/verify_castle.py`, capture
 `tools/capture_runtime_rooms.py`, diagram `tools/castle_diagram.py`.
 Everything is documented in **`ONCHAIN-CASTLES.md`**, including the
