@@ -1,83 +1,70 @@
 {
  "name": "The Well",
  "base_prgHash": "0x5bcd208f63ac255ffc391c4abeb7b8f701061ac896008607ef414c24c880f34d",
- "patched_keccak256": "0x1d3509bcd62758ef9fb3ed01a7d6f682b26cdfdb20a9f1eb68fd71574d35ae7f",
- "entry": 8,
+ "patched_keccak256": "0xa390bee012ea4884b424ea26e29c8c70971219b85a26171908e398368c822e61",
+ "entry": 18,
  "rooms": [
-  8,
-  9,
+  5,
+  18,
   24
  ],
  "scheme": "BLUE",
  "cheat_byte": 0,
+ "edge_mode": "wall",
  "spec": {
   "name": "The Well",
-  "entry": 8,
+  "entry": 18,
   "scheme": "BLUE",
   "cheat": 0,
+  "edge_mode": "wall",
   "exits": {
-   "8": {
-    "S": 24
+   "18": {
+    "W": 5
    },
-   "24": {
-    "E": 9
+   "5": {
+    "S": 24,
+    "E": 255
    },
-   "9": {
-    "W": 24
-   }
+   "24": {}
   }
  },
  "walls": [],
- "patch_bytes": 58,
+ "patch_bytes": 134,
  "records": [
   {
-   "addr": "$9553",
-   "offset": 36180,
-   "old": "12",
-   "new": "08",
-   "why": "title gate -> room 8"
-  },
-  {
-   "addr": "$9520",
-   "offset": 36129,
-   "old": "0d",
+   "addr": "$951D",
+   "offset": 36126,
+   "old": "0a",
    "new": "18",
-   "why": "room 8 S exit -> 24"
+   "why": "room 5 S exit -> 24"
   },
   {
-   "addr": "$953E",
-   "offset": 36159,
-   "old": "07",
+   "addr": "$94FF",
+   "offset": 36096,
+   "old": "06",
    "new": "ff",
-   "why": "room 8 W exit -> sealed"
+   "why": "room 5 E exit -> sealed"
   },
   {
-   "addr": "$953F",
-   "offset": 36160,
-   "old": "ff",
-   "new": "18",
-   "why": "room 9 W exit -> 24"
-  },
-  {
-   "addr": "$94E5",
-   "offset": 36070,
+   "addr": "$953B",
+   "offset": 36156,
    "old": "04",
    "new": "ff",
-   "why": "room 9 N exit -> sealed"
+   "why": "room 5 W exit -> sealed"
   },
   {
-   "addr": "$9503",
-   "offset": 36100,
-   "old": "0a",
-   "new": "ff",
-   "why": "room 9 E exit -> sealed"
+   "addr": "$9548",
+   "offset": 36169,
+   "old": "11",
+   "new": "05",
+   "why": "room 18 W exit -> 5"
   },
   {
    "addr": "$9512",
    "offset": 36115,
    "old": "19",
-   "new": "09",
-   "why": "room 24 E exit -> 9"
+   "new": "ff",
+   "why": "room 24 E exit -> sealed"
   },
   {
    "addr": "$0965",
@@ -99,9 +86,23 @@
    "old": "a99b8d11d0a908",
    "new": "a900852d4ce12b",
    "why": "stub in dead menu: lda #$00; sta $2D; jmp blankScreen"
+  },
+  {
+   "addr": "$080D",
+   "offset": 14,
+   "old": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+   "new": "8d553ec9ffd043ad593ec904d00da9158dcc39a9008dcd394c4508c903d00da9408dcc39a9018dcd394c4508c901d003a9252ca9c38dce39206236200d2aa900f008adc942d00320640e60",
+   "why": "edge guard in BASIC-stub padding: sealed exit = wall (75 B)"
+  },
+  {
+   "addr": "$14E8",
+   "offset": 3305,
+   "old": "8d553e",
+   "new": "4c0d08",
+   "why": "checkForRoomChange tail: jmp edge guard (was sta roomChange)"
   }
  ],
- "hex": "8d540001088d210001188d3f0001ff8d400001188ce60001ff8d040001ff8d13000109016600010300f900032062b4ac630007a900852d4ce12b",
+ "hex": "8d1e0001188d000001ff8d3c0001ff8d490001058d130001ff016600010300f900032062b4ac630007a900852d4ce12b000e004b8d553ec9ffd043ad593ec904d00da9158dcc39a9008dcd394c4508c903d00da9408dcc39a9018dcd394c4508c901d003a9252ca9c38dce39206236200d2aa900f008adc942d00320640e600ce900034c0d08",
  "credits": [
   "Tony: Born for Adventure - code Maciej Malecki, graphics Rafal Dudek, music Sami Juntunen (MIT)",
   "runtime: minimal64 by nopsta (GPL-2.0)"

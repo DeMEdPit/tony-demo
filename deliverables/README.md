@@ -40,11 +40,16 @@ romfree trainer (own-font menu, or menu removed).
 `tony-token-edition.prg` is the exact PRG the Ethereum PoC721 token serves
 (`prg()`, keccak256 `0x5bcd208f…`), with its byte-exact symbol file and the
 engine's runtime collision map of all 30 rooms (`runtime-collision.json`).
-`castles/` holds three sample "mini castles" — 48–58-byte patch sets over
-those bytes, each with its patched PRG and a JSON of the exact records, all
-play-tested on minimal64. Generator `tools/onchain_castle.py`, play-tester
-`tools/verify_castle.py`, capture `tools/capture_runtime_rooms.py`.
-Everything is documented in **`ONCHAIN-CASTLES.md`**.
+`castles/` holds three sample "mini castles" — patch sets over those bytes
+(a few hundred bytes to ~1.2 KB each: rewired exits, colour scheme, the
+cheat-state fix, a 75-byte edge guard, and a rewritten room block where a
+ladder or floor hole had to be capped), each with its patched PRG and a JSON
+of the exact records, all play-tested on minimal64 including the "walk out of
+the entry room" scenario the first player hit. Generator
+`tools/onchain_castle.py`, play-tester `tools/verify_castle.py`, capture
+`tools/capture_runtime_rooms.py`, diagram `tools/castle_diagram.py`.
+Everything is documented in **`ONCHAIN-CASTLES.md`**, including the
+field report on the first play-test and what it changed.
 
 ## Documents
 

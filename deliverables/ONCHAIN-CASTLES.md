@@ -4,11 +4,14 @@ The Tony demo that the Ethereum PoC721 token serves (`prg()`, keccak256
 `0x5bcd208f63ac255ffc391c4abeb7b8f701061ac896008607ef414c24c880f34d`) is the
 30-room game with two boot-time changes (menu skipped, GREEN scheme). Because
 the level is data — exit bytes, object lists, RLE3 room blocks at fixed
-addresses — a "castle" is a **48–58-byte patch** over those exact bytes: rewire
-a handful of exits, set the scheme byte, and (optionally) rewrite one room
-block. No reassembly. A collection contract can hold the base PRG once
-(or read it from the token) and a few dozen bytes per token, apply them in
-memory, and hand the result to the READY 64 Launcher's `dataURI(prg, 0)`.
+addresses — a "castle" is a small patch over those exact bytes: rewire a
+handful of exits, set the scheme byte, fix the cheat-state byte, install a
+75-byte **edge guard** (see the field report: the engine has no behaviour for
+a sealed exit), and where a ladder or floor hole would lead nowhere, rewrite
+one room block. **134 bytes to ~1.2 KB per castle**, no reassembly. A
+collection contract can hold the base PRG once (or read it from the token),
+apply the bytes in memory, and hand the result to the READY 64 Launcher's
+`dataURI(prg, 0)`.
 
 Everything below is derived from and verified against the deployed bytes:
 `deliverables/onchain/tony-token-edition.prg` here is byte-identical to the
@@ -25,10 +28,58 @@ Tools: `tools/onchain_castle.py` (offset map, census, patch generator — it
 refuses any input whose keccak256 is not the on-chain `prgHash`),
 `tools/verify_castle.py` (play-tests a castle on minimal64),
 `tools/capture_runtime_rooms.py` (dumps the engine's runtime collision map
-of every room), `tools/m64-harness` (native build of the vendored, chain-proven
-minimal64 source; now with `poke` and `dump`).
+of every room), `tools/castle_diagram.py` (renders
+`assets/onchain-castles-diagram.png` from the castle JSONs), `tools/m64-harness`
+(native build of the vendored, chain-proven minimal64 source; with `poke` and
+`dump`).
 
-## Two findings about the deployed bytes (measured, not inferred)
+## Field report — what the first play-test found, and what it changed
+
+The first three sample castles (superseded; their files are replaced) were
+played by the owner through READY 64 in OpenSea. Report: after fire at the
+title you can walk left, then "when I try and leave either room … you die",
+and "if I go forward and hop over the door and keep going, I also lose a
+life". Reproduced on minimal64 with the exact v1 Ring PRG: holding LEFT from
+the entry, lives went 5 → 4 → 3 → 1 in about 500 frames while the room number
+never changed (`screenshots/onchain-castle-v1-bug-room27-spikes.png`). Two
+independent causes:
+
+**1. A sealed exit is not a wall — the engine has no behaviour for it.**
+`changeRoomIfNeeded` skips a room change when `roomChange == $FF`, and that
+is all. `checkForRoomChange` keeps firing every frame, Tony keeps walking, his
+16-bit X runs past the playfield and through zero, the collision scan indexes
+columns that do not exist and reads whatever bytes lie there, and the east
+test (`physPlayerX+1 != 0`) can even fire a phantom transition through the
+*opposite* exit. Depending on the room this is a death, a teleport or a walk
+into nothing. My earlier note that a sealed exit "is an invisible wall" was
+measured **eastward only** (room 18, where the garbage column past the right
+edge happens to read as wall) and generalised wrongly — westward is where it
+breaks. Fix: the **edge guard** below, so a sealed exit has one defined,
+selectable behaviour.
+
+**2. Room 27 is a spike bed with a platform, not a front door.** Tony arrives
+at a castle's entry room on its east edge, facing west (that is how the title
+gate works in the shipped game). Room 27 offers eleven columns of platform in
+that direction and then a fall onto a floor-wide spike bed. Fix: entries are
+now chosen by a **front-door rule** (below); the on-chain demo's own first
+room, 18, is the model.
+
+Two more facts surfaced while fixing it:
+
+- `$0801–$080C` is the BASIC program (`0B 08 | 0A 00 | 9E "2240" | 00 | 00 00`):
+  line link, line number, SYS token, argument, end-of-line, end-of-program
+  link. Every byte is parsed by `RUN` on a real C64 and by minimal64's PRG
+  injector. My first guard started at `$080A` and none of the castles booted;
+  the free padding starts at **`$080D`** (179 zero bytes to `$08BF`, and a
+  linear disassembly of `$08C0–$449A` finds no instruction that references
+  the area).
+- Snakes ignore every cheat. They are *static* objects (`handleSnake`, which
+  carries the author's own comment `// TODO add cheat mode here!`) and kill
+  through the object-collision path, so the deployed game's "resistant to
+  nasties" bit (`$10`) does not cover them. Relevant to any trainer semantics
+  and to automated testing.
+
+## Findings about the deployed bytes (measured, not inferred)
 
 **1. The cheat byte is uninitialised on ROM-equipped machines.** The skipped
 menu was the only code that ever wrote `gameCheatState` (zero page `$2D`).
@@ -37,19 +88,19 @@ measured at the title and in play). On a real C64 or VICE, after `LOAD`, `$2D`
 holds BASIC's end-of-program pointer: measured **`$2D = $28`** with the exact
 on-chain bytes autostarted in VICE — that is `CHEAT_PIKES_INVINCIBLE` (`$20`)
 + `CHEAT_PASS_THRU_DOORS` (`$08`) silently ON. The game runs, but it is not the
-same game (pike-proof Tony who walks through locked doors). Fix, 10 bytes,
-included in every castle patch: `$08F8: 20 62 B4` (`jsr $B462` instead of
-`jsr blankScreen`) and `$B462: A9 nn 85 2D 4C E1 2B` (`lda #nn; sta $2D;
-jmp blankScreen`) — the stub lives in the dead menu's own entry point, which
-is still in the load image and runs before unpack. Verified: VICE `$2D = $00`,
-minimal64 `$2D = $00`, game boots and plays identically
+same game. Fix, 10 bytes, included in every castle patch: `$08F8: 20 62 B4`
+(`jsr $B462` instead of `jsr blankScreen`) and `$B462: A9 nn 85 2D 4C E1 2B`
+(`lda #nn; sta $2D; jmp blankScreen`) — the stub lives in the dead menu's own
+entry point, which is still in the load image and runs before unpack.
+Verified: VICE `$2D = $00`, minimal64 `$2D = $00`
 (`screenshots/onchain-cheatclear-vice-title.png`). The same byte doubles as a
-trait: `nn = $04` bakes infinite lives (the Escher castle; measured `$04` on
-both machines).
+trait: `nn = $04` bakes infinite lives (the Escher castle).
 
 **2. Room 11 declares a south exit to room 16 that cannot fire** — its bottom
 two rows are solid wall and no object opens them. Harmless vestigial data;
 noted because a socket census must not count it as a door.
+
+**3. Sealed exits have no behaviour** (field report above).
 
 ## The patch map
 
@@ -65,12 +116,21 @@ noted because a socket census must not count it as a door.
 | `level_startRoom` (29), `startPositionX` (word 170), `startPositionY` (70), `startState` | `$449A` | `0x03C9B` | 5 |
 | boot colour scheme operand (`ldx #n`, 0 CLASSIC 1 AMBER 2 GREEN 3 BLUE 4 C64 5 C128) | `$0965` | `0x00166` | 1 |
 | boot `jsr blankScreen` (→ cheat stub) | `$08F8` | `0x000F9` | 3 |
-| dead `cheatMenu` entry (stub home) | `$B462` | `0x0AC63` | 7 |
+| dead `cheatMenu` entry (cheat stub home, runs pre-unpack only) | `$B462` | `0x0AC63` | 7 |
+| **edge guard home**: zero padding after the BASIC program (`$080D–$08BF`, 179 B free) | `$080D` | `0x0000E` | 75 |
+| `checkForRoomChange` tail `sta roomChange; rts` → `jmp $080D` | `$14E8` | `0x00CE9` | 3 |
 | `materials` — collision class per char (bit0 wall, bit1 ladder, bit2 deadly, bit6 collectible) | `$8DC7` | `0x085C8` | 255 |
 | `level_roomPtr` lo[30] hi[30] → each room's RLE3 map block | `$9446` | `0x08C47` | 60 |
 | `level_objectControlPtr` / `PositionXPtr` / `PositionYPtr` lo/hi | `$9554` / `$9590` / `$95CC` | `0x08D55` … | 3×60 |
 | `level_objectSizes[30]` | `$9644` | `0x08E45` | 30 |
 | bat paths `path0..9`, `pathsPtrsLo/Hi`, `pathLengths` | `$9680` | `0x08E81` | 102 |
+
+Do not touch `$0801–$080C` (the BASIC line, see the field report). Runtime
+variables the guard uses (RAM, not in the file): `roomChange $3E55`,
+`roomChangeDirection $3E59`, `physPlayerX $39CC/CD`, `physPlayerY $39CE`,
+`playerDying $42C9`, `gameLivesLeft $42CA`, `currentChamberNumber $3E51`;
+routines `physResetActorPosition $3662`, `updatePlayerPosition $2A0D`,
+`killPlayer $0E64`.
 
 Per-room: each room's compressed map block (address + length) and object
 list (address + count, control byte = type + value<<4, then X and Y arrays)
@@ -79,100 +139,190 @@ uncompressed and patchable in place (same count); the map blocks are RLE3
 (`_compress.asm`: literal runs, `FF value count` for runs, `FF FF 00` end mark)
 and the tool's encoder reproduces all 30 on-chain blocks byte-exactly, so a
 room can be rewritten as long as the new block is **not larger** (the decoder
-stops at the end mark; leftover bytes are inert). Walls usually compress
-smaller. The four exit tables, the pointer tables and the start block are
-plain bytes.
+stops at the end mark; leftover bytes are inert). The four exit tables, the
+pointer tables and the start block are plain bytes.
 
-Runtime facts that shape the rules (all measured on minimal64 with pokes into
-the running game): an exit set to `NO` (`$FF`) is an invisible wall for
-sideways travel — Tony walks to X=327 and stops, exactly as the shipped room
-18 east edge behaves; the title's fire handler simply walks Tony left off the
-platform at floor row 6, so `exitsW[29]` is the whole gate; a **bottom
-opening with a sealed south exit is not safe** — the collision scan has row
-addresses only for rows 0–19 and Tony comes to rest at Y=214, out of bounds
-under the dashboard, alive; the only room-number-specific engine logic is
-`cmp #29` (title) and `cmp #22/#23` (stones charset), so remixing leaves them
-intact because room numbers never change.
+Runtime facts that shape the rules (measured on minimal64): the title's fire
+handler simply walks Tony left off the platform at floor row 6, so
+`exitsW[29]` is the whole gate and Tony arrives at the entry room's **east**
+edge at X=321, Y=70, facing west; a **bottom opening with a sealed south
+exit** drops Tony out of bounds under the dashboard (the collision scan has
+row addresses only for rows 0–19) — so it is walled off; the only
+room-number-specific engine logic is `cmp #29` (title) and `cmp #22/#23`
+(stones charset), so remixing leaves them intact because room numbers never
+change.
 
 ### No castle name string
 
 The deployed game draws no text at runtime — the title is tile art, the
-dashboard is glyphs — and the menu strings (`"tony born for adventure"`,
-`"official trainer"`, …) are dead bytes now that the menu is skipped:
-patchable, invisible. A castle's name belongs in the token metadata, not the
-PRG. (A code patch could print one; that is a different project.)
+dashboard is glyphs — and the menu strings are dead bytes now that the menu is
+skipped: patchable, invisible. A castle's name belongs in the token metadata,
+not the PRG.
 
 ## What a castle patch is
 
-1. **Gate**: `exitsW[29] = entry room`. Tony leaves the title on floor row 6
-   and arrives at the entry room's east edge, X=321, Y=70.
+1. **Gate**: `exitsW[29] = entry room`.
 2. **Wiring**: exit bytes of the castle rooms. A castle is closed: every
    direction the spec does not wire is sealed (`$FF`); a wired target must be
    another castle room (the generator refuses leaks into the rest of the demo).
 3. **Vertical rule**: a room's bottom opening is either wired to a safe drop or
-   walled off; a top-edge ladder likewise (a ladder into a sealed sky is
-   untested territory). The generator plugs unwired openings automatically by
-   rewriting the room block (same-or-smaller RLE3, e.g. room 8: 532 → 529 B).
+   walled off; a top-edge ladder into a sealed exit is capped. The generator
+   plugs them automatically by rewriting the room block (same-or-smaller RLE3).
 4. **Scheme byte** and the **cheat stub** (clear, or a trait value).
-5. Optional object edits (type/value in place) and wall edits.
+5. **Edge guard** with its **mode byte** (next section) — installed in every
+   castle, 75 B at `$080D` plus the 3-byte re-route at `$14E8`.
+6. Optional object edits (type/value in place) and wall edits.
 
 Sockets are computed from the engine's **runtime** collision map, not the
 static tiles: `capture_runtime_rooms.py` forces each room transition in the
 running game and reads `roomMaterialsBuffer` (`$BE00`) through the live screen
-rows in `chamberLines` (`$4290`). The difference matters: flame objects are
-marked deadly at runtime with no cheat exemption (room 8 gains exactly 8
-deadly cells, one column two rows per flame pair; room 24 twelve), doors
-become blocking, pikes deadly. A door is "safe" when Tony, stepping through
-at his current floor row, finds his body zone open and either stands on a
-wall or drops through safe cells onto one; an edge is "side-safe" when every
-standable spot on it arrives safely opposite. Under those rules the 29 rooms
-offer 15 entry-capable rooms, 234 safe one-way doors, 165 safe drops, 9
-non-neighbour eastward rings and one perfect self-loop room (2). The original
-author's own 23 doors pass the same test in 19 cases; the four exceptions are
-shipped one-way quirks.
+rows in `chamberLines` (`$4290`). Flame objects are deadly at runtime with no
+cheat exemption, doors block, pikes kill. A door is "safe" when Tony, stepping
+through at his current floor row, finds his body zone open and either stands
+on a wall or drops through safe cells onto one; an edge is "side-safe" when
+every standable spot on it arrives safely opposite. Under those rules the 29
+rooms offer 15 entry-capable rooms, 234 safe one-way doors, 165 safe drops and
+one perfect self-loop room (2). The original author's own 23 doors pass the
+same test in 19 cases; the four exceptions are shipped one-way quirks.
+
+## Edge modes — the guard, and the "infinite / wall / void" variable
+
+The guard replaces the tail of `checkForRoomChange`. Entered with the exit
+byte in A and `roomChangeDirection` set, it stores the byte like the original
+did and returns if the exit is real. If the exit is sealed (`$FF`) it pushes
+Tony back inside on the side he tried to leave (X to 21 or 320, Y to 37 or
+195 — two pixels inside the transit limits), re-syncs the actor position the
+way `changeRoomIfNeeded` does, and then consults its **mode byte**
+(`$084C` = guard + 63):
+
+| mode | byte | what a sealed edge does | verified |
+|---|---|---|---|
+| **wall** | `$00` | invisible wall: Tony stays in the room, in bounds, alive (walks in place against it) | Well: 4 sealed edges, all `same room, in bounds, 5 lives` |
+| **void** | `$01` | costs one life — `killPlayer` once, never while already dying — and respawns Tony at the room's entry point | Escher: `exactly one life lost, same room`, X clamped at 321 |
+| **infinite** | (either) | not a byte but a topology: every open side edge is wired somewhere, so the guard never fires | Ring: six doors, no sealed side edge |
+
+75 bytes, assembled by `edge_stub()` in the generator (a two-pass mini
+assembler, so branch offsets are never hand-counted):
+
+```
+080D 8d 55 3e     sta roomChange
+0810 c9 ff        cmp #$FF (sealed)
+0812 d0 43        bne $0857
+0814 ad 59 3e     lda roomChangeDirection
+0817 c9 04        cmp #$04 (WEST)
+0819 d0 0d        bne $0828
+081B a9 15        lda #$15 (WEST_LIMIT+2)
+081D 8d cc 39     sta physPlayerX
+0820 a9 00        lda #$00 (0)
+0822 8d cd 39     sta physPlayerX+1
+0825 4c 45 08     jmp $0845
+0828 c9 03     <- cmp #$03 (EAST)
+082A d0 0d        bne $0839
+082C a9 40        lda #$40 (<(EAST_LIMIT-2))
+082E 8d cc 39     sta physPlayerX
+0831 a9 01        lda #$01 (>(EAST_LIMIT-2))
+0833 8d cd 39     sta physPlayerX+1
+0836 4c 45 08     jmp $0845
+0839 c9 01     <- cmp #$01 (NORTH)
+083B d0 03        bne $0840
+083D a9 25        lda #$25 (NORTH_LIMIT+2)
+083F 2c           bit abs  (swallows the next lda #imm)
+0840 a9 c3     <- lda #$C3 (SOUTH_LIMIT-2)
+0842 8d ce 39     sta physPlayerY
+0845 20 62 36  <- jsr physResetActorPosition
+0848 20 0d 2a     jsr updatePlayerPosition
+084B a9 00        lda #MODE  ($00 wall / $01 void)
+084D f0 08        beq $0857
+084F ad c9 42     lda playerDying
+0852 d0 03        bne $0857
+0854 20 64 0e     jsr killPlayer
+0857 60        <- rts
+```
+
+Why `$080D` is safe: the game never references `$0800–$08BF` (linear sweep of
+the code segment), nothing is copied over it at unpack (music goes to
+`$A000+`, screens to `$C000+`), and the bytes sit inside the PRG so a contract
+can patch them like any other. The dead menu at `$B462` is **not** usable for
+runtime code — `unpack` copies the music over it — which is why the cheat stub
+there may only run at boot. The `guard` check in the play-tester re-reads the
+75 bytes and the re-routed tail after a played session.
+
+## Front doors — the gentle-entry rule
+
+`entry_walk(room)` simulates what a new player does: arrive at the east edge
+on floor row 6, drop to the first floor, hold LEFT. It returns how many
+columns of continuous safe floor that walk covers and how it ends — `wall`
+(he stops), `drop` (a fall onto safe floor), `door` (floor to the west edge),
+`deadly` (a fall onto spikes) or `pit` (off the bottom). A room is a valid
+**front door** when Tony can stand where he arrives, the run is at least six
+columns, it does not end `deadly`/`pit`, and the room has no rolling boulders
+(STONE objects hunt the whole floor). Of the 15 entry-capable rooms only
+**11** (10 columns, then wall), **18** (8, then drop — the shipped first room)
+and **19** (12, then drop, but six enemies) qualify; 27 is 11 columns then
+`deadly`, 22 is 26 columns then `deadly` with boulders. The generator ranks
+front doors by run length minus hazards parked on the run, and gives each
+sample castle its own door when the data allows.
+
+The play-tester turns the rule into a measurement (`entry` check): from the
+gate it holds LEFT and samples X and lives every 8 frames until Tony has
+covered the promised run; every sample must show all five lives and the entry
+room. Sprite enemies are disabled for that one check (`$2D = $12`, pikes
+stay live) so it measures the floor, not the fight — a snake on the run would
+still fail it, legitimately, since snakes ignore cheats.
 
 ## The three sample castles (`deliverables/onchain/castles/`)
 
 Each has its patched PRG (56,361 bytes), a JSON with the exact records and the
 `hex` patch string, and was play-tested on minimal64 by `verify_castle.py`:
-boot, fire at the title, then every wired door walked through (Tony placed on
-the edge floor with the physics actor variables, joystick through the emulated
-CIA), every drop taken, the cheat byte read. Screenshots:
-`screenshots/onchain-castle-*.png`.
+gate, entry walk, every wired door walked through (Tony placed on the edge
+floor with the physics actor variables, joystick through the emulated CIA),
+every drop taken, every sealed side edge walked into, every capped ladder
+climbed, guard bytes re-read. Screenshots: `screenshots/onchain-castle-*.png`;
+map: `assets/onchain-castles-diagram.png`.
 
-**The Ring** — AMBER, 48 bytes. Title → room 27 (the flame-lit hall with the
-door); walk east into room 16 (snakes, potion, jewel); walk east again and you
-are back in 27 — forever. Rooms 27 and 16 are not neighbours in the castle.
-West edges sealed. `3/3` checks passed.
-
-```
-$9553 12→1b  gate → 27        $950A 11→1b  16.E → 27      $9546 0f→ff  16.W sealed
-$9515 1c→10  27.E → 16        $9551 1a→ff  27.W sealed    $0965 02→01  AMBER
-$08F8 20e12b→2062b4  jsr stub $B462 a99b8d11d0a908→a900852d4ce12b  stub, cheats clear
-```
-
-**The Well** — BLUE, 58 bytes. Title → room 8 (skull pillars); climb down the
-centre ladder and fall into room 24 (the keycode hall, six flames) — a
-non-neighbour, four grid rows away; walk east into room 9, and back. Room 8's
-other exits sealed, 9's north and east sealed. `4/4` checks passed (drop
-through column 25 lands on 24's floor at Y=102).
+**The Ring** — AMBER, **infinite** topology, wall mode never fires, 1,180 B.
+Title → room 11 (the jewel gallery; skull, bat, two pikes up high). West door
+→ room 16 (two snakes, potion, jewel), west again → room 25 (vertical bats,
+pikes), west again → 11. Eastward the same cycle in reverse: 11 → 25 → 16 →
+11. Six doors, all six side-safe both ways; no room pair is neighbours in the
+castle. Rooms 11 and 25 had ladders into the sealed sky: capped (4 cells
+each, blocks re-encoded to the same length: 545 and 468 B, hence the size).
+**11/11 checks passed.**
 
 ```
-$9553 12→08  gate → 8         $9520 0d→18  8.S → 24       $953E 07→ff  8.W sealed
-$953F ff→18  9.W → 24         $94E5 04→ff  9.N sealed     $9503 0a→ff  9.E sealed
-$9512 19→09  24.E → 9         $0965 02→03  BLUE           $08F8 / $B462 stub, cheats clear
+$9553 12→0b  gate → 11        $9541 0a→10  11.W → 16      $9505 0c→19  11.E → 25
+$9546 0f→19  16.W → 25        $950A 11→0b  16.E → 11      $954F 18→0b  25.W → 11
+$9513 1a→10  25.E → 16        $94E7/$9523  11.N, 11.S sealed   $94F5  25.N sealed
+$0965 02→01  AMBER            $08F8/$B462  cheat stub, clear   $080D/$14E8  guard (wall)
+$6052 room 11 block (545 B, 4 cells)      $82DB room 25 block (468 B, 4 cells)
 ```
 
-**The Escher Corridor** — C64 scheme, 48 bytes, **infinite lives** baked
-(`$2D = $04`, measured on minimal64 and in VICE). Title → room 26 (four
-vertical bats); walk east into room 2 — whose east edge is its own west edge.
-Walk either way forever. `4/4` checks passed (east wrap lands Tony at X=104
-after re-entry, west wrap at X=241).
+**The Well** — BLUE, **wall** mode, 134 B. Title → room 18, the shipped
+game's own first room (snake on the stairs, bat, pikes far left). Its west door
+→ room 5 (the deadman's hall); fall through the floor hole at column 2 into
+room 24 (the keycode hall, six flames), a non-neighbour four grid rows away.
+Room 5's east and west edges and 24's east edge are sealed: walking into them
+is an invisible wall. **9/9 checks passed** (four sealed edges: same room, in
+bounds, five lives).
 
 ```
-$9553 12→1a  gate → 26        $9514 1b→02  26.E → 2       $9550 19→ff  26.W sealed
-$94FC 03→02  2.E → 2          $9538 01→02  2.W → 2        $0965 02→04  C64
-$08F8 20e12b→2062b4  jsr stub $B462 a99b8d11d0a908→a904852d4ce12b  stub, lives
+$9548 11→05  18.W → 5         $951D 0a→18  5.S → 24       $94FF 06→ff  5.E sealed
+$953B 04→ff  5.W sealed       $9512 19→ff  24.E sealed    $0965 02→03  BLUE
+$08F8/$B462  cheat stub, clear                            $080D/$14E8  guard (wall)
+```
+
+**The Escher Corridor** — C64 scheme, **void** mode, **infinite lives** baked
+(`$2D = $04`), 693 B. Title → room 11; west door → room 2, whose east edge is
+its own west edge: walk either way forever. Room 11's east edge is sealed and
+in void mode stepping off it costs a life — which, with lives infinite, just
+puts you back at the door. **8/8 checks passed** (void: exactly one life lost,
+same room; both wraps re-enter room 2 from the far side).
+
+```
+$9553 12→0b  gate → 11        $9541 0a→02  11.W → 2       $94FC 03→02  2.E → 2
+$9538 01→02  2.W → 2          $94E7/$9505/$9523  11.N, 11.E, 11.S sealed
+$0965 02→04  C64              $08F8/$B462  cheat stub, lives  $080D/$14E8  guard (void)
+$6052 room 11 block (545 B, 4 cells)
 ```
 
 ## Applying a patch in Solidity
@@ -199,20 +349,23 @@ function prgFor(uint256 id) public view returns (bytes memory prg) {
 ```
 
 `TONY.prg()` is already the first half of what the token's own `tokenURI` does
-today (~64M view gas including hex+base64), so per-castle cost is that plus a
-few hundred byte writes. Per-token storage: 48–58 bytes for exits+scheme+stub,
-plus ~530 bytes when a room block is rewritten.
+today, so per-castle cost is that plus a few hundred byte writes. Storage: the
+guard (75 B) and its tail re-route are identical for every castle except the
+mode byte, so they can be one shared constant applied by the contract; the
+per-token part is then exits + scheme + cheat + mode (a few dozen bytes) plus
+~400–600 B for each room block that had to be capped.
 
 ## Not done / open
 
-- Object-level traits (swap a snake for a skull, move a jewel) and
-  hand-drawn wall edits are supported by the generator (`objects`, `walls` in a
-  spec) but no sample uses them; a north-edge ladder into a sealed exit is
-  walled off rather than tested.
+- Object-level traits (swap a snake for a skull, move a jewel) and hand-drawn
+  wall edits are supported by the generator (`objects`, `walls` in a spec) but
+  no sample uses them.
 - The census treats a standable edge spot as reachable; it does not path-find
   inside rooms, so a wired door can be behind an enemy or a locked door — the
-  verifier teleports past that, a player would not. Curation still wants a
-  human eye on each castle.
+  verifier teleports past that, a player would not. The front-door rule covers
+  the first steps only. Curation still wants a human eye on each castle.
+- The first three castles were replaced, not versioned: their PRGs and JSONs
+  no longer exist here; the field report records what they were.
 - Nothing here touches the chain: no contract was written or deployed, and the
   akalabeth repository was read only. These files live in `tony-demo`.
 
@@ -234,3 +387,4 @@ vendored, chain-proven copy of his source.
     sh tools/m64-harness/build.sh /path/to/minimal64      # native harness
     python3 tools/capture_runtime_rooms.py                # runtime-collision.json
     python3 tools/verify_castle.py out/castle-the-ring.json shots/
+    python3 tools/castle_diagram.py out/castle-the-ring.json out/castle-the-well.json out/castle-the-escher-corridor.json

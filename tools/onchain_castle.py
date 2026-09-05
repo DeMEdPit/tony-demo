@@ -5,9 +5,17 @@ The deployed PRG (PoC721 `prg()`, keccak256 = PRG_HASH below) is the 30-room
 Tony demo with the boot menu skipped and the GREEN scheme default.  A
 "castle" is a tiny patch over those exact bytes: the title room's west exit
 becomes the castle's entry room, the castle rooms' exit bytes are rewired,
-the boot colour scheme byte is set, and a 10-byte stub clears (or sets) the
-cheat-state byte the skipped menu used to initialise.  Nothing is
-reassembled; rooms, objects, music and sprites are untouched.
+the boot colour scheme byte is set, a 10-byte stub clears (or sets) the
+cheat-state byte the skipped menu used to initialise, and a 75-byte "edge
+guard" gives sealed exits a defined behaviour (the engine has none: a sealed
+exit is NOT a wall, Tony walks off the playfield, his X wraps and the
+collision scan reads garbage).  The guard lives in the zero padding between
+the BASIC SYS line and the game code ($080D-$08BF, never referenced) and is
+selected per castle: `edge_mode` "wall" (Tony is pushed back inside, an
+invisible wall) or "void" (walking off a sealed edge costs a life and
+respawns him at the room's entry point).  A castle with no sealed side edges
+at all ("infinite": every open edge wired somewhere) never triggers it.
+Nothing is reassembled; rooms, objects, music and sprites are untouched.
 
     python3 tools/onchain_castle.py info    PRG            # offset map + self-checks
     python3 tools/onchain_castle.py census  PRG            # door sockets, compatible pairs
@@ -64,7 +72,17 @@ A = dict(
     gameCheatState=0x2D, currentChamberNumber=0x3E51,
     physPlayerX=0x39CC, physPlayerY=0x39CE, physPlayerState=0x39D3,
     musicData=0x9EDE, endOfTony=0xE428,
+    # edge guard: checkForRoomChange's tail `sta roomChange ; rts` is re-routed to a stub
+    roomChange=0x3E55, roomChangeDirection=0x3E59, roomChange_tail=0x14E8,
+    physResetActorPosition=0x3662, updatePlayerPosition=0x2A0D, killPlayer=0x0E64,
+    playerDying=0x42C9, edge_stub=0x080D, edge_stub_end=0x08C0,
+    # $0801-$080C is the BASIC program: line link, line number, SYS token, "2240",
+    # the $00 end-of-line at $080A and the $0000 end-of-program link at $080B-$080C -
+    # every byte of it is parsed by RUN (real C64) and by minimal64's PRG injector.
 )
+LIMITS = dict(WEST=0x13, EAST=0x142, NORTH=0x23, SOUTH=0xC5)   # ROOM_*_LIMIT
+DIRECTION = dict(NORTH=1, SOUTH=2, EAST=3, WEST=4)            # ROOM_TRANSIT_DIRECTION_*
+EDGE_MODES = {"wall": 0, "void": 1}
 SCHEMES = ["CLASSIC", "AMBER", "GREEN", "BLUE", "C64", "C128"]
 CHEAT = dict(STONE=0x02, LIVES=0x04, DOORS=0x08, SPRITE=0x10, PIKES=0x20)
 SO = {0: "DEAD", 1: "FLAME1", 2: "FLAME2", 3: "PIKES", 4: "SNAKE_L", 5: "STONE", 6: "JEWEL",
@@ -187,6 +205,9 @@ class Tony:
             ("dead menu entry intact", rd(self.prg, A["cheatMenu"], 2) == bytes([0xA9, 0x9B])),
             ("30 rooms decode to 40x20", all(len(r) == H for r in self.rooms)),
             ("object counts sum to 214", sum(self.obj_sizes) == 214),
+            ("checkForRoomChange tail: sta roomChange; rts", rd(self.prg, A["roomChange_tail"], 4) == bytes([0x8D, 0x55, 0x3E, 0x60])),
+            ("BASIC program ends at $080C (SYS 2240, EOL, end link)", rd(self.prg, 0x0801, 12) == bytes.fromhex("0b080a009e32323430000000")),
+            ("padding $080D-$08BF is zero (guard home)", not any(rd(self.prg, A["edge_stub"], A["edge_stub_end"] - A["edge_stub"]))),
         ]
         bad = [n for n, ok in checks if not ok]
         if bad:
@@ -321,9 +342,131 @@ class Tony:
     def entry_ok(self, r):
         return self.arrive_ok(r, "E", self.TITLE_EXIT_FLOOR)
 
+    HAZARDS = {"SNAKE_L", "SNAKE_R", "DEAD", "SKULL", "BAT", "BAT_V", "PIKES", "STONE"}
+
+    def landing(self, r, F=None, cols=(W - 2, W - 1)):
+        """Floor row Tony ends up standing on after arriving at the east edge with his
+        feet at row F (he drops to the first wall below); None if that kills him."""
+        F = self.TITLE_EXIT_FLOOR if F is None else F
+        for row in range(F, H):
+            v = [self.mat(r, row, c) for c in cols]
+            if any(x & KILL for x in v):
+                return None
+            if any(x & WALL for x in v):
+                return row
+        return None
+
+    def entry_walk(self, r):
+        """(columns, ending): how far Tony can simply walk west from the east edge on
+        continuous safe floor, and what stops him - "wall" (he just stops), "drop"
+        (a fall onto safe floor), "deadly" (a fall onto spikes) or "pit" (off the
+        bottom of the playfield).  A front door must not end "deadly" or "pit": the
+        first sample castle's entry (room 27) was eleven columns of platform and
+        then a spike bed, and its first player lost four lives walking left."""
+        Fl = self.landing(r)
+        if Fl is None:
+            return 0, "deadly"
+        n = 0
+        for col in range(W - 3, -1, -1):
+            body = all(self._open(self.mat(r, Fl - k, col)) for k in (1, 2, 3))
+            floor = (self.mat(r, Fl, col) & WALL) and not (self.mat(r, Fl, col) & KILL)
+            if body and floor:
+                n += 1
+                continue
+            if not body:
+                return n, "wall"
+            for row in range(Fl, H):            # the floor is gone: where does he land?
+                v = self.mat(r, row, col)
+                if v & KILL:
+                    return n, "deadly"
+                if v & WALL:
+                    return n, "drop"
+            return n, "pit"
+        return n, "door"                        # floor runs all the way to the west edge
+
+    def entry_run(self, r):
+        return self.entry_walk(r)[0]
+
+    def hazards(self, r):
+        return [o for o in self.objects[r] if o["type"] in self.HAZARDS]
+
+    def gentle(self, r, min_run=6):
+        """A kind front door: standable arrival, a real walk before anything happens,
+        an ending that is not a death, and no rolling boulders (STONE rooms hunt the
+        whole floor)."""
+        run, ending = self.entry_walk(r)
+        return (self.entry_ok(r) and run >= min_run and ending not in ("deadly", "pit")
+                and not any(o["type"] == "STONE" for o in self.objects[r]))
+
     def summary(self, r):
         c = Counter(o["type"] for o in self.objects[r])
         return " ".join(f"{k}x{v}" if v > 1 else k for k, v in c.items()) or "-"
+
+
+# --- the edge guard --------------------------------------------------------
+def assemble(items, org):
+    """items: bytes, or ("label", name), or ("br", opcode, target-label).  Two passes."""
+    labels, pc = {}, org
+    for it in items:
+        if isinstance(it, tuple) and it[0] == "label":
+            labels[it[1]] = pc
+        else:
+            pc += 2 if isinstance(it, tuple) else len(it)
+    out, pc = bytearray(), org
+    for it in items:
+        if isinstance(it, tuple):
+            if it[0] == "label":
+                continue
+            rel = labels[it[2]] - (pc + 2)
+            assert -128 <= rel <= 127, it
+            out += bytes([it[1], rel & 0xFF]); pc += 2
+        else:
+            out += it; pc += len(it)
+    return bytes(out), labels
+
+
+def edge_stub(mode):
+    """Replacement tail for checkForRoomChange.  Entered by `jmp` with A = the exit
+    byte just read from level_roomExits{N,E,S,W}[room] and roomChangeDirection set.
+    A real exit: store it and return (what the original tail did).  A sealed exit
+    ($FF): push Tony back inside the playfield on the side he tried to leave, then
+    in "void" mode take a life (once - never while he is already dying)."""
+    lo, hi = lambda v: bytes([v & 0xFF]), lambda v: bytes([v >> 8])
+    abs_ = lambda a: a.to_bytes(2, "little")
+    STA, LDA_IMM, LDA_ABS, CMP_IMM, JMP, JSR, RTS, BIT_ABS = b"\x8d", b"\xa9", b"\xad", b"\xc9", b"\x4c", b"\x20", b"\x60", b"\x2c"
+    BNE, BEQ = 0xD0, 0xF0
+    X, Y = A["physPlayerX"], A["physPlayerY"]
+    items = [
+        STA + abs_(A["roomChange"]),
+        CMP_IMM + b"\xff", ("br", BNE, "done"),
+        LDA_ABS + abs_(A["roomChangeDirection"]),
+        CMP_IMM + bytes([DIRECTION["WEST"]]), ("br", BNE, "notW"),
+        LDA_IMM + lo(LIMITS["WEST"] + 2), STA + abs_(X), LDA_IMM + b"\x00", STA + abs_(X + 1),
+        ("label", "toApply1"), JMP + b"\x00\x00",           # patched below
+        ("label", "notW"),
+        CMP_IMM + bytes([DIRECTION["EAST"]]), ("br", BNE, "notE"),
+        LDA_IMM + lo(LIMITS["EAST"] - 2), STA + abs_(X), LDA_IMM + hi(LIMITS["EAST"] - 2), STA + abs_(X + 1),
+        ("label", "toApply2"), JMP + b"\x00\x00",
+        ("label", "notE"),
+        CMP_IMM + bytes([DIRECTION["NORTH"]]), ("br", BNE, "south"),
+        LDA_IMM + lo(LIMITS["NORTH"] + 2),
+        BIT_ABS,                                             # swallows the next lda #imm
+        ("label", "south"), LDA_IMM + lo(LIMITS["SOUTH"] - 2),
+        STA + abs_(Y),
+        ("label", "apply"),
+        JSR + abs_(A["physResetActorPosition"]), JSR + abs_(A["updatePlayerPosition"]),
+        ("label", "mode"), LDA_IMM + bytes([EDGE_MODES[mode]]), ("br", BEQ, "done"),
+        LDA_ABS + abs_(A["playerDying"]), ("br", BNE, "done"),
+        JSR + abs_(A["killPlayer"]),
+        ("label", "done"), RTS,
+    ]
+    code, labels = assemble(items, A["edge_stub"])
+    code = bytearray(code)
+    for l in ("toApply1", "toApply2"):
+        o = labels[l] - A["edge_stub"]
+        code[o + 1:o + 3] = labels["apply"].to_bytes(2, "little")
+    assert A["edge_stub"] + len(code) <= A["edge_stub_end"], len(code)
+    return bytes(code), labels["mode"] + 1 - A["edge_stub"]   # (bytes, offset of the mode byte)
 
 
 # --- castles ---------------------------------------------------------------
@@ -384,6 +527,13 @@ def build_castle(t, spec):
         p.set(A["boot_jsr_blankScreen"], bytes([0x20]) + A["cheatMenu"].to_bytes(2, "little"),
               "boot: jsr stub (was jsr blankScreen)")
         p.set(A["cheatMenu"], stub, f"stub in dead menu: lda #${c:02X}; sta $2D; jmp blankScreen")
+    mode = spec.get("edge_mode", "wall")
+    if mode not in EDGE_MODES:
+        raise SystemExit(f"edge_mode must be one of {list(EDGE_MODES)}")
+    stub, _ = edge_stub(mode)
+    p.set(A["edge_stub"], stub, f"edge guard in BASIC-stub padding: sealed exit = {mode} ({len(stub)} B)")
+    p.set(A["roomChange_tail"], bytes([0x4C]) + A["edge_stub"].to_bytes(2, "little"),
+          "checkForRoomChange tail: jmp edge guard (was sta roomChange)")
     for edit in spec.get("objects", []):
         addr = t.objects[edit["room"]][edit["index"]]["ctrl_addr"]
         new = (edit["value"] << 4) | [k for k, v in SO.items() if v == edit["type"]][0]
@@ -423,7 +573,7 @@ def emit(t, spec, outdir):
     enc = p.encoded()
     meta = dict(name=spec["name"], base_prgHash="0x" + PRG_HASH, patched_keccak256="0x" + keccak256(p.out),
                 entry=spec["entry"], rooms=reachable_rooms(spec), scheme=SCHEMES[spec.get("scheme", 2)] if isinstance(spec.get("scheme", 2), int) else spec["scheme"],
-                cheat_byte=spec.get("cheat", 0), spec=spec, walls=p.walls, patch_bytes=len(enc), records=p.records, hex=enc.hex(),
+                cheat_byte=spec.get("cheat", 0), edge_mode=spec.get("edge_mode", "wall"), spec=spec, walls=p.walls, patch_bytes=len(enc), records=p.records, hex=enc.hex(),
                 credits=["Tony: Born for Adventure - code Maciej Malecki, graphics Rafal Dudek, music Sami Juntunen (MIT)",
                          "runtime: minimal64 by nopsta (GPL-2.0)"])
     (outdir / f"castle-{slug}.json").write_text(json.dumps(meta, indent=1))
@@ -432,60 +582,108 @@ def emit(t, spec, outdir):
 
 # --- sample castles: chosen deterministically from the data --------------
 def sample_specs(t):
+    """Three castles, each a different edge behaviour.  Every entry room is a
+    GENTLE one: Tony arrives at its east edge facing west, so the room must offer a
+    long, continuous, safe floor westward (the on-chain demo's own first room, 18,
+    is the model).  The first samples used room 27 - eleven columns of platform
+    and then a spike bed - and its first player lost four lives walking left."""
     R = range(TITLE)
-    entries = [r for r in R if t.entry_ok(r)]
-    score = lambda r: t.obj_sizes[r]
-
-    # 1. THE RING: walk east forever - a's east edge opens on b, b's east edge opens
-    #    on a; every standable spot on those edges arrives safely.  West edges are
-    #    sealed (invisible walls, shipped behaviour).  Unwired vertical openings get
-    #    walled off automatically, so rooms only need to be pluggable.
     neighbours = lambda a, b: t.exits["E"][a] == b or t.exits["E"][b] == a
     flat = lambda r: not t.top_ladder[r] and not t.bottom[r]
     usable = lambda r: t.pluggable(r)
-    rings = [(a, b) for a in entries for b in R
-             if a != b and not neighbours(a, b) and usable(a) and usable(b)
-             and t.side_ok(a, b, "E") and t.side_ok(b, a, "E")]
-    a, b = max(rings, key=lambda ab: (flat(ab[0]) + flat(ab[1]), score(ab[0]) + score(ab[1])))
-    ring = dict(name="The Ring", entry=a, scheme="AMBER", cheat=0,
-                exits={str(a): {"E": b}, str(b): {"E": a}})
 
-    # 2. THE WELL: descend.  Entry room whose floor hole drops safely into a
-    #    non-neighbour; from there a floor-aligned door east into a third, final
-    #    chamber (with the way back if that door works in both directions).
+    def in_way(r):                     # hazards parked on the entry's walk-west band
+        Fl, run = t.landing(r), t.entry_run(r)
+        if Fl is None:
+            return 99
+        return sum(1 for o in t.hazards(r) if o["x"] >= W - 2 - run and Fl - 4 <= o["y"] <= Fl + 1)
+
+    def gentleness(r):                 # bigger = kinder front door
+        return t.entry_run(r) - 6 * in_way(r) - len(t.hazards(r))
+
+    entries = sorted((r for r in R if t.gentle(r)), key=gentleness, reverse=True)
+    if not entries:
+        raise SystemExit("no gentle entry room found")
+    used = set()                       # give each sample its own front door when possible
+
+    def fresh(a):
+        return a not in used
+
+    # 1. THE RING - "infinite" topology: rooms in a cycle whose every seam is safe in
+    #    BOTH directions, so no side edge is ever sealed and the guard never fires.
+    #    A 2-room ring (a|b|a|b...) is tried first, then a 3-room cycle.
+    def key2(ab):
+        return (gentleness(ab[0]), flat(ab[0]) + flat(ab[1]), -len(t.hazards(ab[1])))
+    rings = [(a, b) for a in entries for b in R
+             if a != b and not neighbours(a, b) and usable(a) and usable(b) and t.ring_ok(a, b)]
+    if rings:
+        a, b = max(rings, key=lambda ab: (fresh(ab[0]),) + key2(ab))
+        exits = {str(a): {"E": b, "W": b}, str(b): {"E": a, "W": a}}
+    else:
+        cycles = []
+        for a in entries:
+            for b in R:
+                if b == a or neighbours(a, b) or not usable(b) or not t.side_ok(a, b, "W"):
+                    continue
+                for c in R:
+                    if c in (a, b) or neighbours(b, c) or neighbours(c, a) or not usable(c):
+                        continue
+                    if (t.side_ok(b, c, "W") and t.side_ok(c, a, "W")          # westward a>b>c>a
+                            and t.side_ok(a, c, "E") and t.side_ok(c, b, "E") and t.side_ok(b, a, "E")):  # eastward
+                        cycles.append((a, b, c))
+        if not cycles:
+            raise SystemExit("no ring with a gentle entry")
+        a, b, c = max(cycles, key=lambda abc: (fresh(abc[0]), gentleness(abc[0]), sum(flat(r) for r in abc),
+                                                -sum(len(t.hazards(r)) for r in abc[1:])))
+        exits = {str(a): {"W": b, "E": c}, str(b): {"W": c, "E": a}, str(c): {"W": a, "E": b}}
+    ring = dict(name="The Ring", entry=a, scheme="AMBER", cheat=0, edge_mode="wall", exits=exits)
+    used.add(a)
+
+    # 2. THE WELL - "wall" mode: a gentle hall, its west door into a shaft room whose
+    #    floor hole drops into a bottom chamber; the way back east if it is safe.  The
+    #    chamber's and hall's other open side edges are sealed = invisible walls.
     orig_ns = {(r, t.exits["S"][r]) for r in R if t.exits["S"][r] != NO}
     best = None
     for a in entries:
         for b in R:
-            if b == a or (a, b) in orig_ns or not t.drop_ok(a, b) or not usable(b):
+            if b == a or neighbours(a, b) or not usable(b) or not t.side_ok(a, b, "W"):
                 continue
             for c in R:
-                if c in (a, b) or not usable(c) or neighbours(b, c) or not t.side_ok(b, c, "E"):
+                if c in (a, b) or (b, c) in orig_ns or not t.drop_ok(b, c) or not usable(c):
                     continue
-                back = t.side_ok(c, b, "W")
-                cand = (back, flat(b) + flat(c), score(a) + score(b) + score(c), a, b, c)
+                back = t.side_ok(b, a, "E")
+                cand = (fresh(a), gentleness(a), back, flat(a) + flat(c), -(len(t.hazards(b)) + len(t.hazards(c))), a, b, c)
                 if best is None or cand > best:
                     best = cand
-    back, _, _, a, b, c = best
-    well = dict(name="The Well", entry=a, scheme="BLUE", cheat=0,
-                exits={str(a): {"S": b}, str(b): {"E": c}, str(c): {"W": b if back else NO}})
+    if best is None:
+        raise SystemExit("no well with a gentle entry")
+    _, _, back, _, _, a, b, c = best
+    used.add(a)
+    well = dict(name="The Well", entry=a, scheme="BLUE", cheat=0, edge_mode="wall",
+                exits={str(a): {"W": b}, str(b): {"S": c, "E": a if back else NO}, str(c): {}})
 
-    # 3. THE ESCHER CORRIDOR: an antechamber, then a room whose east edge is its own
-    #    west edge (both directions, every edge floor) - walk either way forever.
-    #    Infinite lives baked as a trait.  Unwired vertical openings get walled off.
+    # 3. THE ESCHER CORRIDOR - "void" mode with infinite lives: a gentle antechamber
+    #    whose west door opens on a room that is its own neighbour on both sides.
+    #    Step off the antechamber's sealed east edge and the void takes a life -
+    #    which, with lives infinite, just puts you back at the door.
     best = None
     for L in R:
         if not t.loop_ok(L) or not usable(L):
             continue
         for a in entries:
-            if a == L or neighbours(a, L) or not usable(a) or not t.side_ok(a, L, "E"):
+            if a == L or neighbours(a, L) or not usable(a):
                 continue
-            cand = (flat(L) + flat(a), score(L) + score(a), a, L)
-            if best is None or cand > best:
-                best = cand
-    _, _, a, L = best
-    escher = dict(name="The Escher Corridor", entry=a, scheme="C64", cheat=CHEAT["LIVES"],
-                  exits={str(a): {"E": L}, str(L): {"E": L, "W": L}})
+            for d in "WE":                     # the west door is the natural one (Tony arrives facing west)
+                if not t.side_ok(a, L, d):
+                    continue
+                cand = (fresh(a), gentleness(a), d == "W", flat(L) + flat(a), -len(t.hazards(L)), a, L, d)
+                if best is None or cand > best:
+                    best = cand
+    if best is None:
+        raise SystemExit("no escher with a gentle entry")
+    *_, a, L, d = best
+    escher = dict(name="The Escher Corridor", entry=a, scheme="C64", cheat=CHEAT["LIVES"], edge_mode="void",
+                  exits={str(a): {d: L}, str(L): {"E": L, "W": L}})
     return [ring, well, escher]
 
 
@@ -524,6 +722,8 @@ def cmd_info(t):
         ("boot colour scheme operand (ldx #n, 0-5)", A["scheme_ldx"] + 1, 1),
         ("boot jsr blankScreen (-> cheat stub)", A["boot_jsr_blankScreen"], 3),
         ("dead cheatMenu entry (stub home)", A["cheatMenu"], 7),
+        ("edge guard home (BASIC-stub padding, zero)", A["edge_stub"], A["edge_stub_end"] - A["edge_stub"]),
+        ("checkForRoomChange tail (-> jmp guard)", A["roomChange_tail"], 3),
         ("materials (collision class per char)", A["materials"], 255),
         ("level_roomPtr lo[30] hi[30]", A["level_roomPtr"], 60),
         ("level_objectControlPtr lo/hi", A["level_objectControlPtr"], 60),
@@ -570,8 +770,9 @@ def main():
     elif args.cmd == "samples":
         for spec in sample_specs(t):
             path, meta = emit(t, spec, args.outdir or ".")
-            print(f"{meta['name']:22s} entry {meta['entry']:2d} rooms {meta['rooms']} scheme {meta['scheme']:7s} "
-                  f"cheat ${meta['cheat_byte']:02X}  {meta['patch_bytes']:3d} patch bytes  -> {path.name}")
+            print(f"{meta['name']:22s} entry {meta['entry']:2d} (walk west {t.entry_walk(meta['entry'])[0]} cols then {t.entry_walk(meta['entry'])[1]}, "
+                  f"{len(t.hazards(meta['entry']))} hazards) rooms {meta['rooms']} scheme {meta['scheme']:7s} "
+                  f"cheat ${meta['cheat_byte']:02X} edges {meta['edge_mode']:4s} {meta['patch_bytes']:3d} patch bytes -> {path.name}")
             for r in meta["records"]:
                 print(f"     {r['addr']} +0x{r['offset']:05X}  {r['old']} -> {r['new']}   {r['why']}")
     elif args.cmd == "castle":

@@ -13,6 +13,19 @@ tools/m64-harness/m64run through a plan derived from the spec:
   loop    for a self-wired room: walk out east, expect the same room with Tony
           re-entered at the west side (X wraps)
   cheat   read gameCheatState after boot
+  entry   the first player's scenario: from the gate, hold LEFT and sample X and
+          lives every 8 frames until Tony has covered the whole safe run the
+          static analysis promises - no life may be lost on the way.  Sprite
+          enemies are made harmless for this one check (cheat byte $12: sprite +
+          stone immunity, NOT pike immunity) so it measures the floor, not the
+          fight: a spike bed or the void on that run fails it.  (Snakes are static
+          objects and ignore every cheat - handleSnake carries the author's "TODO
+          add cheat mode here!" - so a snake parked on the run would fail it too,
+          legitimately.)
+  seal    for every sealed E/W exit with a standable edge floor: walk into it;
+          "wall" mode keeps Tony in the room, in bounds, alive; "void" mode
+          costs exactly one life and keeps him in the room
+  guard   the edge-guard bytes are intact after play (nothing overwrote the padding after the BASIC line)
 
 Room jumps use the engine's own transition (poke roomChange + direction), and
 positions use the physics actor variables; the walks themselves are real
@@ -29,6 +42,8 @@ import onchain_castle as oc  # noqa: E402
 
 M64RUN = Path(__file__).parent / "m64-harness" / "m64run"
 CHAMBER, X_LO, X_HI, Y = 0x3E51, 0x39CC, 0x39CD, 0x39CE
+LIVES, INITIAL_LIVES = 0x42CA, 5
+GUARD = oc.A["edge_stub"]
 ROOM_CHANGE, ROOM_DIR = 0x3E55, 0x3E59
 ACT_X, ACT_Y = 0x39D6, 0x39D8
 JOY = dict(UP=1, DOWN=2, LEFT=4, RIGHT=8, FIRE=16)
@@ -85,11 +100,60 @@ def main():
         return ok
 
     slug = meta["name"].lower().replace(" ", "-")
-    print(f"== {meta['name']} ({prg.name}) ==")
+    mode = meta.get("edge_mode", "wall")
+    stub, mode_off = oc.edge_stub(mode)
+    rooms = set(meta["rooms"])
+    print(f"== {meta['name']} ({prg.name}) edges={mode} ==")
     entry = spec["entry"]
     check(f"gate: fire at title -> room {entry}; cheat byte ${meta['cheat_byte']:02X}",
           boot + [f"peek:{CHAMBER:x}", "peek:2d"], lambda p: p[0] == entry and p[1] == meta["cheat_byte"],
           shot=f"{slug}-entry")
+    walk_cols, walk_end = base.entry_walk(entry)
+    x_end = x_of_col(oc.W - 2 - walk_cols)  # Tony's X once the run is fully walked
+    samples = 40                            # 320 frames of LEFT, sampled every 8
+
+    def walked_safely(p):
+        # p = [chamber, x_lo, x_hi, lives] * samples: find the first sample past the
+        # run's end; every sample up to it must still show all lives and the entry room
+        for i in range(samples):
+            ch, x, lives = p[4 * i], p[4 * i + 1] | (p[4 * i + 2] << 8), p[4 * i + 3]
+            if ch != entry or lives != INITIAL_LIVES:
+                return False
+            if x <= x_end:
+                return True
+        return False                        # never got there: blocked, or stuck
+
+    check(f"entry: hold LEFT from the gate over the {walk_cols}-column safe run (then {walk_end}), "
+          f"enemies harmless, spikes live -> {INITIAL_LIVES} lives all the way",
+          boot + ["poke:2d:12"] + ["joy:4:8", f"peek:{CHAMBER:x}", f"peek:{X_LO:x}", f"peek:{X_HI:x}", f"peek:{LIVES:x}"] * samples,
+          walked_safely, shot=f"{slug}-entry-walk")
+
+    # every direction the spec leaves unmentioned is sealed by the generator
+    sealed = {r: {d: True for d in "EW"} for r in rooms}
+    for r, ex in spec["exits"].items():
+        for d, target in ex.items():
+            if d in "EW" and target != oc.NO:
+                sealed[int(r)][d] = False
+    for r in sorted(rooms):
+        for d in "EW":
+            if not sealed[r][d]:
+                continue
+            floors = sorted(base.edge_floors(r, d))
+            if not floors:
+                continue                     # the map already walls that edge
+            F = floors[0]
+            x = x_of_col(37) if d == "E" else x_of_col(1)
+            joy = JOY["RIGHT"] if d == "E" else JOY["LEFT"]
+            script = boot + invincible + jump(r) + place(x, y_of_floor(F)) + [
+                f"joy:{joy}:90", "wait:200", f"peek:{CHAMBER:x}", f"peek:{LIVES:x}", f"peek:{X_LO:x}", f"peek:{X_HI:x}"]
+            inb = (lambda p: (p[2] | (p[3] << 8)) >= oc.LIMITS["WEST"] - 2) if d == "W" else \
+                  (lambda p: (p[2] | (p[3] << 8)) <= oc.LIMITS["EAST"] + 2)
+            if mode == "wall":
+                check(f"seal/wall: room {r} walk into sealed {d} edge (floor row {F}) -> same room, in bounds, {INITIAL_LIVES} lives",
+                      script, lambda p: p[0] == r and p[1] == INITIAL_LIVES and inb(p), shot=f"{slug}-seal-{r}{d}")
+            else:
+                check(f"seal/void: room {r} walk into sealed {d} edge (floor row {F}) -> same room, exactly one life lost",
+                      script, lambda p: p[0] == r and p[1] == INITIAL_LIVES - 1, shot=f"{slug}-seal-{r}{d}")
 
     for room, ex in spec["exits"].items():
         room = int(room)
@@ -128,11 +192,21 @@ def main():
         r = edit["room"]
         rows = sorted({row for row, _, _ in edit["cells"]})
         c = edit["cells"][0][1]
-        script = boot + invincible + jump(r) + place(x_of_col(c), y_of_floor(min(rows))) + [
-            "joy:2:90", "wait:60", f"peek:{CHAMBER:x}", f"peek:{Y:x}"]
-        check(f"wall plug: room {r} rows {rows} hold DOWN on the plugged hole -> stays in room at floor",
-              script, lambda p: p[0] == r and p[1] <= y_of_floor(min(rows)) + 2, shot=f"{slug}-plug")
+        if min(rows) == 0:      # a ladder into the sealed sky was capped: climb it, stay in the room
+            script = boot + invincible + jump(r) + place(x_of_col(c), y_of_floor(4)) + [
+                "joy:1:90", "wait:60", f"peek:{CHAMBER:x}", f"peek:{Y:x}"]
+            check(f"wall plug: room {r} top rows {rows} hold UP under the capped ladder -> stays in room, inside the playfield",
+                  script, lambda p: p[0] == r and p[1] >= oc.LIMITS["NORTH"], shot=f"{slug}-plug-{r}")
+        else:                   # a floor hole over a sealed exit was filled: stand on it
+            script = boot + invincible + jump(r) + place(x_of_col(c), y_of_floor(min(rows))) + [
+                "joy:2:90", "wait:60", f"peek:{CHAMBER:x}", f"peek:{Y:x}"]
+            check(f"wall plug: room {r} rows {rows} hold DOWN on the plugged hole -> stays in room at floor",
+                  script, lambda p: p[0] == r and p[1] <= y_of_floor(min(rows)) + 2, shot=f"{slug}-plug-{r}")
 
+    peeks_wanted = [f"peek:{GUARD + i:x}" for i in (0, 1, 2, mode_off)] + [f"peek:{oc.A['roomChange_tail'] + i:x}" for i in range(3)]
+    check("guard: edge-guard bytes and the re-routed tail intact after a played session",
+          boot + ["joy:4:120", "joy:8:120"] + peeks_wanted,
+          lambda p: p[:4] == [stub[0], stub[1], stub[2], stub[mode_off]] and p[4:] == [0x4C, GUARD & 0xFF, GUARD >> 8])
     print(f"== {sum(results)}/{len(results)} checks passed ==")
     sys.exit(0 if all(results) else 1)
 
