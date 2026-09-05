@@ -23,8 +23,12 @@ tools/m64-harness/m64run through a plan derived from the spec:
           add cheat mode here!" - so a snake parked on the run would fail it too,
           legitimately.)
   seal    for every sealed E/W exit with a standable edge floor: walk into it;
-          "wall" mode keeps Tony in the room, in bounds, alive; "void" mode
-          costs exactly one life and keeps him in the room
+          "wall" mode keeps Tony in the room, in bounds, alive; "void" mode is
+          run twice - with the respawn point on the far side it costs exactly
+          one life, with the respawn point on the same edge it must behave as a
+          wall (the respawn-side rule)
+  pit     void mode only: for every open floor hole under a sealed S exit,
+          fall in - exactly one life lost, same room
   sky     for every ladder that reaches the top edge under a sealed N exit: stand at
           its foot, hold UP (Tony must stay in the room, inside the playfield, still
           on the ladder), then hold DOWN (he must come back down) - the first
@@ -156,8 +160,24 @@ def main():
                 check(f"seal/wall: room {r} walk into sealed {d} edge (floor row {F}) -> same room, in bounds, {INITIAL_LIVES} lives",
                       script, lambda p: p[0] == r and p[1] == INITIAL_LIVES and inb(p), shot=f"{slug}-seal-{r}{d}")
             else:
-                check(f"seal/void: room {r} walk into sealed {d} edge (floor row {F}) -> same room, exactly one life lost",
-                      script, lambda p: p[0] == r and p[1] == INITIAL_LIVES - 1, shot=f"{slug}-seal-{r}{d}")
+                RSP = oc.A["playerRespawnPositionX"]
+                far = [f"poke:{RSP:x}:15", f"poke:{RSP + 1:x}:00"] if d == "E" else [f"poke:{RSP:x}:41", f"poke:{RSP + 1:x}:01"]
+                same = [f"poke:{RSP:x}:41", f"poke:{RSP + 1:x}:01"] if d == "E" else [f"poke:{RSP:x}:15", f"poke:{RSP + 1:x}:00"]
+                walk = script[len(boot + invincible + jump(r) + place(x, y_of_floor(F))):]
+                head = boot + invincible + jump(r) + place(x, y_of_floor(F))
+                check(f"seal/void: room {r} walk into sealed {d} edge (floor row {F}), respawn on the far side -> same room, exactly one life lost",
+                      head + far + walk, lambda p: p[0] == r and p[1] == INITIAL_LIVES - 1, shot=f"{slug}-seal-{r}{d}")
+                check(f"seal/void: room {r} same {d} edge, respawn on THIS side -> a wall: same room, in bounds, {INITIAL_LIVES} lives",
+                      head + same + walk, lambda p: p[0] == r and p[1] == INITIAL_LIVES and inb(p))
+    if mode == "void":
+        for r in sorted(rooms):
+            if spec["exits"].get(str(r), {}).get("S", oc.NO) != oc.NO or not base.bottom[r]:
+                continue
+            c = sorted(base.bottom[r])[0]
+            script = boot + invincible + jump(r) + place(x_of_col(c), y_of_floor(18)) + [
+                "joy:2:90", "wait:200", f"peek:{CHAMBER:x}", f"peek:{LIVES:x}"]
+            check(f"pit/void: room {r} fall through the open floor hole at column {c} -> same room, exactly one life lost",
+                  script, lambda p: p[0] == r and p[1] == INITIAL_LIVES - 1, shot=f"{slug}-pit-{r}")
 
     for room, ex in spec["exits"].items():
         room = int(room)

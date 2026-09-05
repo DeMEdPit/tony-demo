@@ -5,10 +5,11 @@ The Tony demo that the Ethereum PoC721 token serves (`prg()`, keccak256
 30-room game with two boot-time changes (menu skipped, GREEN scheme). Because
 the level is data — exit bytes, object lists, RLE3 room blocks at fixed
 addresses — a "castle" is a small patch over those exact bytes: rewire a
-handful of exits, set the scheme byte, fix the cheat-state byte, install an
-84-byte **edge guard** (see the field report: the engine has no behaviour for
-a sealed exit), and only where a floor hole would lead nowhere, rewrite one
-room block. **143–168 bytes for the three samples**, no reassembly. A
+handful of exits, set the scheme byte, fix the cheat-state byte, install a
+108-byte **edge guard** (see the field report: the engine has no behaviour for
+a sealed exit), and only where a floor hole would lead nowhere in "wall" mode,
+rewrite one room block. **167–192 bytes for the three samples**, no
+reassembly. A
 collection contract can hold the base PRG once (or read it from the token),
 apply the bytes in memory, and hand the result to the READY 64 Launcher's
 `dataURI(prg, 0)`.
@@ -79,6 +80,21 @@ see). Room 25's ladder hangs from the top edge over open space; it was only
 ever an entrance from the room above and cannot be grabbed from below
 (measured), so there is nothing to get stuck on.
 
+**4. (second play-test) A void on the door you came through is a death
+loop.** The Escher's entry room had its east edge — the edge the title gate
+delivers Tony to — sealed in void mode. Walking back into it: the void takes a
+life, the engine respawns Tony *where he entered the room* (that same edge),
+in the *state* he entered with (walking — the shipped respawn behaviour, which
+is why "he keeps walking when I'm not"), the death hop plays, and any
+rightward input kills him again. Fix, in the guard: **never void into the
+edge Tony would respawn on** — the side is read from the high byte of
+`playerRespawnPositionX` (east half when X ≥ 256), so a room entered from the
+east has a wall on its east edge and a void on its west, and vice versa; a
+drop-in room takes its landing spot as the reference. In void mode open floor
+holes are now left open — a pit *is* the void (fall, lose a life, respawn) —
+while wall mode still fills them. Verified both ways on every sealed edge
+(respawn far side → one life lost; respawn same side → wall).
+
 Two more facts surfaced while fixing it:
 
 - `$0801–$080C` is the BASIC program (`0B 08 | 0A 00 | 9E "2240" | 00 | 00 00`):
@@ -132,7 +148,7 @@ noted because a socket census must not count it as a door.
 | boot colour scheme operand (`ldx #n`, 0 CLASSIC 1 AMBER 2 GREEN 3 BLUE 4 C64 5 C128) | `$0965` | `0x00166` | 1 |
 | boot `jsr blankScreen` (→ cheat stub) | `$08F8` | `0x000F9` | 3 |
 | dead `cheatMenu` entry (cheat stub home, runs pre-unpack only) | `$B462` | `0x0AC63` | 7 |
-| **edge guard home**: zero padding after the BASIC program (`$080D–$08BF`, 179 B free) | `$080D` | `0x0000E` | 84 |
+| **edge guard home**: zero padding after the BASIC program (`$080D–$08BF`, 179 B free) | `$080D` | `0x0000E` | 108 |
 | `checkForRoomChange` tail `sta roomChange; rts` → `jmp $080D` | `$14E8` | `0x00CE9` | 3 |
 | `materials` — collision class per char (bit0 wall, bit1 ladder, bit2 deadly, bit6 collectible) | `$8DC7` | `0x085C8` | 255 |
 | `level_roomPtr` lo[30] hi[30] → each room's RLE3 map block | `$9446` | `0x08C47` | 60 |
@@ -143,7 +159,8 @@ noted because a socket census must not count it as a door.
 Do not touch `$0801–$080C` (the BASIC line, see the field report). Runtime
 variables the guard uses (RAM, not in the file): `roomChange $3E55`,
 `roomChangeDirection $3E59`, `physPlayerX $39CC/CD`, `physPlayerY $39CE`,
-`playerDying $42C9`, `gameLivesLeft $42CA`, `currentChamberNumber $3E51`;
+`playerDying $42C9`, `playerRespawnPositionX $42C5/C6`, `gameLivesLeft $42CA`,
+`currentChamberNumber $3E51`;
 routines `physResetActorPosition $3662`, `updatePlayerPosition $2A0D`,
 `killPlayer $0E64`.
 
@@ -180,15 +197,16 @@ not the PRG.
 2. **Wiring**: exit bytes of the castle rooms. A castle is closed: every
    direction the spec does not wire is sealed (`$FF`); a wired target must be
    another castle room (the generator refuses leaks into the rest of the demo).
-3. **Vertical rule**: a room's bottom opening is either wired to a safe drop or
-   filled with wall (the generator rewrites the room block, same-or-smaller
-   RLE3; in wall mode the guard would otherwise hold Tony falling in the hole
-   forever). A ladder into a sealed sky is **not** touched: the guard holds
-   Tony at its top in the climbing state and he can climb back down (a wall
-   cap traps him — field report, item 3).
+3. **Vertical rule**: a room's bottom opening is either wired to a safe drop,
+   or — in wall mode — filled with wall (the generator rewrites the room
+   block, same-or-smaller RLE3; the guard would otherwise hold Tony falling in
+   the hole forever), or — in void mode — left open as a pit that costs a
+   life. A ladder into a sealed sky is **not** touched: the guard holds Tony
+   at its top in the climbing state and he can climb back down (a wall cap
+   traps him — field report, item 3).
 4. **Scheme byte** and the **cheat stub** (clear, or a trait value).
 5. **Edge guard** with its **mode byte** (next section) — installed in every
-   castle, 84 B at `$080D` plus the 3-byte re-route at `$14E8`.
+   castle, 108 B at `$080D` plus the 3-byte re-route at `$14E8`.
 6. Optional object edits (type/value in place) and wall edits.
 
 Sockets are computed from the engine's **runtime** collision map, not the
@@ -211,24 +229,25 @@ did and returns if the exit is real. If the exit is sealed (`$FF`) it pushes
 Tony back inside on the side he tried to leave (X to 21 or 320, Y to 37 or
 195 — two pixels inside the transit limits), re-syncs the actor position the
 way `changeRoomIfNeeded` does, and then — for the west, east and south edges —
-consults its **mode byte** (`$0855` = guard + 72). The **top edge is always a
-wall**: the only way up there is a ladder, and Tony is simply held on its top
-rung.
+consults its **mode byte** (`$0855` = guard + 72). Two cases are a wall in
+every mode: the **top edge** (the only way up there is a ladder, and Tony is
+simply held on its top rung) and **the side edge Tony would respawn on**
+(field report, item 4).
 
 | mode | byte | what a sealed edge does | verified |
 |---|---|---|---|
-| **wall** | `$00` | invisible wall: Tony stays in the room, in bounds, alive (walks in place against it) | Well: 4 sealed edges, all `same room, in bounds, 5 lives` |
-| **void** | `$01` | costs one life — `killPlayer` once, never while already dying — and respawns Tony at the room's entry point; the top edge stays a wall | Escher: `exactly one life lost, same room`, X clamped at 321; ladder top: held, climbs back down |
+| **wall** | `$00` | invisible wall: Tony stays in the room, in bounds, alive (walks in place against it); floor holes are filled | Escher: sealed entry edge `same room, in bounds, 5 lives`; ladder top: held, climbs back down |
+| **void** | `$01` | the far edges and open pits cost one life — `killPlayer` once, never while already dying — and Tony respawns where he entered the room; the top edge and the edge he would respawn on stay walls | Well: rooms 5 (west) and 24 (east): respawn far side → `exactly one life lost, same room`; respawn same side → `in bounds, 5 lives`; entry room's own edge → wall |
 | **infinite** | (either) | not a byte but a topology: every open side edge is wired somewhere, so the guard only ever fires at the top of a sky ladder | Ring: six doors, no sealed side edge; ladder top: held, climbs back down |
 
-84 bytes, assembled by `edge_stub()` in the generator (a two-pass mini
+108 bytes, assembled by `edge_stub()` in the generator (a two-pass mini
 assembler, so branch offsets are never hand-counted); listing generated from
 the assembled bytes:
 
 ```
 080D 8d 55 3e     sta roomChange
 0810 c9 ff        cmp #$FF (sealed)
-0812 d0 4c        bne $0860
+0812 d0 64        bne $0878
 0814 ad 59 3e     lda roomChangeDirection
 0817 c9 04        cmp #$04 (WEST)
 0819 d0 0d        bne $0828
@@ -256,11 +275,21 @@ the assembled bytes:
 084E 20 62 36  <- jsr physResetActorPosition
 0851 20 0d 2a     jsr updatePlayerPosition
 0854 a9 00        lda #MODE  ($00 wall / $01 void)
-0856 f0 08        beq $0860
+0856 f0 20        beq $0878
 0858 ad c9 42     lda playerDying
-085B d0 03        bne $0860
-085D 20 64 0e     jsr killPlayer
-0860 60        <- rts
+085B d0 1b        bne $0878
+085D ad 59 3e     lda roomChangeDirection
+0860 c9 03        cmp #$03 (EAST)
+0862 d0 08        bne $086C
+0864 ad c6 42     lda playerRespawnPositionX+1
+0867 d0 0f        bne $0878
+0869 4c 75 08     jmp $0875
+086C c9 04     <- cmp #$04 (WEST)
+086E d0 05        bne $0875
+0870 ad c6 42     lda playerRespawnPositionX+1
+0873 f0 03        beq $0878
+0875 20 64 0e  <- jsr killPlayer
+0878 60        <- rts
 ```
 
 Why `$080D` is safe: the game never references `$0800–$08BF` (linear sweep of
@@ -304,7 +333,7 @@ every drop taken, every sealed side edge walked into, every reachable sky
 ladder climbed up and back down, guard bytes re-read. Screenshots: `screenshots/onchain-castle-*.png`;
 map: `assets/onchain-castles-diagram.png`.
 
-**The Ring** — AMBER, **infinite** topology, 168 B.
+**The Ring** — AMBER, **infinite** topology, 192 B.
 Title → room 11 (the jewel gallery; skull, bat, two pikes up high). West door
 → room 16 (two snakes, potion, jewel), west again → room 25 (vertical bats,
 pikes), west again → 11. Eastward the same cycle in reverse: 11 → 25 → 16 →
@@ -320,32 +349,33 @@ $9513 1a→10  25.E → 16        $94E7/$9523  11.N, 11.S sealed   $94F5  25.N s
 $0965 02→01  AMBER            $08F8/$B462  cheat stub, clear   $080D/$14E8  guard (wall)
 ```
 
-**The Well** — BLUE, **wall** mode, 143 B. Title → room 18, the shipped
+**The Well** — BLUE, **void** mode, 167 B. Title → room 18, the shipped
 game's own first room (snake on the stairs, bat, pikes far left). Its west door
 → room 5 (the deadman's hall); fall through the floor hole at column 2 into
-room 24 (the keycode hall, six flames), a non-neighbour four grid rows away.
-Room 5's east and west edges and 24's east edge are sealed: walking into them
-is an invisible wall. **9/9 checks passed** (four sealed edges: same room, in
-bounds, five lives).
+room 24 (the keycode hall, six flames), a non-neighbour four grid rows away;
+room 5's east door leads back to 18. The far edges are the void: step off
+room 5's west edge or room 24's east edge and you lose a life and wake where
+you entered that room. The edges you enter by (18's east, 5's east, 24's
+landing side) are walls. **13/13 checks passed** (each void edge tested from
+both respawn sides).
 
 ```
 $9548 11→05  18.W → 5         $951D 0a→18  5.S → 24       $94FF 06→ff  5.E sealed
 $953B 04→ff  5.W sealed       $9512 19→ff  24.E sealed    $0965 02→03  BLUE
-$08F8/$B462  cheat stub, clear                            $080D/$14E8  guard (wall)
+$08F8/$B462  cheat stub, clear                            $080D/$14E8  guard (void)
 ```
 
-**The Escher Corridor** — C64 scheme, **void** mode, **infinite lives** baked
-(`$2D = $04`), 153 B. Title → room 11; west door → room 2, whose east edge is
-its own west edge: walk either way forever. Room 11's east edge is sealed and
-in void mode stepping off it costs a life — which, with lives infinite, just
-puts you back at the door. Room 11's sky ladder is a wall even in void mode:
-climb, held, climb down, no life lost. **8/8 checks passed** (void: exactly
-one life lost, same room; both wraps re-enter room 2 from the far side).
+**The Escher Corridor** — C64 scheme, **wall** mode, **infinite lives** baked
+(`$2D = $04`), 177 B. Title → room 11; west door → room 2, whose east edge is
+its own west edge: walk either way forever. Room 11's east edge — the door you
+came in by — is an invisible wall; its sky ladder holds you at the top and
+lets you climb down. **8/8 checks passed** (both wraps re-enter room 2 from
+the far side).
 
 ```
 $9553 12→0b  gate → 11        $9541 0a→02  11.W → 2       $94FC 03→02  2.E → 2
 $9538 01→02  2.W → 2          $94E7/$9505/$9523  11.N, 11.E, 11.S sealed
-$0965 02→04  C64              $08F8/$B462  cheat stub, lives  $080D/$14E8  guard (void)
+$0965 02→04  C64              $08F8/$B462  cheat stub, lives  $080D/$14E8  guard (wall)
 ```
 
 ## Applying a patch in Solidity
@@ -373,11 +403,11 @@ function prgFor(uint256 id) public view returns (bytes memory prg) {
 
 `TONY.prg()` is already the first half of what the token's own `tokenURI` does
 today, so per-castle cost is that plus a few hundred byte writes. Storage: the
-guard (84 B) and its tail re-route are identical for every castle except the
+guard (108 B) and its tail re-route are identical for every castle except the
 mode byte, so they can be one shared constant applied by the contract; the
 per-token part is then exits + scheme + cheat + mode (a few dozen bytes) plus
-~400–600 B only when a floor hole had to be filled (none of the three samples
-needs one).
+~400–600 B only when a floor hole had to be filled in wall mode (none of the
+three samples needs one).
 
 ## Not done / open
 

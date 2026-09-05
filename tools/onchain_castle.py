@@ -75,7 +75,7 @@ A = dict(
     # edge guard: checkForRoomChange's tail `sta roomChange ; rts` is re-routed to a stub
     roomChange=0x3E55, roomChangeDirection=0x3E59, roomChange_tail=0x14E8,
     physResetActorPosition=0x3662, updatePlayerPosition=0x2A0D, killPlayer=0x0E64,
-    playerDying=0x42C9, edge_stub=0x080D, edge_stub_end=0x08C0,
+    playerDying=0x42C9, playerRespawnPositionX=0x42C5, edge_stub=0x080D, edge_stub_end=0x08C0,
     # $0801-$080C is the BASIC program: line link, line number, SYS token, "2240",
     # the $00 end-of-line at $080A and the $0000 end-of-program link at $080B-$080C -
     # every byte of it is parsed by RUN (real C64) and by minimal64's PRG injector.
@@ -430,9 +430,14 @@ def edge_stub(mode):
     byte just read from level_roomExits{N,E,S,W}[room] and roomChangeDirection set.
     A real exit: store it and return (what the original tail did).  A sealed exit
     ($FF): push Tony back inside the playfield on the side he tried to leave, then
-    in "void" mode take a life (once - never while he is already dying) - except at
-    the TOP edge, which is always a wall: the only way up there is a ladder, and a
-    ladder that kills you at its last rung is not a hazard anyone can see."""
+    in "void" mode take a life (once - never while he is already dying) - with two
+    exceptions that are always a wall: the TOP edge (the only way up there is a
+    ladder, and a ladder that kills you at its last rung is not a hazard anyone can
+    see), and a side edge on the SAME side as Tony's respawn point (measured: the
+    engine respawns him where he entered the room, so a void on the door he came
+    through kills him, puts him back on the very same edge in the entry state, and
+    kills him again - the "glitching" of the second play-test).  Side = the high
+    byte of playerRespawnPositionX: east half of the playfield when X >= 256."""
     lo, hi = lambda v: bytes([v & 0xFF]), lambda v: bytes([v >> 8])
     abs_ = lambda a: a.to_bytes(2, "little")
     STA, LDA_IMM, LDA_ABS, CMP_IMM, JMP, JSR, RTS = b"\x8d", b"\xa9", b"\xad", b"\xc9", b"\x4c", b"\x20", b"\x60"
@@ -459,7 +464,15 @@ def edge_stub(mode):
         JSR + abs_(A["physResetActorPosition"]), JSR + abs_(A["updatePlayerPosition"]),
         ("label", "mode"), LDA_IMM + bytes([EDGE_MODES[mode]]), ("br", BEQ, "done"),
         LDA_ABS + abs_(A["playerDying"]), ("br", BNE, "done"),
-        JSR + abs_(A["killPlayer"]),
+        # respawn-side rule: never void into the edge Tony would respawn on
+        LDA_ABS + abs_(A["roomChangeDirection"]),
+        CMP_IMM + bytes([DIRECTION["EAST"]]), ("br", BNE, "notE2"),
+        LDA_ABS + abs_(A["playerRespawnPositionX"] + 1), ("br", BNE, "done"),   # respawn east -> wall
+        JMP + b"\x00\x00", ("label", "toKill"),                                 # patched below
+        ("label", "notE2"),
+        CMP_IMM + bytes([DIRECTION["WEST"]]), ("br", BNE, "kill"),               # south: always void
+        LDA_ABS + abs_(A["playerRespawnPositionX"] + 1), ("br", BEQ, "done"),   # respawn west -> wall
+        ("label", "kill"), JSR + abs_(A["killPlayer"]),
         ("label", "done"), RTS,
     ]
     code, labels = assemble(items, A["edge_stub"])
@@ -467,6 +480,8 @@ def edge_stub(mode):
     for l in ("toApply1", "toApply2"):
         o = labels[l] - A["edge_stub"]
         code[o + 1:o + 3] = labels["apply"].to_bytes(2, "little")
+    o = labels["toKill"] - 3 - A["edge_stub"]
+    code[o + 1:o + 3] = labels["kill"].to_bytes(2, "little")
     assert A["edge_stub"] + len(code) <= A["edge_stub_end"], len(code)
     return bytes(code), labels["mode"] + 1 - A["edge_stub"]   # (bytes, offset of the mode byte)
 
@@ -520,6 +535,8 @@ def build_castle(t, spec):
     # the climbing state and he can climb back down.
     walls = list(spec.get("walls", []))
     for room, ex in sorted(exits.items()):
+        if spec.get("edge_mode", "wall") == "void":
+            break                          # void: an open pit IS the void - fall, lose a life, respawn
         cells = plug_cells(t, room, bottom=ex["S"] == NO and bool(t.bottom[room]))
         if cells:
             walls.append(dict(room=room, cells=cells, auto=True))
@@ -644,9 +661,11 @@ def sample_specs(t):
     ring = dict(name="The Ring", entry=a, scheme="AMBER", cheat=0, edge_mode="wall", exits=exits)
     used.add(a)
 
-    # 2. THE WELL - "wall" mode: a gentle hall, its west door into a shaft room whose
+    # 2. THE WELL - "void" mode: a gentle hall, its west door into a shaft room whose
     #    floor hole drops into a bottom chamber; the way back east if it is safe.  The
-    #    chamber's and hall's other open side edges are sealed = invisible walls.
+    #    shaft's far (west) edge and the chamber's far (east) edge are sealed: step off
+    #    and the void takes a life, back to where you entered that room.  The hall's
+    #    own entry edge stays a wall (respawn-side rule).
     orig_ns = {(r, t.exits["S"][r]) for r in R if t.exits["S"][r] != NO}
     best = None
     for a in entries:
@@ -664,13 +683,12 @@ def sample_specs(t):
         raise SystemExit("no well with a gentle entry")
     _, _, back, _, _, a, b, c = best
     used.add(a)
-    well = dict(name="The Well", entry=a, scheme="BLUE", cheat=0, edge_mode="wall",
+    well = dict(name="The Well", entry=a, scheme="BLUE", cheat=0, edge_mode="void",
                 exits={str(a): {"W": b}, str(b): {"S": c, "E": a if back else NO}, str(c): {}})
 
-    # 3. THE ESCHER CORRIDOR - "void" mode with infinite lives: a gentle antechamber
+    # 3. THE ESCHER CORRIDOR - "wall" mode with infinite lives: a gentle antechamber
     #    whose west door opens on a room that is its own neighbour on both sides.
-    #    Step off the antechamber's sealed east edge and the void takes a life -
-    #    which, with lives infinite, just puts you back at the door.
+    #    The antechamber's sealed east edge (the door you came in by) is a wall.
     best = None
     for L in R:
         if not t.loop_ok(L) or not usable(L):
@@ -687,7 +705,7 @@ def sample_specs(t):
     if best is None:
         raise SystemExit("no escher with a gentle entry")
     *_, a, L, d = best
-    escher = dict(name="The Escher Corridor", entry=a, scheme="C64", cheat=CHEAT["LIVES"], edge_mode="void",
+    escher = dict(name="The Escher Corridor", entry=a, scheme="C64", cheat=CHEAT["LIVES"], edge_mode="wall",
                   exits={str(a): {d: L}, str(L): {"E": L, "W": L}})
     return [ring, well, escher]
 
