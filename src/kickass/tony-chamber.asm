@@ -2080,12 +2080,13 @@ hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
 //         column 5. Three bit streams (A from byte 0, B from 19, C from 25,
 //         wrapping at 32); density mode = seed[31] & 3:
 //         0 = A&B  1 = A  2 = A|B  3 = A&B&C
-//   candles: seed[30] & 3 of them at columns 7/13/19/25/31, picked by 3-bit
-//         values (seed[29] bits 0-2, 3-5; seed[28] bits 0-2) through the table
-//         0,1,2,3,4,1,2,3; a position lit twice stays one candle. A candle is
-//         $70 over $72 on a ledge $5B with a drip $FA (rows 8-11), the two
-//         wall slots it stands in cleared first.
-//   floor: the 8 block digits carved into row 23, columns 16-23 ($01 + digit).
+//   candles: seed[30] & 3 of them, picked by 3-bit values (seed[29] bits 0-2,
+//         3-5; seed[28] bits 0-2) through the table 0,1,2,3,4,1,2,3 into five
+//         niches whose left column is 5/11/17/23/29; a niche lit twice stays
+//         one candle. The niche (rows 8-11, 4 columns = two wall slots by two)
+//         is cleared, then the 3x3 glowing candle $BD-$C5 is drawn at rows
+//         8-10, columns left+1..left+3.
+//   floor: the 8 block digits carved into row 23, columns 27-34 ($01 + digit).
 // ---------------------------------------------------------------------
 .label MURAL_DIGIT_BASE = $01
 
@@ -2233,7 +2234,7 @@ muralStamp: {
         lda muralBlock, x
         clc
         adc #MURAL_DIGIT_BASE
-        sta SCREEN_MEM_0 + 23*40 + 16, x
+        sta SCREEN_MEM_0 + 23*40 + 27, x
         inx
         cpx #8
     bne digitLoop
@@ -2273,20 +2274,19 @@ muralStamp: {
         lda candleBit, x
         ora litMask
         sta litMask
-        ldy candleCol, x
-        lda #0                   // clear the two wall slots (rows 8-11, both columns)
-        sta SCREEN_MEM_0 + 8*40 + 1, y
-        sta SCREEN_MEM_0 + 9*40 + 1, y
-        sta SCREEN_MEM_0 + 10*40 + 1, y
-        sta SCREEN_MEM_0 + 11*40 + 1, y
-        lda #$70                 // the flame-topped candle
-        sta SCREEN_MEM_0 + 8*40, y
-        lda #$72                 // its body
-        sta SCREEN_MEM_0 + 9*40, y
-        lda #$5B                 // a stone ledge
-        sta SCREEN_MEM_0 + 10*40, y
-        lda #$FA                 // a drip under the ledge
-        sta SCREEN_MEM_0 + 11*40, y
+        ldy candleCol, x         // the niche's left column
+        lda #0                   // clear the niche: rows 8-11, four columns
+        .for (var r = 8; r <= 11; r++) {
+            .for (var c = 0; c < 4; c++) {
+                sta SCREEN_MEM_0 + r*40 + c, y
+            }
+        }
+        .for (var r = 0; r < 3; r++) {          // the 3x3 candle, one column in
+            .for (var c = 0; c < 3; c++) {
+                lda #($BD + r*3 + c)
+                sta SCREEN_MEM_0 + (8 + r)*40 + 1 + c, y
+            }
+        }
         done:
         rts
     }
@@ -2308,7 +2308,7 @@ muralStamp: {
     candleCount: .byte 0
     candleSlot:  .byte 0, 1, 2, 3, 4, 1, 2, 3
     candleBit:   .byte 1, 2, 4, 8, 16
-    candleCol:   .byte 7, 13, 19, 25, 31
+    candleCol:   .byte 5, 11, 17, 23, 29
 }
 muralRowA:  .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 5
 muralRowA1: .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 6

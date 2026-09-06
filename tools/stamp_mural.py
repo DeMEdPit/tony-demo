@@ -17,7 +17,7 @@ from pathlib import Path
 
 MARKER = b"MURAL01\x00"
 CANDLE_SLOT = [0, 1, 2, 3, 4, 1, 2, 3]
-CANDLE_COL = [7, 13, 19, 25, 31]
+CANDLE_COL = [5, 11, 17, 23, 29]      # left column of each 4-wide niche (rows 8-11); the 3x3 candle sits at +1..+3
 
 
 class Stream:
@@ -37,8 +37,9 @@ class Stream:
 
 def predict(seed):
     """-> (mode, wall rows of 15 bools, candle columns, candle count asked)
-    A candle at column c clears the two wall slots (rows 3 and 4, slot column
-    (c-5)//2) and draws $70/$72/$5B/$FA down rows 8-11 of column c."""
+    A candle at niche column L clears wall slots (3,k),(3,k+1),(4,k),(4,k+1)
+    with k = (L-5)//2 and draws the 3x3 block $BD-$C5 at rows 8-10, columns
+    L+1..L+3."""
     A, B, C = Stream(seed, 0), Stream(seed, 19), Stream(seed, 25)
     mode = seed[31] & 3
     wall = []
@@ -63,10 +64,12 @@ def show(seed, digits):
     names = ["quarter (A&B)", "half (A)", "three-quarter (A|B)", "eighth (A&B&C)"]
     print(f"   density mode {mode}: {names[mode]}; candles asked {n}, lit at columns {cols or 'none'}; "
           f"floor reads {''.join(str(d) for d in digits)}")
-    lit = {(c - 5) // 2 for c in cols}
+    lit = set()
+    for c in cols:
+        lit |= {(c - 5) // 2, (c - 5) // 2 + 1}
     for r, row in enumerate(wall):
-        line = "".join(("i" if r == 3 else "_") if (r in (3, 4) and c in lit) else ("#" if v else ".") for c, v in enumerate(row))
-        print("   " + line + ("   (i = candle, _ = its ledge)" if r == 3 and lit else ""))
+        line = "".join("i" if (r in (3, 4) and c in lit) else ("#" if v else ".") for c, v in enumerate(row))
+        print("   " + line + ("   (i = a candle's niche)" if r == 3 and lit else ""))
 
 
 def main():

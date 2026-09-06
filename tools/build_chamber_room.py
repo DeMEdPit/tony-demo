@@ -11,7 +11,7 @@ seed, up to three wall candles, and carves the block number into the floor
 Characters the run-time routine needs must be part of the room's used set
 (the engine only carries the characters a room uses), so they are placed in
 the static map INSIDE the mural area, which the routine overwrites entirely:
-the four dotted-brick chars, the four candle chars, and the ten carved digits.
+the four dotted-brick chars, the nine candle chars, and the ten carved digits.
 
 The ten carved digits are new glyphs: a smooth stone cell with a small 4x6
 digit cut into it (dark on light). They replace characters $01-$0A
@@ -29,7 +29,9 @@ sys.path.insert(0, "tools")
 W, H = 40, 25
 DIGIT_BASE = 0x01                 # carved digits live at $01..$0A
 DIGIT_TEXTURE = 0x32              # the floor brick face the digits are cut into
-CANDLE = (0x70, 0x72, 0x5B, 0xFA)   # flame-topped candle, its body, a stone ledge, a drip
+CANDLE = ((0xBD, 0xBE, 0xBF),        # the candle with its glow: a 3x3 block (room 10, beside the ladder)
+          (0xC0, 0xC1, 0xC2),
+          (0xC3, 0xC4, 0xC5))
 MURAL = (0xB0, 0xB1, 0xB2, 0xB3)
 g = [[0x00] * W for _ in range(H)]
 
@@ -48,11 +50,8 @@ for c in range(W):
 
 PILLAR = (
     [(0x8A, 0x8B, 0x8C, 0x8D, 0x8E)] +               # capital
-    [(0x94, 0x95, 0x96, 0x97, 0x98)] * 16 +          # shaft
-    [(0x94, 0x9E, 0x9F, 0xA0, 0xA1),                 # niche detail near the base
-     (0xA2, 0xA3, 0xA4, 0xA5, 0xA6)] +
-    [(0x94, 0x95, 0x96, 0x97, 0x98),
-     (0x99, 0x9A, 0x9B, 0x9C, 0x9D)]                 # base
+    [(0x94, 0x95, 0x96, 0x97, 0x98)] * 19 +          # plain shaft (no crack rows)
+    [(0x99, 0x9A, 0x9B, 0x9C, 0x9D)]                 # base
 )
 assert len(PILLAR) == 21
 for i, row in enumerate(PILLAR):                     # rows 2..22
@@ -61,8 +60,9 @@ for i, row in enumerate(PILLAR):                     # rows 2..22
 
 # run-time characters, parked inside the mural area (rows 2-21, cols 5-34)
 put(2, 5, MURAL[0], MURAL[1]); put(3, 5, MURAL[2], MURAL[3])
-put(4, 5, *CANDLE)
-put(6, 5, *[DIGIT_BASE + d for d in range(10)])
+for i, row in enumerate(CANDLE):
+    put(4 + i, 5, *row)
+put(7, 5, *[DIGIT_BASE + d for d in range(10)])            # row 7: the candle block occupies rows 4-6
 
 os.makedirs("src/level-custom", exist_ok=True)
 with open("src/level-custom/chamber-room.bin", "wb") as f:
@@ -90,8 +90,9 @@ for d in range(10):
                 rows[1 + y] &= ~(0x80 >> (2 + x)) & 0xFF                     # carve the digit
     cs[(DIGIT_BASE + d) * 8:(DIGIT_BASE + d) * 8 + 8] = bytes(rows)
     mt[DIGIT_BASE + d] = 1                                                   # wall: Tony stands on them
-for c in CANDLE:
-    mt[c] = 0                                                                # decoration only (the game marks candle flames deadly)
+for row in CANDLE:
+    for c in row:
+        mt[c] = 0                                                            # decoration only
 open("src/level-custom/chamber-charset.bin", "wb").write(bytes(cs))
 open("src/level-custom/chamber-materials.bin", "wb").write(bytes(mt))
 print("wrote src/level-custom/chamber-charset.bin and chamber-materials.bin")

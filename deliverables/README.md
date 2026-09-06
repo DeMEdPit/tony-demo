@@ -13,11 +13,11 @@ any emulator (verified in VICE as well).
 | file | bytes | what it is |
 |---|---|---|
 | `tony-buddy.prg` | 37,310 | the tall pillar chamber: no menu, no dashboard, loads straight in — your Tony plus the green mimic Tony (follows, faces you, hops when you jump, idles like the real one), two bats up high |
-| `tony-chamber.prg` | 37,942 | the Chamber: the tall pillar room with a brick ceiling, Tony, the green buddy and two bats; its back wall (density and bricks), up to three candles and the block number carved into the floor are drawn from a 40-byte seed block in the file (`tools/stamp_mural.py`; a contract writes the block hash and number there at render time) |
-| `tony-chamber-block-25850251.prg` | 37,942 | same build, seed "block 25850251": quarter-density wall, two candles |
-| `tony-chamber-block-25850257.prg` | 37,942 | same build, seed "block 25850257": half-density wall, one candle |
-| `tony-chamber-block-25850254.prg` | 37,942 | same build, seed "block 25850254": three-quarter wall, one candle |
-| `tony-chamber-block-25850252.prg` | 37,942 | same build, seed "block 25850252": eighth-density wall, two candles |
+| `tony-chamber.prg` | 38,198 | the Chamber: the tall pillar room with a brick ceiling and plain pillars, Tony, the green buddy and two bats; its back wall (density and bricks), up to three glowing candles and the block number carved into the floor's right end are drawn from a 40-byte seed block in the file (`tools/stamp_mural.py`; a contract writes the block hash and number there at render time) |
+| `tony-chamber-block-25850251.prg` | 38,198 | same build, seed "block 25850251": quarter-density wall, two candles |
+| `tony-chamber-block-25850257.prg` | 38,198 | same build, seed "block 25850257": half-density wall, one candle |
+| `tony-chamber-block-25850254.prg` | 38,198 | same build, seed "block 25850254": three-quarter wall, one candle |
+| `tony-chamber-block-25850252.prg` | 38,198 | same build, seed "block 25850252": eighth-density wall, two candles |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 

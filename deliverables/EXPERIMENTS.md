@@ -211,10 +211,11 @@ contract make every render a dated impression.
 **Built (2026-09-06), after the owner cut it down to the one idea:** no HUD,
 the full 25 rows, a brick ceiling, the same floor, the two pillars, Tony,
 the green buddy, two bats — and the chain touches only what the seed block
-says. `tony-chamber.prg` (37,942 B, ROM-free, boots straight in) carries a
+says. `tony-chamber.prg` (38,198 B, ROM-free, boots straight in) carries a
 **40-byte seed block** right after an 8-byte marker `MURAL01\0` (file offset
-`0x042C9`, address `$4AC8`, 64-aligned): 32 seed bytes (the block hash) and
-8 block-number digits. At every room draw the game stamps, between the room
+`0x043C9`, address `$4BC8`, 64-aligned): 32 seed bytes (the block hash) and
+8 block-number digits. The pillars are plain shafts (the two "niche" rows
+with the diagonal crack are gone). At every room draw the game stamps, between the room
 decompression and its character translation:
 
 - **the wall** — 15 × 10 slots of 2×2 dotted bricks. Three bit streams run
@@ -223,18 +224,22 @@ decompression and its character translation:
   (about a quarter filled), A (half), A|B (three quarters), A&B&C (an
   eighth). Same seed, same wall, forever; a different hash, a different wall
   and often a different density;
-- **the candles** — `seed[30] & 3` of them (0–3) at five fixed wall
-  positions, chosen by 3-bit picks (`seed[29]` bits 0–2 and 3–5, `seed[28]`
-  bits 0–2, mapped 0,1,2,3,4,1,2,3), a position lit twice stays one. A candle
-  is the artist's own flame-topped candle (`$70` over `$72`, the ones on room
-  8's ledge — the game marks them deadly, the chamber's material table makes
-  them harmless) on a stone ledge (`$5B`) with a drip under it (`$FA`), rows
-  8–11, the two wall slots it stands in cleared first. (The first version
-  used `$69–$6E`, which turned out to be a carved skull block, not a light.)
+- **the candles** — `seed[30] & 3` of them (0–3) in five fixed wall niches,
+  chosen by 3-bit picks (`seed[29]` bits 0–2 and 3–5, `seed[28]` bits 0–2,
+  mapped 0,1,2,3,4,1,2,3), a niche lit twice stays one. The candle is the
+  glowing one from room 10 (beside its ladder): a 3×3 block `$BD–$C5`, a
+  candle on its holder inside a halo of dots, all decorative material. It is
+  drawn at rows 8–10 inside a cleared 4×4 niche (rows 8–11, two wall slots
+  wide) so no half bricks are left beside it. (Two earlier tries: `$69–$6E`
+  is a carved skull block; `$70/$72` are the small flame candles of room 8's
+  ledge, which the game marks deadly.)
 - **the floor inscription** — the eight block digits carved into the top
-  course of the floor, columns 16–23, as ten new glyphs (`$01–$0A` in the
-  chamber's own charset: a smooth stone cell with a small 4×6 numeral cut
-  into it, dark on light; wall material, so Tony stands on them).
+  course of the floor, right-aligned against the right pillar (columns
+  27–34), as ten new glyphs (`$01–$0A` in the chamber's own charset: a
+  smooth stone cell with a small 4×6 numeral cut into it, dark on light; wall
+  material, so Tony stands on them). Eight digits cover block numbers to
+  99,999,999 — roughly the year 2054 at today's block rate; a ninth digit
+  would take column 26.
 
 Also fixed: the buddy showed the wall through his transparent pixels. Tony
 never did because the engine gives him a third, Y-expanded, dark backdrop
@@ -243,14 +248,17 @@ at the BG frame of whatever pose he wears and repainted in the top-of-frame
 interrupt with the player's backdrop colour.
 
 Verified on minimal64 for five seeds (all four density modes, 0–2 candles):
-every one of the 150 wall slots, the five candle positions (all four rows of
-the motif and the cleared column beside it) and the eight floor digits match
+every one of the 150 wall slots, the five candle niches (all nine cells of
+the motif and the seven cleared cells around it) and the eight floor digits match
 `tools/stamp_mural.py`'s bit-exact prediction of the 6502 routine. Captures:
 `assets/chamber-five-seeds-m64.png`, `assets/chamber-zoom-candles.png`,
 `assets/chamber-zoom-floor.png`. Generated sources:
 `tools/build_chamber_room.py` (map, `chamber-charset.bin`,
 `chamber-materials.bin`), `tools/make_chamber.py` (`level/chamber/data.asm`,
-`tony-chamber.asm`). The combination space is 2^150 walls × 4 densities ×
+`tony-chamber.asm`). A trap met on the way: characters the run-time routine
+needs must be parked in the static map, and two parked groups overlapped —
+three candle characters fell out of the room's character set and the
+candle's bottom row went blank until the parking was fixed. The combination space is 2^150 walls × 4 densities ×
 the candle choices — not a preset list. **Open:** the owner's play-through in
 READY 64; the contract-side 40-byte write at render time (the room base is
 the buddy engine, not yet deployed); colour scheme as a trait.
