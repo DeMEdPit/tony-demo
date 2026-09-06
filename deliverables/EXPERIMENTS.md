@@ -28,6 +28,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E11 | Buddy behaviours as instruments | proposed | this file, §E11 |
 | E12 | Chain-reactive tokens (render-time / run-time) | proposed | this file, §E12 |
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
+| E14 | Engraved chambers & the HUD as an instrument panel | proposed | `assets/engraved-chamber-mock.png`, `assets/hud-instrument-mock.png` |
 
 ---
 
@@ -182,6 +183,33 @@ publish once, reference many). Keyless and immutable per token means
 fix-forward: bugs found later are fixed in new tokens. Gates before any
 mint: the automated suite passes and the owner has played it in READY 64.
 Decide up front whether shared parts (guard, launcher) can ever change.
+
+## E14 — Engraved chambers & the HUD as an instrument panel · proposed
+
+Chain state as *decoration* rather than a readout: carved into the room the
+way stone gets inscribed. Mock-ups built from the game's own tiles, its title
+font and its sprites (`assets/engraved-chamber-mock.png`), sample values:
+
+- **lintel** — a brick band under the ceiling with the block number carved
+  out (negative glyphs of the title font, `$BC20`);
+- **pillar shafts** — the owner's short id (`48DD` / `AF5B`) carved into the
+  niche rows;
+- **mural** — the dotted background bricks (`$B0–$B3`, the ones behind the
+  skull in room 11) laid as a 14×7 field where each brick is present iff a
+  bit of the block hash is set: a fingerprint nobody reads as data;
+- **sconces** (`$69 $6A / $6D $6E`) — one lit candle per token held;
+- **weathering** — cracked-brick variants (`$50–$5E`) sprinkled into the
+  floor, count growing with blocks since mint: the chamber ages with the chain;
+- **the carved face block** (`$3D–$48`) and an engraved diamond in the mural.
+
+Also the HUD kept as a panel (`assets/hud-instrument-mock.png`): the
+six-digit score becomes the block number, hearts become tokens held, an
+item slot shows a relic, labels redrawn (`HOLDS`, `BLOCK`, `GAS`). Both feed
+from the same parameter block as E11/E12; render-time values from the
+contract make every render a dated impression. Engine work: an "engraving"
+routine in the room base that stamps glyphs and brick bits from ~24 bytes
+of state into slots the room declares; relabelling the HUD is a dashboard
+charset edit. Not started.
 
 ---
 
