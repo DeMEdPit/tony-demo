@@ -13,11 +13,12 @@ any emulator (verified in VICE as well).
 | file | bytes | what it is |
 |---|---|---|
 | `tony-buddy.prg` | 37,310 | the tall pillar chamber: no menu, no dashboard, loads straight in — your Tony plus the green mimic Tony (follows, faces you, hops when you jump, idles like the real one), two bats up high |
-| `tony-chamber.prg` | 37,942 | the Chamber: the tall pillar room with a brick ceiling and plain pillars, Tony, the green buddy and two bats; its back wall (bricks and density, dense being the rare roll), one candle that appears three times in four somewhere on the upper or middle wall, and the block number carved into the floor's right end are all drawn from a 40-byte seed block in the file (`tools/stamp_mural.py`; a contract writes the block hash and number there at render time). Default seed: block 25850267 |
-| `tony-chamber-block-25850251.prg` | 37,942 | same build, seed "block 25850251": quarter wall, candle low right |
-| `tony-chamber-block-25850254.prg` | 37,942 | same build, seed "block 25850254": eighth wall, candle low middle |
+| `tony-chamber.prg` | 37,942 | the Chamber: the tall pillar room with a brick ceiling and plain pillars, Tony, the green buddy and two bats; its back wall (bricks and density — fewer bricks common, the near-full wall the rare roll), one candle that appears three times in four somewhere on the upper or middle wall, and the block number carved into the floor's right end are all drawn from a 40-byte seed block in the file (`tools/stamp_mural.py`; a contract writes the block hash and number there at render time). Default seed: block 25850267 |
+| `tony-chamber-block-25850271.prg` | 37,942 | same build, seed "block 25850271": eighth wall (the most common roll), no candle |
+| `tony-chamber-block-25850251.prg` | 37,942 | same build, seed "block 25850251": eighth wall, candle low right |
+| `tony-chamber-block-25850252.prg` | 37,942 | same build, seed "block 25850252": quarter wall, candle upper middle |
+| `tony-chamber-block-25850254.prg` | 37,942 | same build, seed "block 25850254": half wall, candle low middle |
 | `tony-chamber-block-25850256.prg` | 37,942 | same build, seed "block 25850256": the rare three-quarter wall, candle |
-| `tony-chamber-block-25850271.prg` | 37,942 | same build, seed "block 25850271": half wall, no candle |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 

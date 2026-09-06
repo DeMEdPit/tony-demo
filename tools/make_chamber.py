@@ -16,8 +16,9 @@ The seed block (48 bytes, 64-aligned): marker "MURAL01\0", 32 seed bytes
     cols 5-34.  Three bit streams run through the 32 bytes (A from byte 0, B from
     byte 19, C from byte 25, each wrapping at 32) and the DENSITY mode decides how
     they combine per slot. Three seed bits (seed[31] & 7) pick the mode through
-    the table 0,0,1,1,1,3,3,2: 0 = A&B (~1/4 filled, 2 in 8), 1 = A (~1/2, 3 in 8),
-    3 = A&B&C (~1/8, 2 in 8), 2 = A|B (~3/4, the rare one, 1 in 8);
+    the table 3,3,3,0,0,1,1,2 - fewer bricks is always more common: 3 = A&B&C (~1/8
+    filled, 3 in 8), 0 = A&B (~1/4, 2 in 8), 1 = A (~1/2, 2 in 8), 2 = A|B (~3/4,
+    the rare one, 1 in 8);
   - the CANDLE: at most one. Present when seed[30] & 3 is not zero (3 times in 4).
     Its niche comes from seed[29]: the low 4 bits pick a column through a 16-entry
     table onto 14 slot columns (left column 5 + 2k, k = 0..13), the next 3 bits
@@ -93,7 +94,7 @@ MURAL = """// ------------------------------------------------------------------
 //   wall: 15 x 10 slots of 2x2 dotted bricks ($B0 $B1 / $B2 $B3) from row 2,
 //         column 5. Three bit streams (A from byte 0, B from 19, C from 25,
 //         wrapping at 32); density mode = modeTable[seed[31] & 7]:
-//         0 = A&B (2/8)  1 = A (3/8)  3 = A&B&C (2/8)  2 = A|B (1/8, rare)
+//         3 = A&B&C (3/8)  0 = A&B (2/8)  1 = A (2/8)  2 = A|B (1/8, rare)
 //   candle: one at most, present when seed[30] & 3 != 0 (3 in 4). Column:
 //         kTable[seed[29] & 15] -> left = 5 + 2k; row: jTable[seed[29] >> 4 & 7]
 //         -> top = 2 + 2j (rows 4..12 only, never near the floor). The 4x4
@@ -336,7 +337,7 @@ muralStamp: {
     candleRight: .byte 0
     rowCount:    .byte 0
     charBase:    .byte 0
-    modeTable:   .byte 0, 0, 1, 1, 1, 3, 3, 2         // quarter x2, half x3, eighth x2, dense x1
+    modeTable:   .byte 3, 3, 3, 0, 0, 1, 1, 2         // eighth x3, quarter x2, half x2, dense x1: fewer bricks = more common
     kTable:      .byte 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9
     jTable:      .byte 1, 2, 3, 4, 5, 2, 3, 4
 }

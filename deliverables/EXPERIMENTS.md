@@ -215,17 +215,19 @@ says. `tony-chamber.prg` (37,942 B, ROM-free, boots straight in) carries a
 **40-byte seed block** right after an 8-byte marker `MURAL01\0` (file offset
 `0x042C9`, address `$4AC8`, 64-aligned): 32 seed bytes (the block hash) and
 8 block-number digits. The shipped default seed is sha256 of "block 25850267",
-a typical roll (half wall, one candle high on the left). The pillars are plain shafts (the two "niche" rows
+a typical roll (quarter wall, one candle high on the left). The pillars are plain shafts (the two "niche" rows
 with the diagonal crack are gone). At every room draw the game stamps, between the room
 decompression and its character translation:
 
 - **the wall** — 15 × 10 slots of 2×2 dotted bricks. Three bit streams run
   through the seed (A from byte 0, B from 19, C from 25, wrapping at 32) and a
   **density mode** picks how they combine per slot. Three seed bits
-  (`seed[31] & 7`) index the table 0,0,1,1,1,3,3,2: quarter-filled (A&B) two
-  rolls in eight, half (A) three in eight, an eighth (A&B&C) two in eight,
-  and three-quarters (A|B) **one in eight — the rare roll**. Measured over
-  4,000 hashes: 26 / 36 / 25 / 12 %. Same seed, same wall, forever;
+  (`seed[31] & 7`) index the table 3,3,3,0,0,1,1,2 — **fewer bricks is
+  always more common**: an eighth filled (A&B&C) three rolls in eight, a
+  quarter (A&B) two, half (A) two, and three-quarters (A|B) **one in eight,
+  the rare roll**. Measured over 4,000 hashes: 39 / 24 / 25 / 12 %. "Dense"
+  means more brick slots filled; the lattice spacing never changes. Same
+  seed, same wall, forever;
 - **the candle** — one at most. Present when `seed[30] & 3` is not zero
   (three rolls in four). Its place comes from `seed[29]`: the low four bits
   choose one of 14 slot columns through a 16-entry table (left column

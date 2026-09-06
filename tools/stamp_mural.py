@@ -16,7 +16,7 @@ import hashlib
 from pathlib import Path
 
 MARKER = b"MURAL01\x00"
-MODETAB = [0, 0, 1, 1, 1, 3, 3, 2]                          # quarter x2, half x3, eighth x2, dense x1
+MODETAB = [3, 3, 3, 0, 0, 1, 1, 2]                          # eighth x3, quarter x2, half x2, dense x1: fewer bricks = more common
 KTAB = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9]   # slot column 0..13 (left column 5 + 2k)
 JTAB = [1, 2, 3, 4, 5, 2, 3, 4]                             # slot row 1..5 (top row 2 + 2j)
 

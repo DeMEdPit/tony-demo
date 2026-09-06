@@ -2079,7 +2079,7 @@ hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
 //   wall: 15 x 10 slots of 2x2 dotted bricks ($B0 $B1 / $B2 $B3) from row 2,
 //         column 5. Three bit streams (A from byte 0, B from 19, C from 25,
 //         wrapping at 32); density mode = modeTable[seed[31] & 7]:
-//         0 = A&B (2/8)  1 = A (3/8)  3 = A&B&C (2/8)  2 = A|B (1/8, rare)
+//         3 = A&B&C (3/8)  0 = A&B (2/8)  1 = A (2/8)  2 = A|B (1/8, rare)
 //   candle: one at most, present when seed[30] & 3 != 0 (3 in 4). Column:
 //         kTable[seed[29] & 15] -> left = 5 + 2k; row: jTable[seed[29] >> 4 & 7]
 //         -> top = 2 + 2j (rows 4..12 only, never near the floor). The 4x4
@@ -2322,7 +2322,7 @@ muralStamp: {
     candleRight: .byte 0
     rowCount:    .byte 0
     charBase:    .byte 0
-    modeTable:   .byte 0, 0, 1, 1, 1, 3, 3, 2         // quarter x2, half x3, eighth x2, dense x1
+    modeTable:   .byte 3, 3, 3, 0, 0, 1, 1, 2         // eighth x3, quarter x2, half x2, dense x1: fewer bricks = more common
     kTable:      .byte 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9
     jTable:      .byte 1, 2, 3, 4, 5, 2, 3, 4
 }
