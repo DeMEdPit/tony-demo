@@ -223,13 +223,18 @@ decompression and its character translation:
   (about a quarter filled), A (half), A|B (three quarters), A&B&C (an
   eighth). Same seed, same wall, forever; a different hash, a different wall
   and often a different density;
-- **the sconces** — `seed[30] & 3` of them (0–3) at five fixed wall
+- **the candles** — `seed[30] & 3` of them (0–3) at five fixed wall
   positions, chosen by 3-bit picks (`seed[29]` bits 0–2 and 3–5, `seed[28]`
-  bits 0–2, mapped 0,1,2,3,4,1,2,3), a position lit twice stays one;
+  bits 0–2, mapped 0,1,2,3,4,1,2,3), a position lit twice stays one. A candle
+  is the artist's own flame-topped candle (`$70` over `$72`, the ones on room
+  8's ledge — the game marks them deadly, the chamber's material table makes
+  them harmless) on a stone ledge (`$5B`) with a drip under it (`$FA`), rows
+  8–11, the two wall slots it stands in cleared first. (The first version
+  used `$69–$6E`, which turned out to be a carved skull block, not a light.)
 - **the floor inscription** — the eight block digits carved into the top
   course of the floor, columns 16–23, as ten new glyphs (`$01–$0A` in the
-  chamber's own charset: the floor brick face with the game's title-font
-  digit cut out; wall material, so Tony stands on them).
+  chamber's own charset: a smooth stone cell with a small 4×6 numeral cut
+  into it, dark on light; wall material, so Tony stands on them).
 
 Also fixed: the buddy showed the wall through his transparent pixels. Tony
 never did because the engine gives him a third, Y-expanded, dark backdrop
@@ -237,15 +242,16 @@ sprite; the buddy now has the same on sprite 7 (free in this build), pointed
 at the BG frame of whatever pose he wears and repainted in the top-of-frame
 interrupt with the player's backdrop colour.
 
-Verified on minimal64 for five seeds (all four density modes, 0–2 sconces):
-every one of the 150 wall slots, the five sconce positions and the eight
-floor digits match `tools/stamp_mural.py`'s bit-exact prediction of the 6502
-routine. Captures: `assets/chamber-five-seeds-m64.png`,
-`assets/chamber-zoom-buddy-floor.png`. Generated sources:
+Verified on minimal64 for five seeds (all four density modes, 0–2 candles):
+every one of the 150 wall slots, the five candle positions (all four rows of
+the motif and the cleared column beside it) and the eight floor digits match
+`tools/stamp_mural.py`'s bit-exact prediction of the 6502 routine. Captures:
+`assets/chamber-five-seeds-m64.png`, `assets/chamber-zoom-candles.png`,
+`assets/chamber-zoom-floor.png`. Generated sources:
 `tools/build_chamber_room.py` (map, `chamber-charset.bin`,
 `chamber-materials.bin`), `tools/make_chamber.py` (`level/chamber/data.asm`,
 `tony-chamber.asm`). The combination space is 2^150 walls × 4 densities ×
-the sconce choices — not a preset list. **Open:** the owner's play-through in
+the candle choices — not a preset list. **Open:** the owner's play-through in
 READY 64; the contract-side 40-byte write at render time (the room base is
 the buddy engine, not yet deployed); colour scheme as a trait.
 

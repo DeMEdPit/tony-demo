@@ -36,7 +36,9 @@ class Stream:
 
 
 def predict(seed):
-    """-> (mode, wall rows of 15 bools, sconce columns, sconce count asked)"""
+    """-> (mode, wall rows of 15 bools, candle columns, candle count asked)
+    A candle at column c clears the two wall slots (rows 3 and 4, slot column
+    (c-5)//2) and draws $70/$72/$5B/$FA down rows 8-11 of column c."""
     A, B, C = Stream(seed, 0), Stream(seed, 19), Stream(seed, 25)
     mode = seed[31] & 3
     wall = []
@@ -59,14 +61,12 @@ def predict(seed):
 def show(seed, digits):
     mode, wall, cols, n = predict(seed)
     names = ["quarter (A&B)", "half (A)", "three-quarter (A|B)", "eighth (A&B&C)"]
-    print(f"   density mode {mode}: {names[mode]}; sconces asked {n}, lit at columns {cols or 'none'}; "
+    print(f"   density mode {mode}: {names[mode]}; candles asked {n}, lit at columns {cols or 'none'}; "
           f"floor reads {''.join(str(d) for d in digits)}")
+    lit = {(c - 5) // 2 for c in cols}
     for r, row in enumerate(wall):
-        line = "".join("#" if v else "." for v in row)
-        if r == 3:
-            marks = "".join("C" if (5 + 2 * c) in cols else " " for c in range(15))
-            line += "   sconces: " + marks
-        print("   " + line)
+        line = "".join(("i" if r == 3 else "_") if (r in (3, 4) and c in lit) else ("#" if v else ".") for c, v in enumerate(row))
+        print("   " + line + ("   (i = candle, _ = its ledge)" if r == 3 and lit else ""))
 
 
 def main():

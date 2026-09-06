@@ -17,9 +17,11 @@ The seed block (48 bytes, 64-aligned): marker "MURAL01\0", 32 seed bytes
     byte 19, C from byte 25, each wrapping at 32) and the DENSITY mode, seed[31] & 3,
     decides how they combine per slot: 0 = A&B (~1/4 filled), 1 = A (~1/2),
     2 = A|B (~3/4), 3 = A&B&C (~1/8);
-  - the SCONCES: seed[30] & 3 of them (0-3), each choosing one of five wall
+  - the CANDLES: seed[30] & 3 of them (0-3), each choosing one of five wall
     positions from 3 bits (seed[29] bits 0-2 and 3-5, seed[28] bits 0-2, mapped
-    0,1,2,3,4,1,2,3), duplicates dropped;
+    0,1,2,3,4,1,2,3), duplicates dropped - a flame-topped candle ($70/$72) on a
+    stone ledge ($5B) with a drip under it ($FA), rows 8-11, in a cleared 2-wide
+    column so no half bricks are left beside it;
   - the FLOOR: the eight block digits carved into the top course, columns 16-23.
 The buddy gets the player's own dark backdrop (sprite 7, Y-expanded, the BG
 frame of whatever pose he wears) so the wall no longer shows through him.
@@ -87,9 +89,11 @@ MURAL = """// ------------------------------------------------------------------
 //         column 5. Three bit streams (A from byte 0, B from 19, C from 25,
 //         wrapping at 32); density mode = seed[31] & 3:
 //         0 = A&B  1 = A  2 = A|B  3 = A&B&C
-//   sconces: seed[30] & 3 of them at row 8, columns 7/13/19/25/31, picked by
-//         3-bit values (seed[29] bits 0-2, 3-5; seed[28] bits 0-2) through
-//         the table 0,1,2,3,4,1,2,3; a position lit twice stays one sconce.
+//   candles: seed[30] & 3 of them at columns 7/13/19/25/31, picked by 3-bit
+//         values (seed[29] bits 0-2, 3-5; seed[28] bits 0-2) through the table
+//         0,1,2,3,4,1,2,3; a position lit twice stays one candle. A candle is
+//         $70 over $72 on a ledge $5B with a drip $FA (rows 8-11), the two
+//         wall slots it stands in cleared first.
 //   floor: the 8 block digits carved into row 23, columns 16-23 ($01 + digit).
 // ---------------------------------------------------------------------
 .label MURAL_DIGIT_BASE = $01
@@ -205,7 +209,7 @@ muralStamp: {
         jmp rowLoop
     rowDone:
 
-    // sconces
+    // candles
     lda #0
     sta litMask
     lda muralSeed + 30
@@ -279,14 +283,19 @@ muralStamp: {
         ora litMask
         sta litMask
         ldy candleCol, x
-        lda #$69
-        sta SCREEN_MEM_0 + 8*40, y
-        lda #$6A
+        lda #0                   // clear the two wall slots (rows 8-11, both columns)
         sta SCREEN_MEM_0 + 8*40 + 1, y
-        lda #$6D
-        sta SCREEN_MEM_0 + 9*40, y
-        lda #$6E
         sta SCREEN_MEM_0 + 9*40 + 1, y
+        sta SCREEN_MEM_0 + 10*40 + 1, y
+        sta SCREEN_MEM_0 + 11*40 + 1, y
+        lda #$70                 // the flame-topped candle
+        sta SCREEN_MEM_0 + 8*40, y
+        lda #$72                 // its body
+        sta SCREEN_MEM_0 + 9*40, y
+        lda #$5B                 // a stone ledge
+        sta SCREEN_MEM_0 + 10*40, y
+        lda #$FA                 // a drip under the ledge
+        sta SCREEN_MEM_0 + 11*40, y
         done:
         rts
     }

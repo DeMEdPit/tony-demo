@@ -2080,9 +2080,11 @@ hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
 //         column 5. Three bit streams (A from byte 0, B from 19, C from 25,
 //         wrapping at 32); density mode = seed[31] & 3:
 //         0 = A&B  1 = A  2 = A|B  3 = A&B&C
-//   sconces: seed[30] & 3 of them at row 8, columns 7/13/19/25/31, picked by
-//         3-bit values (seed[29] bits 0-2, 3-5; seed[28] bits 0-2) through
-//         the table 0,1,2,3,4,1,2,3; a position lit twice stays one sconce.
+//   candles: seed[30] & 3 of them at columns 7/13/19/25/31, picked by 3-bit
+//         values (seed[29] bits 0-2, 3-5; seed[28] bits 0-2) through the table
+//         0,1,2,3,4,1,2,3; a position lit twice stays one candle. A candle is
+//         $70 over $72 on a ledge $5B with a drip $FA (rows 8-11), the two
+//         wall slots it stands in cleared first.
 //   floor: the 8 block digits carved into row 23, columns 16-23 ($01 + digit).
 // ---------------------------------------------------------------------
 .label MURAL_DIGIT_BASE = $01
@@ -2198,7 +2200,7 @@ muralStamp: {
         jmp rowLoop
     rowDone:
 
-    // sconces
+    // candles
     lda #0
     sta litMask
     lda muralSeed + 30
@@ -2272,14 +2274,19 @@ muralStamp: {
         ora litMask
         sta litMask
         ldy candleCol, x
-        lda #$69
-        sta SCREEN_MEM_0 + 8*40, y
-        lda #$6A
+        lda #0                   // clear the two wall slots (rows 8-11, both columns)
         sta SCREEN_MEM_0 + 8*40 + 1, y
-        lda #$6D
-        sta SCREEN_MEM_0 + 9*40, y
-        lda #$6E
         sta SCREEN_MEM_0 + 9*40 + 1, y
+        sta SCREEN_MEM_0 + 10*40 + 1, y
+        sta SCREEN_MEM_0 + 11*40 + 1, y
+        lda #$70                 // the flame-topped candle
+        sta SCREEN_MEM_0 + 8*40, y
+        lda #$72                 // its body
+        sta SCREEN_MEM_0 + 9*40, y
+        lda #$5B                 // a stone ledge
+        sta SCREEN_MEM_0 + 10*40, y
+        lda #$FA                 // a drip under the ledge
+        sta SCREEN_MEM_0 + 11*40, y
         done:
         rts
     }

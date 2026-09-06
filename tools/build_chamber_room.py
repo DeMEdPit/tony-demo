@@ -5,16 +5,16 @@ its own character set and material table.
 Ceiling and floor use the same two-row brick courses; two pillars run from
 ceiling to floor. The back wall between the pillars is left empty on purpose:
 at run time the game stamps a mural of dotted bricks there from a 32-byte
-seed, up to three wall sconces, and carves the block number into the floor
+seed, up to three wall candles, and carves the block number into the floor
 (tools/make_chamber.py, tools/stamp_mural.py).
 
 Characters the run-time routine needs must be part of the room's used set
 (the engine only carries the characters a room uses), so they are placed in
 the static map INSIDE the mural area, which the routine overwrites entirely:
-the four dotted-brick chars, the four sconce chars, and the ten carved digits.
+the four dotted-brick chars, the four candle chars, and the ten carved digits.
 
-The ten carved digits are new glyphs: the floor brick texture with the
-game's own title-font digit cut out of it. They replace characters $01-$0A
+The ten carved digits are new glyphs: a smooth stone cell with a small 4x6
+digit cut into it (dark on light). They replace characters $01-$0A
 (unused by this room) in a copy of the level charset, `chamber-charset.bin`,
 and get wall material in `chamber-materials.bin` so Tony can stand on them.
 
@@ -29,7 +29,7 @@ sys.path.insert(0, "tools")
 W, H = 40, 25
 DIGIT_BASE = 0x01                 # carved digits live at $01..$0A
 DIGIT_TEXTURE = 0x32              # the floor brick face the digits are cut into
-SCONCE = (0x69, 0x6A, 0x6D, 0x6E)
+CANDLE = (0x70, 0x72, 0x5B, 0xFA)   # flame-topped candle, its body, a stone ledge, a drip
 MURAL = (0xB0, 0xB1, 0xB2, 0xB3)
 g = [[0x00] * W for _ in range(H)]
 
@@ -61,7 +61,7 @@ for i, row in enumerate(PILLAR):                     # rows 2..22
 
 # run-time characters, parked inside the mural area (rows 2-21, cols 5-34)
 put(2, 5, MURAL[0], MURAL[1]); put(3, 5, MURAL[2], MURAL[3])
-put(4, 5, SCONCE[0], SCONCE[1]); put(5, 5, SCONCE[2], SCONCE[3])
+put(4, 5, *CANDLE)
 put(6, 5, *[DIGIT_BASE + d for d in range(10)])
 
 os.makedirs("src/level-custom", exist_ok=True)
@@ -75,14 +75,23 @@ cs = bytearray(open("build/charpad/demo-level-charset.bin", "rb").read())   # in
 mt = bytearray(open("build/charpad/demo-level-materials.bin", "rb").read())
 prg = open("deliverables/onchain/tony-token-edition.prg", "rb").read()
 font = prg[0xBC20 - 0x0801 + 2:][:296]                                       # title font: @ A-Z 0-9
-texture = cs[DIGIT_TEXTURE * 8:DIGIT_TEXTURE * 8 + 8]
+# a smooth stone cell with a small 4x6 digit carved into it (dark on light),
+# 2 px in from the left, 1 px down: small and legible at C64 resolution
+F46 = {"0": [".##.", "#..#", "#..#", "#..#", "#..#", ".##."], "1": ["..#.", ".##.", "..#.", "..#.", "..#.", ".###"],
+       "2": [".##.", "#..#", "...#", "..#.", ".#..", "####"], "3": ["###.", "...#", ".##.", "...#", "...#", "###."],
+       "4": ["#..#", "#..#", "####", "...#", "...#", "...#"], "5": ["####", "#...", "###.", "...#", "...#", "###."],
+       "6": [".##.", "#...", "###.", "#..#", "#..#", ".##."], "7": ["####", "...#", "..#.", "..#.", ".#..", ".#.."],
+       "8": [".##.", "#..#", ".##.", "#..#", "#..#", ".##."], "9": [".##.", "#..#", ".###", "...#", "...#", ".##."]}
 for d in range(10):
-    glyph = font[(27 + d) * 8:(27 + d) * 8 + 8]
-    carved = bytes(texture[r] & ~glyph[r] & 0xFF for r in range(8))        # brick minus the digit
-    cs[(DIGIT_BASE + d) * 8:(DIGIT_BASE + d) * 8 + 8] = carved
+    rows = [0xFF] * 8                                                        # smooth light stone
+    for y, line in enumerate(F46[str(d)]):
+        for x, ch in enumerate(line):
+            if ch == "#":
+                rows[1 + y] &= ~(0x80 >> (2 + x)) & 0xFF                     # carve the digit
+    cs[(DIGIT_BASE + d) * 8:(DIGIT_BASE + d) * 8 + 8] = bytes(rows)
     mt[DIGIT_BASE + d] = 1                                                   # wall: Tony stands on them
-for c in SCONCE:
-    mt[c] = 0                                                                # decoration only
+for c in CANDLE:
+    mt[c] = 0                                                                # decoration only (the game marks candle flames deadly)
 open("src/level-custom/chamber-charset.bin", "wb").write(bytes(cs))
 open("src/level-custom/chamber-materials.bin", "wb").write(bytes(mt))
 print("wrote src/level-custom/chamber-charset.bin and chamber-materials.bin")
