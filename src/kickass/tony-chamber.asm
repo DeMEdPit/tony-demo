@@ -498,7 +498,17 @@ doEachFrameTop: {
     sta c64lib.MEMORY_CONTROL
     
     lda currentColor
+    ldx muralBehaviour          // the Glitch's blackout: the room in dark grey, Tony in grey
+    cpx #7
+    bne !+
+        lda #11
+    !:
     sta c64lib.BG_COL_0
+    lda currentColor
+    cpx #7
+    bne !+
+        lda #12
+    !:
     ldx #0
     !:
         cpx #2
@@ -2310,7 +2320,9 @@ sleeperDecide: {
 // blinks out for twelve frames and is somewhere else in the room when he
 // comes back.
 // His room is the blackout: the mural routine draws no wall, no candle and
-// no bats when the behaviour byte is 7. Returns A = the mechanic worn.
+// no bats when the behaviour byte is 7, the interrupt paints the room dark
+// grey and Tony grey, and the block number's cells keep light-grey ink.
+// Returns A = the mechanic worn.
 glitchTick: {
     lda wanderRng
     asl
@@ -3177,6 +3189,17 @@ muralStamp: {
         inx
         cpx #8
     bne digitLoop
+    lda muralBehaviour          // the blackout: the block number's cells keep light-grey ink on the dark stone
+    cmp #7
+    bne digitsInked
+        ldx #0
+        lda #15
+        inkLoop:
+            sta c64lib.COLOR_RAM + 23*40 + 27, x
+            inx
+            cpx #8
+            bne inkLoop
+    digitsInked:
     jsr muralBatsStamp
     rts
 

@@ -324,11 +324,16 @@ def glitch(prg, A):
     colours = [c & 15 for c in v]
     # the room: screen memory of the mural area (rows 2-21, cols 5-34), the candle block, the digits, the bats
     scr = run(p, f"wait:{BOOT},peek:D015," + "".join(f"peek:{0xC000 + r * 40 + c:X}," for r in range(2, 22) for c in range(5, 35)) + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)))
+    tint = run(p, f"wait:{BOOT},peek:D021,peek:D027,peek:D028," + "".join(f"peek:{0xD800 + 23 * 40 + c:X}," for c in range(27, 35)))
     os.unlink(p)
     # the digits are compared with an ordinary room's (the screen holds translated character codes)
     p0 = stamp(prg, 0, 5)
-    ref = run(p0, f"wait:{BOOT}," + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)))
+    ref = run(p0, f"wait:{BOOT}," + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)) + "peek:D021,peek:D027")
     os.unlink(p0)
+    ref, ref_tint = ref[:8], ref[8:]
+    # the blackout's colours: room dark grey (11), Tony grey (12), the digit cells' ink light grey (15); an ordinary room light grey
+    room, tony, tony2, ink = tint[0] & 15, tint[1] & 15, tint[2] & 15, [c & 15 for c in tint[3:]]
+    tinted = room == 11 and tony == 12 and tony2 == 12 and all(i == 15 for i in ink) and (ref_tint[0] & 15) == 15 and (ref_tint[1] & 15) == 15
     en, wall, digits = scr[0], scr[1:1 + 20 * 30], scr[1 + 20 * 30:]
     bx, mode = t["buddyX"], t["glitchMode"]
     worn = sorted(set(mode))
@@ -342,11 +347,12 @@ def glitch(prg, A):
     teleported_on_change = sum(1 for c in change_frames if any(c <= j <= c + 12 for j in jumps))
     ok = (len(worn) >= 3 and changes >= 3 and len(palette) >= 6 and 0 < blinks < n // 6 and max(bx) - min(bx) >= 40
           and teleported_on_change >= 2 and MIN_X <= min(bx) and max(bx) <= MAX_X
-          and not any(wall) and carved and not (en & 0b11000))
+          and not any(wall) and carved and not (en & 0b11000) and tinted)
     return report("GLITCH", ok, f"{n / 50:.0f} s: wore mechanics {worn} with {changes} changes ({teleported_on_change} of them teleporting), "
                   f"{len(jumps)} teleports in all; colours seen {palette} with {blinks} blink frames; X {min(bx)}..{max(bx)}; "
                   f"room: wall cells lit {sum(1 for w in wall if w)} of 600, block number carved as in an ordinary room {carved}, "
-                  f"bat sprites enabled {bool(en & 8)},{bool(en & 16)}")
+                  f"bat sprites enabled {bool(en & 8)},{bool(en & 16)}; colours: room {room}, Tony {tony}, digit ink {ink[0]} "
+                  f"(an ordinary room: {ref_tint[0] & 15}, {ref_tint[1] & 15})")
 
 
 TESTS = {"follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper, "glitch": glitch}

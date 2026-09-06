@@ -61,7 +61,7 @@ every render from the current block. The room itself stays black and grey.
   | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, jumps now and then, on the chip's dice | built, tested |
   | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, bolts past you when you are almost on him, creeps back when you leave | built, tested |
   | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
-  | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and teleports into the next, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats | built, tested |
+  | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and teleports into the next, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats, dark grey stone, a grey Tony, the block number in light grey | built, tested |
 
   One build serves all eight: the byte selects the mechanic at run time.
   The Glitch's blackout is gated on his mechanic byte, not on the seed, so
@@ -170,7 +170,7 @@ rules of section 1):
 
 Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 41,094 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `30c538065f2b73d80fd59f28882b55d4c0b7ee625d82ae92258c0623c068f630`.
+sha256 `81468c5a3232246eaaf701c2c59dc39ebddad43cb20eda61eb977c87cb15e262`.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its

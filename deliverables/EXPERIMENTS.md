@@ -621,7 +621,15 @@ mechanic is now a teleport (he blinks out for twelve frames and is
 somewhere else between the pillars when he comes back, the spot from the
 dice), and one burst in eight is a teleport instead of a jitter. Test (30
 s): six changes, five of them teleporting, seventeen teleports in all, 227
-blink frames of 1,500, X 66..254, never past the pillars.
+blink frames of 1,500, X 66..254, never past the pillars. And the owner's
+last ask for him: everything darker. In the blackout the interrupt paints
+the room's light (the screen background, which is what the negated
+charset shows as stone) dark grey (11) instead of light grey and Tony's
+sprites grey (12), and the mural routine gives the block number's eight
+cells light-grey ink (colour RAM) so the digits read bright on the dark
+floor. Measured: background 11, Tony 12, digit ink 15; an ordinary room
+15 and 15. `screenshots/chamber-glitch-dark-m64.png` shows the two side
+by side.
 
 **Bats, exhaustively (2026-09-06):** on paper, all 8 paths × 8 rows × 64
 column pairs: the lowest bat bottom is 153 (Tony's jump top is 183), the
@@ -692,6 +700,10 @@ step 6.
   for the buddy and 56..286 for Tony (E11).
 - The player's X and Y are settled before the buddy's update runs in a
   frame; the duck's animation number is written after it (E11).
+- The room's light colour is the screen background: the level charset is
+  loaded negated, so the stone is the background register and the char
+  pixels (colour RAM) are the dark; the interrupt repaints both, and the
+  player's sprites, from `currentColor` every frame (E16).
 - A bat's sprite starts 4 px below the top of its row (Y = 54 + 8·row),
   X = 24 + 8·column; a bat's path is replayed with the same signs after
   the turn, so a path must net to zero to hold its height (E14).
