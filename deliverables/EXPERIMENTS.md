@@ -301,9 +301,10 @@ a two-minute frame-by-frame script exceeds the command line.
 
 The base is now **feature complete**: one build, 40,248 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is
-still open): Shadow purple (the owner's ask: the Shadow should be the dark
-purple), Dancer cyan, Echo yellow, Mirror light blue, Wanderer blue, Shy
-One light red, Sleeper green.
+still open): Shadow blue (the owner's ask: the darkest of the seven for
+the Shadow; the C64's blue, which reads as a dark purple on a black
+screen), Dancer cyan, Echo yellow, Mirror light blue, Wanderer green, Shy
+One light red, Sleeper purple.
 
 **The Shy One's corner escape (found by the owner in play, kept on
 purpose).** Cornered at a pillar and crouching, he bolts the other way at

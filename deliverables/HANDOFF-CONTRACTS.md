@@ -66,8 +66,8 @@ every render from the current block. The room itself stays black and grey.
   All seven exist and pass their scripted tests; the base is feature
   complete and waits only on the owner's play-through and the colour
   mapping before the freeze. Provisional colours in the shipped files:
-  Shadow purple, Dancer cyan, Echo yellow, Mirror light blue, Wanderer
-  blue, Shy One light red, Sleeper green.
+  Shadow blue (6), Dancer cyan (3), Echo yellow (7), Mirror light blue
+  (14), Wanderer green (5), Shy One light red (10), Sleeper purple (4).
 - **Colours (colour byte, a C64 colour index):** the owner's seven: cyan 3,
   green 5, yellow 7, light blue 14, blue 6, light red 10, purple 4. Which
   colour goes with which mechanic is **not decided yet**.
