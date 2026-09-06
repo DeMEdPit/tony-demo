@@ -192,6 +192,16 @@ marker is at file offset `0x04EC1` and the 42 bytes start at file offset
 digits are bytes 0–9, not ASCII. Bytes never written keep the file's
 defaults (block 25850267, Follow, green).
 
+**A second tune, not decided (E17):** the demo's other tune (the intro
+scroller's) has been relocated into the Chamber's music slot and proved
+identical by replay; `tony-chamber-intro.prg` (41,368 bytes, sha256
+`3f82853171d63ca637b44b3e32d330f3c700c57ddd0d0fa202ec0c1106fae0b6`, the
+block at the same file offset 0x04EC9) is the same engine carrying it. If
+the owner gives The Glitch that tune, either the Glitch token points at
+this second base (a second hash) or both tunes go into one base with
+behaviour 7 starting the second (not built; there is room). Until that
+decision, the one-base table above stands.
+
 How the seed is used (so a test can predict a wall; the Python model is
 `tools/stamp_mural.py --show`): three bit streams run through the 32 bytes
 (from byte 0, byte 19 and byte 25, each wrapping at 32); `seed[31] & 7` picks
@@ -357,6 +367,8 @@ ignored by default). If a file bundle is preferred instead, it is:
 | `tools/stamp_mural.py` | writes seed, digits, behaviour, colour into a PRG; `--show` predicts the wall |
 | `tools/verify_buddy.py` | scripted tests of all seven mechanics on minimal64 |
 | `tools/verify_bats.py` | the seeded bats checked over sixteen seeds on minimal64 |
+| `tools/sidreloc.py`, `tools/verify_reloc.py` | move a tune to another address and prove it by replay; `src/music/TonyIntroA000_reloc.sid` is the intro tune at $A000 (E17) |
+| `deliverables/prg/minimal64/tony-chamber-intro*.prg` | the Chamber carrying the intro tune, unstamped and stamped as the Glitch and the Dancer (E17, not decided) |
 | `tools/buddy_thumbnail.py` | the SVG reference; `deliverables/assets/buddy-idle-*.svg` its outputs |
 | `tools/m64-harness/` | the native minimal64 test runner (`build.sh` builds it from nopsta's source) |
 | `deliverables/EXPERIMENTS.md` | the ledger: every decision, measurement and open item |

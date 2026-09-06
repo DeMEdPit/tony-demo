@@ -50,14 +50,36 @@ tools/stamp_mural.py writes seed, block number, behaviour and colour.
 
 Run from repo root after tools/make_buddy.py and tools/build_chamber_room.py:
     python3 tools/make_chamber.py
+    python3 tools/make_chamber.py --music src/music/TonyIntroA000_reloc.sid --variant tony-chamber-intro
 """
 import hashlib
 import os
+import sys
 
 import re as _re
-_sid = open("src/music/TonyLevelA000_V2.sid", "rb").read()
+
+# Options: --music PATH   the tune the variant carries (a PSID assembled for $A000;
+#                         default the level tune, src/music/TonyLevelA000_V2.sid)
+#          --variant NAME the .asm/.prg name (default tony-chamber)
+#          --dance-voice N the voice (1-3) whose line the Dancer steps to (default 1)
+MUSIC = "src/music/TonyLevelA000_V2.sid"
+VARIANT = "tony-chamber"
+#          --dance-cool    keep the engine's pause after a landing in the Dance mechanic
+#                          (default: none, he may bounce again the moment he lands)
+DANCE_VOICE = 1
+DANCE_COOL = False
+_args = sys.argv[1:]
+while _args:
+    _flag = _args.pop(0)
+    if _flag == "--music": MUSIC = _args.pop(0)
+    elif _flag == "--variant": VARIANT = _args.pop(0)
+    elif _flag == "--dance-voice": DANCE_VOICE = int(_args.pop(0)); assert DANCE_VOICE in (1, 2, 3)
+    elif _flag == "--dance-cool": DANCE_COOL = True
+    else: raise SystemExit("unknown option " + _flag)
+_sid = open(MUSIC, "rb").read()
+assert _sid[:4] == b"PSID" and _sid[124:126] == b"\x00\xa0", "the tune must be a PSID assembled for $A000"
 _m = _re.search(rb"\xBD(..)\x9D\x00\xD4", _sid[124 + 2:], _re.S)      # LDA image,X / STA $D400,X
-SID_IMAGE = _m.group(1)[0] | (_m.group(1)[1] << 8)                       # the player's register image ($A474)
+SID_IMAGE = (_m.group(1)[0] | (_m.group(1)[1] << 8)) + 7 * (DANCE_VOICE - 1)   # the player's register image ($A474 for the level tune), at the Dancer's voice
 DEFAULT_SEED = hashlib.sha256(b"block 25850267").digest()   # a typical roll: half-density wall, one candle high on the left
 
 # ------------------------------------------------------------- level data
@@ -128,7 +150,8 @@ print("wrote src/kickass/level/chamber/data.asm")
 
 # ------------------------------------------------------------- game variant
 src = open("src/kickass/tony-buddy.asm").read()
-src = sub(src, '.file [name="./tony-buddy.prg"', '.file [name="./tony-chamber.prg"')
+src = sub(src, '.file [name="./tony-buddy.prg"', f'.file [name="./{VARIANT}.prg"')
+src = sub(src, '.var music = LoadSid("TonyLevelA000_V2.sid")', f'.var music = LoadSid("{os.path.basename(MUSIC)}")')
 src = sub(src, '#import "level/buddy/data.asm"', '#import "level/chamber/data.asm"')
 src = sub(src, "    jsr _draw_playfield\n", "    jsr _draw_playfield\n    jsr muralStamp   // the back wall, from the seed\n")
 
@@ -1231,7 +1254,7 @@ buddyDecide: {{
     noSlide:
     lda #0
     sta buddyDelay                  // the pose moves only with the music
-    sta buddyCool                   // and he may bounce again the moment he lands
+{"" if DANCE_COOL else "    sta buddyCool                   // and he may bounce again the moment he lands"}
     lda $D41C                       // ENV3: voice 3's envelope, from the chip
     tax
     sec
@@ -1587,13 +1610,13 @@ echoAnim: .fill 256, ANIM_IDLING_RIGHT
 // skull, bat, deadman L/R, bat L/R, quick duck L/R
 echoPose: .byte 4, 5, 8, 9, 0, 1, 2, 12, 13, 2, 0, 1, 2, 2, 0, 1, 2, 2, 8, 9
 """)
-open("src/kickass/tony-chamber.asm", "w").write(src)
-print("wrote src/kickass/tony-chamber.asm")
+open(f"src/kickass/{VARIANT}.asm", "w").write(src)
+print(f"wrote src/kickass/{VARIANT}.asm (music {os.path.basename(MUSIC)}, the Dancer reads voice {DANCE_VOICE} at ${SID_IMAGE:04X})")
 
 # ------------------------------------------------------------- build wiring
 g = open("build.gradle.kts").read()
-if "tony-chamber.asm" not in g:
-    g = sub(g, '        "src/kickass/tony-buddy.asm",\n', '        "src/kickass/tony-buddy.asm",\n        "src/kickass/tony-chamber.asm",\n')
+if f"{VARIANT}.asm" not in g:
+    g = sub(g, '        "src/kickass/tony-buddy.asm",\n', f'        "src/kickass/tony-buddy.asm",\n        "src/kickass/{VARIANT}.asm",\n')
     open("build.gradle.kts", "w").write(g)
     print("build.gradle.kts: include added")
 else:

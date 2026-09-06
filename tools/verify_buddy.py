@@ -59,6 +59,9 @@ def addresses(prg):
     A["playerAnim"] = A["playerX"] + 6
     m = re.search(rb"\xBD(..)\x9D\x00\xD4", data, re.S)                            # the tune's player: LDA image,X / STA $D400,X
     A["sidImage"] = m.group(1)[0] | (m.group(1)[1] << 8)
+    # the voice the Dancer reads: his reread loop LDA v / STA noteNew / LDA v+1 / STA noteNew+1 / LDA v / CMP noteNew / BNE
+    m = re.search(rb"\xAD(..)\x8D(..)\xAD..\x8D..\xAD\1\xCD\2\xD0", data, re.S)
+    A["danceVoice"] = (m.group(1)[0] | (m.group(1)[1] << 8)) if m else A["sidImage"]
     return A
 
 
@@ -134,7 +137,7 @@ def follow(prg, A):
 def dance(prg, A):
     p = stamp(prg, 1, 3)
     n = 900
-    S = A["sidImage"]
+    S = A["danceVoice"]
     per = (f"peek:D41C,peek:{A['buddyHop']:X},peek:{A['buddyFacing']:X},peek:{A['buddyX']:X},"
            f"peek:{A['buddyPhase']:X},peek:{S:X},peek:{S + 1:X},wait:1,")
     v = run(p, f"wait:{BOOT},peek:D02C,peek:D02D," + per * n)
@@ -166,8 +169,9 @@ def dance(prg, A):
     walk = frames(p, A, ["buddyX"], [(RIGHT, 60), (LEFT, 60)] * 3 + [(RIGHT, 40)])["buddyX"]
     os.unlink(p)
     same = still == walk
+    airborne = 100 * sum(1 for h in hop if h) // n
     return report("DANCE", ok and same, f"{n / 50:.0f} s: notes {len(notes)}, steps {len(steps)} (off the beat {len(steps_off)}, unanswered {len(unanswered)}), "
-                  f"turns {len(turns)}, ENV3 rises {len(rises)}, hops {len(hops)} (without a rise {len(hops_unfounded)}, rises unanswered {len(rises_unanswered)}), "
+                  f"turns {len(turns)}, ENV3 rises {len(rises)}, hops {len(hops)} (without a rise {len(hops_unfounded)}, rises unanswered {len(rises_unanswered)}, airborne {airborne}% of the time), "
                   f"X {min(bx)}..{max(bx)}, colours {col5},{col6}; path with the player still vs walking {'identical' if same else 'DIFFERS'}")
 
 
@@ -363,7 +367,8 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     prg = args.pop(0) if args and args[0].endswith(".prg") else "deliverables/prg/minimal64/tony-chamber.prg"
     A = addresses(prg)
-    print(f"{prg}: buddy variables at ${A['buddyX']:04X}.., player at ${A['playerX']:04X}, player's register image at ${A['sidImage']:04X}")
+    print(f"{prg}: buddy variables at ${A['buddyX']:04X}.., player at ${A['playerX']:04X}, player's register image at ${A['sidImage']:04X}, "
+          f"the Dancer reads voice {(A['danceVoice'] - A['sidImage']) // 7 + 1}")
     names = args or list(TESTS)
     results = [TESTS[n](prg, A) for n in names]
     print("ALL OK" if all(results) else "FAILED")

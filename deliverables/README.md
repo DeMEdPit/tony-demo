@@ -27,6 +27,9 @@ any emulator (verified in VICE as well).
 | `tony-chamber-the-shy-one.prg` | 41,094 | the same build with the token's behaviour and a provisional colour stamped: The Shy One (Shy, light red): runs when Tony comes close, cowers at the pillar, bolts straight past Tony when he is almost on him, creeps back when he leaves. `tools/verify_buddy.py` is the scripted test of all seven |
 | `tony-chamber-the-sleeper.prg` | 41,094 | the same build with the token's behaviour and a provisional colour stamped: The Sleeper (Sleeper, purple): dozes crouched until Tony comes close, follows a while, dozes off. `tools/verify_buddy.py` is the scripted test of all seven |
 | `tony-chamber-the-glitch.prg` | 41,094 | the same build with behaviour 7: The Glitch, the eighth mechanic, wears one of the seven at a time and teleports into the next every few seconds, cycles the seven colours, blinks and jitters in bursts; his room is the blackout, no wall, no candle, no bats, the stone dark grey and Tony grey, only the block number in the floor, in light grey |
+| `tony-chamber-intro.prg` | 41,368 | the same engine carrying the demo's other tune: the intro tune (heard only in the full game's intro scroller) relocated from $E000 to $A000 with `tools/sidreloc.py` and proved note-for-note identical by replay (`tools/verify_reloc.py`, 8 minutes). Built with the Dancer stepping to voice 2 and keeping his landing pause (E17); default block: Follow, green |
+| `tony-chamber-intro-the-glitch.prg` | 41,368 | the intro-tune build stamped as The Glitch (behaviour 7): to hear him with his own tune |
+| `tony-chamber-intro-the-dancer.prg` | 41,368 | the intro-tune build stamped as The Dancer (behaviour 1, cyan): the Dance mechanic alone under the faster tune, about one bounce a second |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 
@@ -102,7 +105,7 @@ as an animated SVG, one file per colour, the buddy alone at 48 px) is
 `tools/buddy_thumbnail.py` → `assets/tokens/the-<name>.svg`, the eight by token name (`--tokens`; the Glitch's cycles the seven colours), and `assets/buddy-idle-<colour>.svg` by colour;
 `assets/buddy-thumbnail-seven.png` shows the seven chosen colours,
 `assets/buddy-thumbnail-options.png` the layouts that were considered, and
-`assets/buddy-palette-16.png` all sixteen C64 colours on the Chamber's black. `screenshots/` holds before/after and
+`assets/buddy-palette-16.png` all sixteen C64 colours on the Chamber's black. `tools/sidreloc.py` moves a PSID tune to another page-aligned address by tag-tracking its player, and `tools/verify_reloc.py` proves the move by replaying both on minimal64 and comparing every SID register write (`src/music/RELOCATION.md`). `screenshots/` holds before/after and
 on-target captures (`*-m64-*.png` are minimal64 framebuffer grabs;
 `buddy-m64-*.png` show the buddy build booting straight into the chamber).
 

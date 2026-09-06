@@ -658,6 +658,93 @@ their bands.
 
 ---
 
+## E17 — The Glitch's tune: the intro tune relocated into the Chamber · built (2026-09-06)
+
+**Question (owner):** are there other soundtracks in the demo, and could
+the Glitch have his own?
+
+**Census:** two tunes exist, ever: the level tune
+(`src/music/TonyLevelA000_V2.sid`, $A000, 5,508 bytes, the game and every
+Chamber build) and the intro tune (`src/music/tonyintroe000_1.sid`, $E000,
+5,782 bytes, heard only in the full loader build's intro scroller, never in
+the Chamber). Both are GoatTracker exports with one song each (init with 0,
+1 or 2 gives the same register stream); no sound effects anywhere, no song
+sources, nothing else in git history; the commented "funktest" tune in
+intro.asm never existed in the repo.
+
+**Measured character** (bare player on minimal64, PAL 50 Hz, 8-minute
+captures of each player's register image): the level tune has a ~75 BPM
+feel with 100 ms steps, is sparse (4.4 / 2.2 / 1.9 note-ons per second on
+voices 1–3), opens quietly for 30 s, pulse-heavy, filter on voices 1–2, its
+phrase structure recurring about every 3:08. The intro tune is ~107 BPM and
+dense (7.4 / 7.1 / 10.4 note-ons per second), 70 ms runs and arpeggios on
+voices 1 and 3, a constant low-pass sweep on voice 2, phrase structure
+recurring about every 2:50 with an inner repeat near 1:24. Neither register
+stream repeats exactly within 8 minutes (a free-running counter in the
+player), so the periods come from autocorrelation of the note onsets.
+
+**The obstacle:** the intro tune is bound to $E000, where the Chamber keeps
+its 125 sprite shapes. No relocator on the machine (sidreloc unreachable
+under the network policy); the two exported players share only 370 bytes in
+fragments, so no diff-based move either.
+
+**Relocation:** `tools/sidreloc.py`, a tag-tracking 6502 in Python: every
+file byte carries its offset through registers, memory and arithmetic; when
+an address is formed (an operand, an indirect pointer, a jump, a return) the
+tag of its high byte is recorded together with where the address points.
+12,000 play calls traced (3.8 M instructions, 6 s): 289 bytes serve as
+address high bytes inside the tune, none of them also as data, index, low
+byte or an outside address. **Proof by replay** (`tools/verify_reloc.py`):
+bare players for the original at $E000 and the copy at $A000, 24,000 frames
+each (8 minutes), every SID register write identical. Cross-check: the level
+tune moved $A000 → $E000 the same way, 6,000 frames identical. The result is
+`src/music/TonyIntroA000_reloc.sid` (provenance in `src/music/RELOCATION.md`);
+no note, instrument or timing changed, the header is the original's.
+
+**The variant:** `tools/make_chamber.py --music src/music/TonyIntroA000_reloc.sid
+--variant tony-chamber-intro` generates `src/kickass/tony-chamber-intro.asm`,
+the same engine carrying the other tune in the same slot ($A000–$B695, under
+the charset at $B800; the materials area at $B400 is unused by the Chamber).
+The default generation is unchanged (`tony-chamber.prg` still `81468c5a…`).
+Build: `tony-chamber-intro.prg`, 41,368 bytes (274 more, the tune's extra
+bytes), the parameter block at the same file offset 0x04EC9. The Glitch test
+passes on it unchanged (7 changes, 17 teleports, blackout intact).
+
+**The Dance phase under the intro tune (measured):** as built for the level
+tune, the Dancer steps on voice 1's note changes and bounces on voice 3's
+envelope rises (ENV3 ≥ 6). The intro tune's voice 1 is an arpeggio nearly
+every frame (39 changes/s against 16 for the level tune's) and its voice 3 a
+fast lead whose every attack is a big rise (8.8 rises/s, 495 of 532 ≥ $28):
+he never lands — 34 hops in 18 s, airborne 99% by the hop model (ENV3
+captured; no threshold up to 96 changes it), no visible step, 149 turns in
+18 s. Two generator knobs, variant-only (the standard base's bytes do not
+change): `--dance-voice 2` (he steps to voice 2, the steadier line: 41 notes
+in the first 18 s) and `--dance-cool` (keep the engine's 20-frame pause after
+a landing instead of zeroing it). With both: 19 hops in 18 s (about one a
+second), airborne 55%, 7 steps, 10 turns — a bounce every other beat with
+shuffles between. Reference, the standard base with the level tune: 68
+notes, 41 steps, 17 turns, 13 hops, airborne 34%. `tools/verify_buddy.py`
+now reads the voice the Dancer was built for and reports the airborne share;
+its pass criteria remain the level tune's, so the variant reports FAIL on
+the Dance test by design (7 steps against the 30 it expects) and OK on the
+Glitch test.
+
+**Deliverables:** `prg/minimal64/tony-chamber-intro.prg` (41,368 bytes,
+unstamped), `tony-chamber-intro-the-glitch.prg` (behaviour 7, colour 1),
+`tony-chamber-intro-the-dancer.prg` (behaviour 1, cyan; to hear the Dancer
+alone with the intro tune). All three are the voice-2, landing-pause build.
+
+**Open (owner's decisions):** (1) whether a relocation counts as modifying
+the music — no note changes, 289 address bytes do; (2) whether the Glitch
+takes the intro tune at all; (3) the shipping shape: a second base for the
+Glitch (this variant, a second hash) or both tunes resident in one base
+(the 14,847 bytes free at run time below $A000 hold the second tune;
+behaviour 7 would start it; one hash, the handoff's assumption) — not
+built; (4) the Dance knobs: the plain pogo (no knobs) or the one-a-second
+bounce (voice 2 + landing pause).
+
+---
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the
@@ -741,3 +828,10 @@ step 6.
 - Respawn is at the room entry point in the entry state (E9).
 - Room 11's declared south exit is dead; room 25's ladder is an entrance
   only (E8, E9).
+- The demo has exactly two tunes, both GoatTracker exports with one song
+  each, and no sound effects (E17).
+- Both players touch only $FE/$FF in zero page at run time (E17).
+- A page-aligned move of a tune changes only address high bytes: 289 of the
+  intro tune's 5,782; replay-identical for 8 minutes (E17).
+- The intro tune's voice 3 raises ENV3 by ≥ $28 on 495 of its 532 attacks;
+  under the Dancer's hit rule he is airborne 99% of the time with it (E17).
