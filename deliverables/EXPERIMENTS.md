@@ -264,9 +264,24 @@ motif and the seven cleared cells around it) and the eight floor digits match
 needs must be parked in the static map, and two parked groups overlapped —
 three candle characters fell out of the room's character set and the
 candle's bottom row went blank until the parking was fixed. The combination space is 2^150 walls × 4 densities ×
-71 candle states — not a preset list. **Open:** the owner's play-through in
-READY 64; the contract-side 40-byte write at render time (the room base is
-the buddy engine, not yet deployed); colour scheme as a trait.
+71 candle states — not a preset list.
+
+**Decided (owner, 2026-09-06):** the wall is fed at **render time**. When a
+marketplace or viewer calls the token, the contract writes the current
+block's hash (`blockhash(block.number - 1)`, the newest hash a view call can
+read) into the 32 seed bytes and the current block number into the 8 digit
+bytes, so every fresh render is a different wall, a different candle roll and
+a different number in the floor. Consequences to keep in mind: marketplaces
+cache metadata and re-fetch on their own schedule, so "every render" means
+every re-fetch, while READY 64 and a direct call are always fresh; and a
+chain can only serve the last 256 block hashes, so a wall seen at block N
+cannot be recomputed on-chain an hour later — the renders are impressions,
+not a permanent series (if a permanent "birth wall" is ever wanted, the mint
+block's hash can be stored at mint and rendered alongside). Colour scheme is
+**parked** until the buddy's five mechanics (E11) are designed.
+
+**Open:** the owner's play-through in READY 64; the room base (the buddy
+engine) is not yet deployed; the contract that performs the 40-byte write.
 
 ---
 
