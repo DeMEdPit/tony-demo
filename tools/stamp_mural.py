@@ -6,8 +6,10 @@ exactly what the game will draw from it.
     python3 tools/stamp_mural.py IN.prg OUT.prg --text "block 25990001" --block 25990001
     python3 tools/stamp_mural.py IN.prg --show
 
-The block sits right after the 8-byte marker "MURAL01\\0": 32 seed bytes
-(the block hash), then 8 block-number digits (0-9 each, most significant
+The block sits right after the 8-byte marker "MURAL02\\0": 32 seed bytes
+(the block hash), 8 block-number digits, the behaviour byte (0 Follow,
+1 Dance, 2-6 reserved) and the colour byte (a C64 colour index); older
+"MURAL01" builds carry only the first 40 bytes. Digits are 0-9 each, most significant
 first). A contract writes the same 40 bytes at render time. The prediction
 below mirrors the 6502 routine in tony-chamber.asm bit for bit.
 """
@@ -15,7 +17,8 @@ import argparse
 import hashlib
 from pathlib import Path
 
-MARKER = b"MURAL01\x00"
+MARKERS = {b"MURAL02\x00": 42, b"MURAL01\x00": 40}   # marker -> bytes the contract writes
+BEHAVIOURS = ["Follow", "Dance", "Echo", "Mirror", "Wander", "Shy", "Sleeper"]
 MODETAB = [3, 3, 3, 0, 0, 1, 1, 2]                          # eighth x3, quarter x2, half x2, dense x1: fewer bricks = more common
 KTAB = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9]   # slot column 0..13 (left column 5 + 2k)
 JTAB = [1, 2, 3, 4, 5, 2, 3, 4]                             # slot row 1..5 (top row 2 + 2j)
@@ -79,17 +82,23 @@ def main():
     ap.add_argument("--hex", help="32-byte seed, e.g. a block hash")
     ap.add_argument("--text", help="seed = sha256 of this text")
     ap.add_argument("--block", type=int, help="block number carved into the floor (8 digits)")
+    ap.add_argument("--behaviour", type=int, help="0 Follow, 1 Dance, 2-6 Echo/Mirror/Wander/Shy/Sleeper (MURAL02 builds)")
+    ap.add_argument("--colour", type=int, help="the buddy's C64 colour index 0-15 (MURAL02 builds)")
     ap.add_argument("--show", action="store_true")
     a = ap.parse_args()
     data = bytearray(Path(a.prg).read_bytes())
-    i = data.find(MARKER)
-    if i < 0 or data.count(MARKER) != 1:
-        raise SystemExit("no (or more than one) MURAL01 marker in this PRG")
-    off = i + len(MARKER)
+    found = [(m, n) for m, n in MARKERS.items() if data.count(m) == 1]
+    if len(found) != 1:
+        raise SystemExit("no (or more than one) MURAL marker in this PRG")
+    marker, nbytes = found[0]
+    off = data.find(marker) + len(marker)
     addr = 0x0801 + off - 2
     cur_seed, cur_digits = bytes(data[off:off + 32]), list(data[off + 32:off + 40])
-    print(f"seed block at file offset 0x{off:05X} (address ${addr:04X}): 32 seed bytes + 8 digits")
-    print(f"current seed {cur_seed.hex()} block {''.join(str(d) for d in cur_digits)}")
+    cur_beh, cur_col = (data[off + 40], data[off + 41]) if nbytes == 42 else (None, None)
+    print(f"{marker[:7].decode()} block at file offset 0x{off:05X} (address ${addr:04X}): {nbytes} bytes"
+          + (" = 32 seed + 8 digits + behaviour + colour" if nbytes == 42 else " = 32 seed + 8 digits"))
+    print(f"current seed {cur_seed.hex()} block {''.join(str(d) for d in cur_digits)}"
+          + (f" behaviour {cur_beh} ({BEHAVIOURS[cur_beh] if cur_beh < len(BEHAVIOURS) else '?'}) colour {cur_col}" if nbytes == 42 else ""))
     if a.show or not a.out:
         show(cur_seed, cur_digits)
         return
@@ -103,8 +112,20 @@ def main():
     digits = cur_digits if a.block is None else [int(ch) for ch in f"{a.block:08d}"[-8:]]
     data[off:off + 32] = seed
     data[off + 32:off + 40] = bytes(digits)
+    if nbytes == 42:
+        if a.behaviour is not None:
+            if not 0 <= a.behaviour <= 6:
+                raise SystemExit("behaviour must be 0-6")
+            data[off + 40] = a.behaviour
+        if a.colour is not None:
+            if not 0 <= a.colour <= 15:
+                raise SystemExit("colour must be 0-15")
+            data[off + 41] = a.colour
+    elif a.behaviour is not None or a.colour is not None:
+        raise SystemExit("this is a MURAL01 build: no behaviour or colour bytes")
     Path(a.out).write_bytes(bytes(data))
-    print(f"wrote {a.out}: seed {seed.hex()} block {''.join(str(d) for d in digits)}")
+    extra = f" behaviour {data[off + 40]} colour {data[off + 41]}" if nbytes == 42 else ""
+    print(f"wrote {a.out}: seed {seed.hex()} block {''.join(str(d) for d in digits)}{extra}")
     show(seed, digits)
 
 

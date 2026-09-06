@@ -13,12 +13,13 @@ any emulator (verified in VICE as well).
 | file | bytes | what it is |
 |---|---|---|
 | `tony-buddy.prg` | 37,310 | the tall pillar chamber: no menu, no dashboard, loads straight in — your Tony plus the green mimic Tony (follows, faces you, hops when you jump, idles like the real one), two bats up high |
-| `tony-chamber.prg` | 37,942 | the Chamber: the tall pillar room with a brick ceiling and plain pillars, Tony, the green buddy and two bats; its back wall (bricks and density — fewer bricks common, the near-full wall the rare roll), one candle that appears three times in four somewhere on the upper or middle wall, and the block number carved into the floor's right end are all drawn from a 40-byte seed block in the file (`tools/stamp_mural.py`; a contract writes the block hash and number there at render time). Default seed: block 25850267 |
-| `tony-chamber-block-25850271.prg` | 37,942 | same build, seed "block 25850271": eighth wall (the most common roll), no candle |
-| `tony-chamber-block-25850251.prg` | 37,942 | same build, seed "block 25850251": eighth wall, candle low right |
-| `tony-chamber-block-25850252.prg` | 37,942 | same build, seed "block 25850252": quarter wall, candle upper middle |
-| `tony-chamber-block-25850254.prg` | 37,942 | same build, seed "block 25850254": half wall, candle low middle |
-| `tony-chamber-block-25850256.prg` | 37,942 | same build, seed "block 25850256": the rare three-quarter wall, candle |
+| `tony-chamber.prg` | 38,200 | the Chamber: the tall pillar room with a brick ceiling and plain pillars, Tony, the buddy and two bats; its back wall (bricks and density — fewer bricks common, the near-full wall the rare roll), one candle that appears three times in four somewhere on the upper or middle wall, and the block number carved into the floor's right end are drawn from the 42-byte parameter block in the file (`tools/stamp_mural.py`: 32 seed bytes, 8 block digits, the buddy's behaviour byte and colour byte; a contract writes them at render time). Default block: block 25850267, behaviour 0 Follow, colour 5 green |
+| `tony-chamber-block-25850271.prg` | 38,200 | same build, seed "block 25850271": eighth wall (the most common roll), no candle |
+| `tony-chamber-block-25850251.prg` | 38,200 | same build, seed "block 25850251": eighth wall, candle low right |
+| `tony-chamber-block-25850252.prg` | 38,200 | same build, seed "block 25850252": quarter wall, candle upper middle |
+| `tony-chamber-block-25850254.prg` | 38,200 | same build, seed "block 25850254": half wall, candle low middle |
+| `tony-chamber-block-25850256.prg` | 38,200 | same build, seed "block 25850256": the rare three-quarter wall, candle |
+| `tony-chamber-dance-cyan.prg` | 38,200 | the same build with behaviour 1 (Dance) and colour 3 (cyan) stamped: the buddy steps and turns with the bass line and bounces on voice 3's hits, read from the chip; he ignores Tony. `tools/verify_dance.py` is its scripted test |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 
@@ -61,6 +62,10 @@ field report on the first play-test and what it changed.
 
 ## Documents
 
+- **`HANDOFF-CONTRACTS.md`** — for the agent writing and deploying the
+  Chamber contracts: what is on mainnet, the base program and its 42-byte
+  parameter block, what `tokenURI` must do, the SVG image exactly, how to
+  prove it before deploying, the deployment order, open decisions.
 - **`ONCHAIN-CASTLES.md`** — the on-chain PRG's patch map (offsets of every
   table), the castle patch scheme, the three verified samples, and two
   measured findings about the deployed bytes.

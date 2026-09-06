@@ -25,7 +25,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E8 | Room census: which rooms can join which | done | `tools/onchain_castle.py census` |
 | E9 | Mini castles as byte patches over the mainnet PRG | in progress | `ONCHAIN-CASTLES.md`, `onchain/castles/` |
 | E10 | Room builder (Workbench extension) | proposed | this file, §E10 |
-| E11 | Buddy behaviours as instruments | proposed | this file, §E11 |
+| E11 | Buddy behaviours as instruments | in progress | `tony-chamber-dance-cyan.prg`, `tools/verify_dance.py` |
 | E12 | Chain-reactive tokens (render-time / run-time) | proposed | this file, §E12 |
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
 | E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
@@ -144,7 +144,7 @@ patch tool ≈ 1 session; builder MVP in the Workbench ≈ 2–4; tile colours
 +1; behaviour table +1. `pm-chamber` in akalabeth already extracted and
 credited the tile groups.
 
-## E11 — Buddy behaviours as instruments · proposed
+## E11 — Buddy behaviours as instruments · in progress
 
 Follow / mirror / lead / hide are cheap and teach nothing about the machine.
 Behaviours chosen as **probes** do: a buddy driven by the SID's oscillator-3
@@ -180,6 +180,45 @@ light red (10), purple (4); blue is the dimmest of the seven on black and
 was picked with that in view. Which colour goes with which mechanic is
 still open. Build order: the two bytes, then Dance, then the rest, each
 with a scripted test on minimal64.
+
+**Built (2026-09-06): the two bytes, and Dance.** The Chamber's parameter
+block is now 42 bytes after the marker `MURAL02\0`: 32 seed bytes, 8
+block digits, the behaviour byte, the colour byte (`tools/make_chamber.py`,
+`tools/stamp_mural.py --behaviour --colour`). `buddyUpdate` is split into a
+*decide* part (what he wants this frame: moving, facing, a hop) and an
+*act* part (step, hop, sprite, pose); Follow is the original decide code
+and the other mechanics dispatch through `buddyDecide` on the behaviour
+byte, so one build serves all seven. Dance listens to two things, both
+inside the machine, and nothing outside it:
+
+- *the beat*: voice 1's note, read from the image of the sound-chip
+  registers that the tune's player keeps in RAM and copies to the chip every
+  frame (`$A474`, found in the player by its copy loop `LDA image,X / STA
+  $D400,X`). A move of half a semitone or more (|new − old| ≥ old/32) is a
+  step: the pose advances one phase of the idle cycle, and every fourth step
+  he turns round. Between steps the pose holds: he moves only when the music
+  moves;
+- *the hits*: voice 3's envelope read back from the chip itself (`$D41C`).
+  A rise of 6 or more in a frame is a note hit and queues a hop, answered
+  the moment he is on the ground, so the tune's double hits become double
+  bounces.
+
+Measured on the tune before designing it: gate-ons are rare (a hard
+restart every 160 frames, all three voices together); the notes move by
+frequency, legato, voice 1 and voice 3 every 10 frames, voice 2 an arpeggio
+every 3 frames; voice 3's envelope holds at $55 with a double attack (10
+frames apart) every 150 frames. So the beat had to come from the note
+changes, not the gates or the envelope, and the envelope gives the accents.
+`tools/verify_dance.py` (18 s on minimal64): 68 notes on voice 1, 56 pose
+steps, none off the beat, none unanswered; 17 turns, never closer than 39
+frames; 79 envelope rises, 14 hops, every one on a rise, no rise without a
+hop; he does not follow the player; the sprite colour registers carry the
+colour byte. Follow regression passes (walks after the player, hops at the
+player's jump, green). **Taught:** minimal64 implements both readback
+registers of the SID (`$D41B` oscillator 3, `$D41C` envelope 3) in its
+`sid_read`, and the values behave like the chip's: the on-chain machine can
+be listened to. Open: the assignment of colours to mechanics; Echo, Mirror,
+Wander, Shy, Sleeper (behaviour bytes 2–6 stand still until built).
 
 ## E12 — Chain-reactive tokens · proposed
 
@@ -307,8 +346,14 @@ block's hash can be stored at mint and rendered alongside). Colour: the
 room keeps its black-and-grey scheme; only the buddy is coloured, one
 dedicated colour per token (decided with the seven mechanics, E11).
 
+**Block format since E11's build (2026-09-06):** the marker is
+`MURAL02\0` and the contract writes 42 bytes after it: 32 seed, 8 digits,
+behaviour, colour. In the current build (`tony-chamber.prg`, 38,200 bytes)
+the block sits at file offset `0x043C9` (address `$4BC8`); find it by the
+marker, never by a fixed offset, until the base is frozen.
+
 **Open:** the owner's play-through in READY 64; the room base (the buddy
-engine) is not yet deployed; the contract that performs the 40-byte write.
+engine) is not yet deployed; the contract that performs the 42-byte write.
 
 ---
 
@@ -441,6 +486,11 @@ step 6.
 - Sprite colours are repainted in the top-of-frame IRQ (E5).
 - The idle animation plays its four frames as A B A B C D, fifteen PAL
   frames per phase, a 1.8 s loop (E15).
+- The SID's readback registers ($D41B oscillator 3, $D41C envelope 3) are
+  implemented in minimal64 and behave like the chip's (E11).
+- The tune's player keeps a 25-byte image of the SID registers at $A474
+  and copies it to the chip every frame; the tune moves its notes legato,
+  by frequency, with a hard restart only every 160 frames (E11).
 - The Movable segment is overwritten by the music copy at unpack; the
   dead menu at `$B462` can only run at boot (E6, E9).
 - Sealed exits have no behaviour; X wraps through zero (E9).

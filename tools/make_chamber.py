@@ -4,14 +4,18 @@ from a 32-byte seed - the block hash at render time, once a contract writes it.
 
 Produces (all generated, all committed):
   src/kickass/level/chamber/data.asm - the buddy level data pointing at
-      chamber-room.bin, plus the seed block: 8-byte marker "MURAL01\\0" and
-      32 seed bytes, 64-aligned so the seed never crosses a page
+      chamber-room.bin, plus the parameter block: 8-byte marker "MURAL02\\0",
+      32 seed bytes, 8 digits, the behaviour byte and the colour byte,
+      64-aligned so the block never crosses a page
   src/kickass/tony-chamber.asm       - tony-buddy.asm plus the mural routine,
       hooked between the room decompression and its char translation
   build.gradle.kts                   - the new include (idempotent)
 
-The seed block (48 bytes, 64-aligned): marker "MURAL01\0", 32 seed bytes
-(the block hash), 8 block-number digits (0-9 each).  What the seed draws:
+The parameter block (50 bytes, 64-aligned): marker "MURAL02\0", 32 seed
+bytes (the block hash), 8 block-number digits (0-9 each), one BEHAVIOUR byte
+(0 Follow, 1 Dance; 2-6 reserved for Echo, Mirror, Wander, Shy, Sleeper, which
+stand still until they exist) and one COLOUR byte (a C64 colour index, the
+buddy's own).  What the seed draws:
   - the WALL: 15 x 10 slots of 2x2 dotted bricks ($B0 $B1 / $B2 $B3), rows 2-21,
     cols 5-34.  Three bit streams run through the 32 bytes (A from byte 0, B from
     byte 19, C from byte 25, each wrapping at 32) and the DENSITY mode decides how
@@ -31,7 +35,14 @@ The seed block (48 bytes, 64-aligned): marker "MURAL01\0", 32 seed bytes
     against the right pillar (columns 27-34).
 The buddy gets the player's own dark backdrop (sprite 7, Y-expanded, the BG
 frame of whatever pose he wears) so the wall no longer shows through him.
-tools/stamp_mural.py writes seed and block number and predicts the wall.
+The buddy's mechanics: buddyUpdate is split into a DECIDE part (what does he
+want this frame: buddyMoving, buddyFacing, wantHop) and an ACT part (step,
+hop, write the sprite, choose the pose). Follow is the original decide code;
+the others live in buddyDecide. DANCE reads voice 3's envelope back from the
+SID ($D41C, a register the chip exposes in hardware): a rise of DANCE_RISE or
+more since the previous frame is a note hit, and on every hit he hops and
+turns round. No timing table, no outside data: he listens to the chip.
+tools/stamp_mural.py writes seed, block number, behaviour and colour.
 
 Run from repo root after tools/make_buddy.py and tools/build_chamber_room.py:
     python3 tools/make_chamber.py
@@ -39,6 +50,10 @@ Run from repo root after tools/make_buddy.py and tools/build_chamber_room.py:
 import hashlib
 import os
 
+import re as _re
+_sid = open("src/music/TonyLevelA000_V2.sid", "rb").read()
+_m = _re.search(rb"\xBD(..)\x9D\x00\xD4", _sid[124 + 2:], _re.S)      # LDA image,X / STA $D400,X
+SID_IMAGE = _m.group(1)[0] | (_m.group(1)[1] << 8)                       # the player's register image ($A474)
 DEFAULT_SEED = hashlib.sha256(b"block 25850267").digest()   # a typical roll: half-density wall, one candle high on the left
 
 # ------------------------------------------------------------- level data
@@ -61,14 +76,16 @@ src = sub(src, '''// "The Colonnade + Buddy" - the TALL pillar chamber (full 25 
 // from the seed block below. Map: tools/build_chamber_room.py; generator:
 // tools/make_chamber.py; seed: tools/stamp_mural.py.''')
 seed_bytes = ", ".join(f"${b:02X}" for b in DEFAULT_SEED)
-src = sub(src, "materials:\n", f'''// The seed block. A contract (or tools/stamp_mural.py) overwrites the 40
-// bytes after the marker: 32 seed bytes (the block hash) and 8 block-number
-// digits. The marker makes the block findable in any build; 64-aligned so it
-// never crosses a page.
+src = sub(src, "materials:\n", f'''// The parameter block. A contract (or tools/stamp_mural.py) overwrites the 42
+// bytes after the marker: 32 seed bytes (the block hash), 8 block-number
+// digits, the behaviour byte and the colour byte. The marker makes the block
+// findable in any build; 64-aligned so it never crosses a page.
 .align 64
-muralMarker: .byte $4D, $55, $52, $41, $4C, $30, $31, $00   // "MURAL01\\0"
-muralSeed:   .byte {seed_bytes}
-muralBlock:  .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
+muralMarker:     .byte $4D, $55, $52, $41, $4C, $30, $32, $00   // "MURAL02\\0"
+muralSeed:       .byte {seed_bytes}
+muralBlock:      .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
+muralBehaviour:  .byte 0                                        // 0 Follow, 1 Dance
+muralColour:     .byte 5                                        // green, the buddy's original colour
 
 materials:
 ''')
@@ -361,7 +378,7 @@ src = sub(src, """    lda c64lib.SPRITE_ENABLE
     sta c64lib.SPRITE_EXPAND_Y
     lda c64lib.SPRITE_2_COLOR   // and wears the player's backdrop colour
     sta c64lib.SPRITE_7_COLOR
-    lda #BUDDY_COLOR""")
+    lda muralColour             // the buddy's colour comes from the parameter block""")
 src = sub(src, """    lda buddyX
     sta c64lib.SPRITE_5_X
     sta c64lib.SPRITE_6_X
@@ -436,7 +453,179 @@ src = sub(src, """    lda eyesColor
     sta c64lib.SPRITE_7_COLOR
     lda #BUDDY_COLOR""", """    lda c64lib.SPRITE_2_COLOR   // sprite 7 is the buddy's backdrop now
     sta c64lib.SPRITE_7_COLOR
-    lda #BUDDY_COLOR""")
+    lda muralColour""")
+
+# --- the mechanics: split buddyUpdate into decide and act, dispatch on the behaviour byte
+src = sub(src, """.label BUDDY_HOP_COOL = 20
+""", """.label BUDDY_HOP_COOL = 20
+.label DANCE_RISE     = 6   // ENV3 must climb this much in one frame to count as a hit
+""")
+src = sub(src, """    // signed 16-bit distance to the player -> mag + targetRight
+""", """    // decide: Follow is below; the other mechanics are in buddyDecide
+    lda muralBehaviour
+    beq follow
+        jsr buddyDecide
+        jmp act
+    follow:
+
+    // signed 16-bit distance to the player -> mag + targetRight
+""")
+src = sub(src, """    // always turn towards the player
+    lda targetRight
+    sta buddyFacing
+
+    // one pixel towards him, clamped to the space between the pillars
+    lda buddyMoving
+    beq noMove
+        lda targetRight
+        beq stepLeft""", """    // always turn towards the player
+    lda targetRight
+    sta buddyFacing
+
+    // hop when the player leaves the ground
+    lda #0
+    sta wantHop
+    lda physPlayerY
+    cmp #(BUDDY_FLOOR_Y - 8)
+    bcs !+
+        inc wantHop
+    !:
+
+    act:
+    // one pixel the way he faces, clamped to the space between the pillars
+    lda buddyMoving
+    beq noMove
+        lda buddyFacing
+        beq stepLeft""")
+src = sub(src, """    // hop when the player leaves the ground
+    lda buddyHop
+    bne doHop
+        lda buddyCool
+        beq !+
+            dec buddyCool
+            jmp hopDone
+        !:
+        lda physPlayerY
+        cmp #(BUDDY_FLOOR_Y - 8)
+        bcs hopDone
+            lda #1
+            sta buddyHop""", """    // hop when the decide part asked for one
+    lda buddyHop
+    bne doHop
+        lda buddyCool
+        beq !+
+            dec buddyCool
+            jmp hopDone
+        !:
+        lda wantHop
+        beq hopDone
+            lda #1
+            sta buddyHop
+            lda #0
+            sta wantHop""")
+src = sub(src, """hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
+""", f"""hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
+wantHop:      .byte 0
+envPrev:      .byte 0
+stepCount:    .byte 0
+noteOld:      .word 0
+noteNew:      .word 0
+noteDiff:     .word 0
+noteStep:     .word 0
+
+// The mechanics other than Follow. Each leaves buddyMoving, buddyFacing and
+// wantHop for this frame; the act part of buddyUpdate does the rest.
+//
+// DANCE listens to two things, both inside the machine:
+//  - the beat: voice 1's note, read from the image of the sound-chip registers
+//    that the tune's player keeps in RAM and copies to the chip every frame
+//    (SID_IMAGE, found in the player by its copy loop). A move of half a
+//    semitone or more (|new - old| >= old / 32) is a step: the pose advances
+//    one phase, and every fourth step he turns round. Between steps the pose
+//    holds, so he moves only when the music moves.
+//  - the hits: voice 3's envelope read back from the chip itself ($D41C). A
+//    rise of DANCE_RISE or more in a frame is a note hit: a hop, queued until
+//    he is on the ground again, so a double hit is a double bounce.
+.label SID_IMAGE = ${SID_IMAGE:04X}
+buddyDecide: {{
+    lda #0
+    sta buddyMoving
+    lda muralBehaviour
+    cmp #1
+    beq dance
+        lda #0
+        sta wantHop
+        rts                         // 2-6 (Echo, Mirror, Wander, Shy, Sleeper): not built yet, he stands
+    dance:
+    reread:                         // the player runs in the interrupt: read lo, hi, lo again
+        lda SID_IMAGE
+        sta noteNew
+        lda SID_IMAGE + 1
+        sta noteNew + 1
+        lda SID_IMAGE
+        cmp noteNew
+        bne reread
+    sec                             // diff = |new - old|
+    lda noteNew
+    sbc noteOld
+    sta noteDiff
+    lda noteNew + 1
+    sbc noteOld + 1
+    sta noteDiff + 1
+    bpl absDone
+        sec
+        lda #0
+        sbc noteDiff
+        sta noteDiff
+        lda #0
+        sbc noteDiff + 1
+        sta noteDiff + 1
+    absDone:
+    lda noteOld                     // step = old / 32
+    sta noteStep
+    lda noteOld + 1
+    sta noteStep + 1
+    ldx #5
+    shift:
+        lsr noteStep + 1
+        ror noteStep
+        dex
+        bne shift
+    lda noteNew
+    sta noteOld
+    lda noteNew + 1
+    sta noteOld + 1
+    lda noteDiff                    // diff >= step ?
+    cmp noteStep
+    lda noteDiff + 1
+    sbc noteStep + 1
+    bcc noStep
+        inc buddyPhase              // one pose per note
+        inc stepCount
+        lda stepCount
+        and #3
+        bne noStep
+            lda buddyFacing         // every fourth note: turn round
+            eor #1
+            sta buddyFacing
+    noStep:
+    lda #0
+    sta buddyDelay                  // the pose moves only with the music
+    sta buddyCool                   // and he may bounce again the moment he lands
+    lda $D41C                       // ENV3: voice 3's envelope, from the chip
+    tax
+    sec
+    sbc envPrev
+    stx envPrev
+    bcc done                        // falling or flat: no hit
+    cmp #DANCE_RISE
+    bcc done
+        lda #1
+        sta wantHop                 // queued until he is on the ground
+    done:
+    rts
+}}
+""")
 open("src/kickass/tony-chamber.asm", "w").write(src)
 print("wrote src/kickass/tony-chamber.asm")
 

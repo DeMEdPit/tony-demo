@@ -510,7 +510,7 @@ doEachFrameTop: {
     bne !-
     lda c64lib.SPRITE_2_COLOR   // sprite 7 is the buddy's backdrop now
     sta c64lib.SPRITE_7_COLOR
-    lda #BUDDY_COLOR
+    lda muralColour
     sta c64lib.SPRITE_5_COLOR
     sta c64lib.SPRITE_6_COLOR
 
@@ -1798,6 +1798,7 @@ showEnemies: {
 .label BUDDY_GO_AT    = 52  // follow when farther than this
 .label BUDDY_HOP_LEN  = 14
 .label BUDDY_HOP_COOL = 20
+.label DANCE_RISE     = 6   // ENV3 must climb this much in one frame to count as a hit
 
 buddyInit: {
     lda #120
@@ -1826,9 +1827,16 @@ buddyUpdate: {
     sta c64lib.SPRITE_EXPAND_Y
     lda c64lib.SPRITE_2_COLOR   // and wears the player's backdrop colour
     sta c64lib.SPRITE_7_COLOR
-    lda #BUDDY_COLOR
+    lda muralColour             // the buddy's colour comes from the parameter block
     sta c64lib.SPRITE_5_COLOR
     sta c64lib.SPRITE_6_COLOR
+
+    // decide: Follow is below; the other mechanics are in buddyDecide
+    lda muralBehaviour
+    beq follow
+        jsr buddyDecide
+        jmp act
+    follow:
 
     // signed 16-bit distance to the player -> mag + targetRight
     sec
@@ -1875,10 +1883,20 @@ buddyUpdate: {
     lda targetRight
     sta buddyFacing
 
-    // one pixel towards him, clamped to the space between the pillars
+    // hop when the player leaves the ground
+    lda #0
+    sta wantHop
+    lda physPlayerY
+    cmp #(BUDDY_FLOOR_Y - 8)
+    bcs !+
+        inc wantHop
+    !:
+
+    act:
+    // one pixel the way he faces, clamped to the space between the pillars
     lda buddyMoving
     beq noMove
-        lda targetRight
+        lda buddyFacing
         beq stepLeft
             inc buddyX
             bne !+
@@ -1907,7 +1925,7 @@ buddyUpdate: {
                 sta buddyX
     noMove:
 
-    // hop when the player leaves the ground
+    // hop when the decide part asked for one
     lda buddyHop
     bne doHop
         lda buddyCool
@@ -1915,11 +1933,12 @@ buddyUpdate: {
             dec buddyCool
             jmp hopDone
         !:
-        lda physPlayerY
-        cmp #(BUDDY_FLOOR_Y - 8)
-        bcs hopDone
+        lda wantHop
+        beq hopDone
             lda #1
             sta buddyHop
+            lda #0
+            sta wantHop
     doHop:
         ldx buddyHop
         lda hopArc - 1, x
@@ -2068,6 +2087,106 @@ buddyCool:    .byte 0
 buddyPhase:   .byte 0
 buddyDelay:   .byte 0
 hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
+wantHop:      .byte 0
+envPrev:      .byte 0
+stepCount:    .byte 0
+noteOld:      .word 0
+noteNew:      .word 0
+noteDiff:     .word 0
+noteStep:     .word 0
+
+// The mechanics other than Follow. Each leaves buddyMoving, buddyFacing and
+// wantHop for this frame; the act part of buddyUpdate does the rest.
+//
+// DANCE listens to two things, both inside the machine:
+//  - the beat: voice 1's note, read from the image of the sound-chip registers
+//    that the tune's player keeps in RAM and copies to the chip every frame
+//    (SID_IMAGE, found in the player by its copy loop). A move of half a
+//    semitone or more (|new - old| >= old / 32) is a step: the pose advances
+//    one phase, and every fourth step he turns round. Between steps the pose
+//    holds, so he moves only when the music moves.
+//  - the hits: voice 3's envelope read back from the chip itself ($D41C). A
+//    rise of DANCE_RISE or more in a frame is a note hit: a hop, queued until
+//    he is on the ground again, so a double hit is a double bounce.
+.label SID_IMAGE = $A474
+buddyDecide: {
+    lda #0
+    sta buddyMoving
+    lda muralBehaviour
+    cmp #1
+    beq dance
+        lda #0
+        sta wantHop
+        rts                         // 2-6 (Echo, Mirror, Wander, Shy, Sleeper): not built yet, he stands
+    dance:
+    reread:                         // the player runs in the interrupt: read lo, hi, lo again
+        lda SID_IMAGE
+        sta noteNew
+        lda SID_IMAGE + 1
+        sta noteNew + 1
+        lda SID_IMAGE
+        cmp noteNew
+        bne reread
+    sec                             // diff = |new - old|
+    lda noteNew
+    sbc noteOld
+    sta noteDiff
+    lda noteNew + 1
+    sbc noteOld + 1
+    sta noteDiff + 1
+    bpl absDone
+        sec
+        lda #0
+        sbc noteDiff
+        sta noteDiff
+        lda #0
+        sbc noteDiff + 1
+        sta noteDiff + 1
+    absDone:
+    lda noteOld                     // step = old / 32
+    sta noteStep
+    lda noteOld + 1
+    sta noteStep + 1
+    ldx #5
+    shift:
+        lsr noteStep + 1
+        ror noteStep
+        dex
+        bne shift
+    lda noteNew
+    sta noteOld
+    lda noteNew + 1
+    sta noteOld + 1
+    lda noteDiff                    // diff >= step ?
+    cmp noteStep
+    lda noteDiff + 1
+    sbc noteStep + 1
+    bcc noStep
+        inc buddyPhase              // one pose per note
+        inc stepCount
+        lda stepCount
+        and #3
+        bne noStep
+            lda buddyFacing         // every fourth note: turn round
+            eor #1
+            sta buddyFacing
+    noStep:
+    lda #0
+    sta buddyDelay                  // the pose moves only with the music
+    sta buddyCool                   // and he may bounce again the moment he lands
+    lda $D41C                       // ENV3: voice 3's envelope, from the chip
+    tax
+    sec
+    sbc envPrev
+    stx envPrev
+    bcc done                        // falling or flat: no hit
+    cmp #DANCE_RISE
+    bcc done
+        lda #1
+        sta wantHop                 // queued until he is on the ground
+    done:
+    rts
+}
 
 // ---------------------------------------------------------------------
 // MURAL: the back wall, the sconces and the floor inscription are drawn from

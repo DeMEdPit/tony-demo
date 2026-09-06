@@ -120,14 +120,16 @@ chamberColonnade: // 0
         objectExt(SO_BAT, 0, 27, 4, 1)      // territory (sprites must not touch)
     ))
 
-// The seed block. A contract (or tools/stamp_mural.py) overwrites the 40
-// bytes after the marker: 32 seed bytes (the block hash) and 8 block-number
-// digits. The marker makes the block findable in any build; 64-aligned so it
-// never crosses a page.
+// The parameter block. A contract (or tools/stamp_mural.py) overwrites the 42
+// bytes after the marker: 32 seed bytes (the block hash), 8 block-number
+// digits, the behaviour byte and the colour byte. The marker makes the block
+// findable in any build; 64-aligned so it never crosses a page.
 .align 64
-muralMarker: .byte $4D, $55, $52, $41, $4C, $30, $31, $00   // "MURAL01\0"
-muralSeed:   .byte $C8, $3F, $A3, $8F, $73, $CA, $43, $B5, $26, $1D, $05, $9C, $B8, $3A, $8A, $B7, $17, $D2, $64, $39, $36, $49, $34, $68, $4C, $5E, $21, $83, $12, $84, $BE, $8C
-muralBlock:  .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
+muralMarker:     .byte $4D, $55, $52, $41, $4C, $30, $32, $00   // "MURAL02\0"
+muralSeed:       .byte $C8, $3F, $A3, $8F, $73, $CA, $43, $B5, $26, $1D, $05, $9C, $B8, $3A, $8A, $B7, $17, $D2, $64, $39, $36, $49, $34, $68, $4C, $5E, $21, $83, $12, $84, $BE, $8C
+muralBlock:      .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
+muralBehaviour:  .byte 0                                        // 0 Follow, 1 Dance
+muralColour:     .byte 5                                        // green, the buddy's original colour
 
 materials:
     .import binary "chamber-materials.bin"
