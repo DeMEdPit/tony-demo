@@ -16,8 +16,9 @@ import hashlib
 from pathlib import Path
 
 MARKER = b"MURAL01\x00"
-CANDLE_SLOT = [0, 1, 2, 3, 4, 1, 2, 3]
-CANDLE_COL = [5, 11, 17, 23, 29]      # left column of each 4-wide niche (rows 8-11); the 3x3 candle sits at +1..+3
+MODETAB = [0, 0, 1, 1, 1, 3, 3, 2]                          # quarter x2, half x3, eighth x2, dense x1
+KTAB = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9]   # slot column 0..13 (left column 5 + 2k)
+JTAB = [1, 2, 3, 4, 5, 2, 3, 4]                             # slot row 1..5 (top row 2 + 2j)
 
 
 class Stream:
@@ -36,12 +37,13 @@ class Stream:
 
 
 def predict(seed):
-    """-> (mode, wall rows of 15 bools, candle columns, candle count asked)
-    A candle at niche column L clears wall slots (3,k),(3,k+1),(4,k),(4,k+1)
-    with k = (L-5)//2 and draws the 3x3 block $BD-$C5 at rows 8-10, columns
-    L+1..L+3."""
+    """-> (mode, wall rows of 15 bools, candle or None)
+    candle = (left, top): the niche is rows top..top+3, columns left..left+3
+    (wall slots (j,k),(j,k+1),(j+1,k),(j+1,k+1) cleared, j=(top-2)//2,
+    k=(left-5)//2); the 3x3 block $BD-$C5 sits at rows top..top+2, columns
+    left+1..left+3."""
     A, B, C = Stream(seed, 0), Stream(seed, 19), Stream(seed, 25)
-    mode = seed[31] & 3
+    mode = MODETAB[seed[31] & 7]
     wall = []
     for r in range(10):
         row = []
@@ -49,27 +51,25 @@ def predict(seed):
             a, b, cc = A.bit(), B.bit(), C.bit()
             row.append(bool([a & b, a, a | b, a & b & cc][mode]))
         wall.append(row)
-    n = seed[30] & 3
-    picks = [seed[29] & 7, (seed[29] >> 3) & 7, seed[28] & 7][:n]
-    lit = []
-    for k in picks:
-        slot = CANDLE_SLOT[k]
-        if slot not in lit:
-            lit.append(slot)
-    return mode, wall, [CANDLE_COL[s] for s in lit], n
+    candle = None
+    if seed[30] & 3:
+        k = KTAB[seed[29] & 15]
+        j = JTAB[(seed[29] >> 4) & 7]
+        candle = (5 + 2 * k, 2 + 2 * j)
+    return mode, wall, candle
 
 
 def show(seed, digits):
-    mode, wall, cols, n = predict(seed)
-    names = ["quarter (A&B)", "half (A)", "three-quarter (A|B)", "eighth (A&B&C)"]
-    print(f"   density mode {mode}: {names[mode]}; candles asked {n}, lit at columns {cols or 'none'}; "
-          f"floor reads {''.join(str(d) for d in digits)}")
+    mode, wall, candle = predict(seed)
+    names = ["quarter (A&B)", "half (A)", "three-quarter (A|B, rare)", "eighth (A&B&C)"]
+    where = f"candle at column {candle[0] + 1}, rows {candle[1]}-{candle[1] + 2}" if candle else "no candle"
+    print(f"   density mode {mode}: {names[mode]}; {where}; floor reads {''.join(str(d) for d in digits)}")
     lit = set()
-    for c in cols:
-        lit |= {(c - 5) // 2, (c - 5) // 2 + 1}
+    if candle:
+        k, j = (candle[0] - 5) // 2, (candle[1] - 2) // 2
+        lit = {(j, k), (j, k + 1), (j + 1, k), (j + 1, k + 1)}
     for r, row in enumerate(wall):
-        line = "".join("i" if (r in (3, 4) and c in lit) else ("#" if v else ".") for c, v in enumerate(row))
-        print("   " + line + ("   (i = a candle's niche)" if r == 3 and lit else ""))
+        print("   " + "".join("i" if (r, c) in lit else ("#" if v else ".") for c, v in enumerate(row)))
 
 
 def main():

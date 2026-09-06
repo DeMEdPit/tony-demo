@@ -2078,14 +2078,14 @@ hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
 // lookup as the rest of the map.
 //   wall: 15 x 10 slots of 2x2 dotted bricks ($B0 $B1 / $B2 $B3) from row 2,
 //         column 5. Three bit streams (A from byte 0, B from 19, C from 25,
-//         wrapping at 32); density mode = seed[31] & 3:
-//         0 = A&B  1 = A  2 = A|B  3 = A&B&C
-//   candles: seed[30] & 3 of them, picked by 3-bit values (seed[29] bits 0-2,
-//         3-5; seed[28] bits 0-2) through the table 0,1,2,3,4,1,2,3 into five
-//         niches whose left column is 5/11/17/23/29; a niche lit twice stays
-//         one candle. The niche (rows 8-11, 4 columns = two wall slots by two)
-//         is cleared, then the 3x3 glowing candle $BD-$C5 is drawn at rows
-//         8-10, columns left+1..left+3.
+//         wrapping at 32); density mode = modeTable[seed[31] & 7]:
+//         0 = A&B (2/8)  1 = A (3/8)  3 = A&B&C (2/8)  2 = A|B (1/8, rare)
+//   candle: one at most, present when seed[30] & 3 != 0 (3 in 4). Column:
+//         kTable[seed[29] & 15] -> left = 5 + 2k; row: jTable[seed[29] >> 4 & 7]
+//         -> top = 2 + 2j (rows 4..12 only, never near the floor). The 4x4
+//         niche (rows top..top+3, columns left..left+3) is cleared, then the
+//         3x3 glowing candle $BD-$C5 is drawn at rows top..top+2, columns
+//         left+1..left+3.
 //   floor: the 8 block digits carved into row 23, columns 27-34 ($01 + digit).
 // ---------------------------------------------------------------------
 .label MURAL_DIGIT_BASE = $01
@@ -2102,7 +2102,9 @@ muralStamp: {
     lda #25
     sta sIdx + 2
     lda muralSeed + 31
-    and #3
+    and #7
+    tax
+    lda modeTable, x
     sta mode
 
     ldx #0
@@ -2201,32 +2203,72 @@ muralStamp: {
         jmp rowLoop
     rowDone:
 
-    // candles
-    lda #0
-    sta litMask
+    // the candle: present three times in four, its niche chosen from the seed
     lda muralSeed + 30
     and #3
-    sta candleCount
-    beq candlesDone
+    beq candleDone
     lda muralSeed + 29
-    and #7
-    jsr placeCandle
-    lda candleCount
-    cmp #2
-    bcc candlesDone
+    and #15
+    tax
+    lda kTable, x                  // slot column 0..13 -> left column 5 + 2k
+    asl
+    clc
+    adc #5
+    sta candleLeft
+    clc
+    adc #4
+    sta candleRight
     lda muralSeed + 29
     lsr
     lsr
     lsr
+    lsr
     and #7
-    jsr placeCandle
-    lda candleCount
-    cmp #3
-    bcc candlesDone
-    lda muralSeed + 28
-    and #7
-    jsr placeCandle
-    candlesDone:
+    tax
+    lda jTable, x                  // slot row 1..5 -> top row 2 + 2j
+    asl
+    clc
+    adc #2
+    tax                            // X = screen row
+    lda #0
+    sta rowCount
+    lda #$BD
+    sta charBase
+    nicheRow:
+        lda chamberLines.lo, x
+        sta clrPtr
+        sta drwPtr
+        lda chamberLines.hi, x
+        sta clrPtr + 1
+        sta drwPtr + 1
+        ldy candleLeft
+        lda #0
+        clr:                       // clear the niche row, four columns
+            sta clrPtr:$ffff, y
+            iny
+            cpy candleRight
+        bne clr
+        lda rowCount
+        cmp #3
+        bcs nextRow                // the fourth row is only cleared
+        ldy candleLeft
+        iny
+        lda charBase
+        drw:                       // three candle characters, one column in
+            sta drwPtr:$ffff, y
+            clc
+            adc #1
+            iny
+            cpy candleRight
+        bne drw
+        sta charBase               // next row's characters ($BD, $C0, $C3)
+        nextRow:
+        inx
+        inc rowCount
+        lda rowCount
+        cmp #4
+    bne nicheRow
+    candleDone:
 
     // the floor inscription
     ldx #0
@@ -2263,34 +2305,6 @@ muralStamp: {
         rts
     }
 
-    // in: A = 3-bit pick
-    placeCandle: {
-        tax
-        lda candleSlot, x
-        tax
-        lda candleBit, x
-        and litMask
-        bne done                 // already lit
-        lda candleBit, x
-        ora litMask
-        sta litMask
-        ldy candleCol, x         // the niche's left column
-        lda #0                   // clear the niche: rows 8-11, four columns
-        .for (var r = 8; r <= 11; r++) {
-            .for (var c = 0; c < 4; c++) {
-                sta SCREEN_MEM_0 + r*40 + c, y
-            }
-        }
-        .for (var r = 0; r < 3; r++) {          // the 3x3 candle, one column in
-            .for (var c = 0; c < 3; c++) {
-                lda #($BD + r*3 + c)
-                sta SCREEN_MEM_0 + (8 + r)*40 + 1 + c, y
-            }
-        }
-        done:
-        rts
-    }
-
     sIdx:        .byte 0, 19, 25
     sCur:        .byte 0, 0, 0
     sLeft:       .byte 0, 0, 0
@@ -2304,11 +2318,13 @@ muralStamp: {
     t1:          .byte 0
     t2:          .byte 0
     t3:          .byte 0
-    litMask:     .byte 0
-    candleCount: .byte 0
-    candleSlot:  .byte 0, 1, 2, 3, 4, 1, 2, 3
-    candleBit:   .byte 1, 2, 4, 8, 16
-    candleCol:   .byte 5, 11, 17, 23, 29
+    candleLeft:  .byte 0
+    candleRight: .byte 0
+    rowCount:    .byte 0
+    charBase:    .byte 0
+    modeTable:   .byte 0, 0, 1, 1, 1, 3, 3, 2         // quarter x2, half x3, eighth x2, dense x1
+    kTable:      .byte 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9
+    jTable:      .byte 1, 2, 3, 4, 5, 2, 3, 4
 }
 muralRowA:  .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 5
 muralRowA1: .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 6

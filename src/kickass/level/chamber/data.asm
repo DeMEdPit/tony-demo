@@ -126,8 +126,8 @@ chamberColonnade: // 0
 // never crosses a page.
 .align 64
 muralMarker: .byte $4D, $55, $52, $41, $4C, $30, $31, $00   // "MURAL01\0"
-muralSeed:   .byte $F8, $F7, $9B, $7F, $AE, $43, $D1, $F0, $1E, $A0, $8E, $F3, $B0, $71, $2A, $21, $A8, $4A, $FC, $BE, $7E, $9B, $D7, $66, $98, $69, $92, $8F, $C4, $53, $EC, $67
-muralBlock:  .byte 2, 5, 8, 5, 0, 2, 5, 0                   // block 25850250
+muralSeed:   .byte $C8, $3F, $A3, $8F, $73, $CA, $43, $B5, $26, $1D, $05, $9C, $B8, $3A, $8A, $B7, $17, $D2, $64, $39, $36, $49, $34, $68, $4C, $5E, $21, $83, $12, $84, $BE, $8C
+muralBlock:  .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
 
 materials:
     .import binary "chamber-materials.bin"
