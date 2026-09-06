@@ -58,6 +58,8 @@ field report on the first play-test and what it changed.
 - **`ONCHAIN-CASTLES.md`** — the on-chain PRG's patch map (offsets of every
   table), the castle patch scheme, the three verified samples, and two
   measured findings about the deployed bytes.
+- **`EXPERIMENTS.md`** — the experiment ledger: every experiment started,
+  its status, what it produced and taught, what is open.
 - **`TRAINER.md`** — the trainer builds and the full ROM-free verification
   (on-target runs + static scan).
 - **`VAULT.md`** — the Idol Vault board: design, route, how it's made.
