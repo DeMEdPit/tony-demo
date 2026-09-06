@@ -8,24 +8,25 @@ rebuilds that loop from the very same sprite bytes the PRG carries
 (build/sprites/tony-idling-right_*.bin, the left 24-pixel column of each
 frame: top half then bottom half) and emits one SVG per colour.
 
-Two layouts, both on a square black canvas (56x56 pixels by default):
+Layouts, all on a square black canvas:
 
-  floor  (default) a brick course from the level charset, the Chamber's own
-         floor, sits flush on the bottom edge and the buddy stands flush on
-         it: his lowest ink row is the row above the bricks' top line.
-  plain  no bricks; the buddy alone, centred.
+  plain  (default, 48 px: the owner's pick) the buddy alone, centred.
+  floor  a brick course from the level charset, the Chamber's own floor,
+         flush on the bottom edge, the buddy standing flush on it: his
+         lowest ink row is the row above the bricks' top line.
 
 Each frame is one <path> of run-length pixel rows; the four are switched with
 SMIL <animate opacity> in discrete steps. Frame A is drawn first so a viewer
 that shows a still image (a marketplace grid, a cached thumbnail) shows the
 pose the loop starts on.
 
-Layouts bricks (a full-width course of the small running-bond bricks, no
-seam), arch (an arched doorway in the level's dotted stone, small bricks
-around it; 64 px) and arch-brick (the doorway cut out of the small-brick
-wall) came from the owner's review of the first two.
+  bricks a full-width course of the small running-bond bricks, no seam.
+  arch   an arched doorway drawn in the level's dotted stone, small bricks
+         around it (64 px); arch-brick: the doorway cut out of the brick wall.
+The chosen files carry the bare name (buddy-idle-<colour>.svg); any other
+layout or size gets a -<layout>-<size> suffix.
 
-Usage:  tools/buddy_thumbnail.py [--layout LAYOUT] [--size 56]
+Usage:  tools/buddy_thumbnail.py [--layout LAYOUT] [--size 48]
                                  [--out deliverables/assets] [colour ...]
         tools/buddy_thumbnail.py --strip PNG        six phases of the loop
         tools/buddy_thumbnail.py --sheet PNG SPEC... comparison sheet, SPEC =
@@ -55,7 +56,8 @@ PHASE_SECONDS = 15 / 50.0              # fifteen PAL frames
 SPRITE_W = 24
 FLOOR_OFFSET = 3                       # start the course mid-run so the seam between the two courses falls
                                        # under the buddy, centred, and both edges cut through a brick
-DEFAULT_SIZE = 56                      # square canvas; a multiple of 8 so the floor is whole characters
+DEFAULT_LAYOUT, DEFAULT_SIZE = "plain", 48   # the owner's pick: the buddy alone, the middle size
+                                       # (sizes are multiples of 8 so the floor layouts use whole characters)
 
 
 def sprite_rows(data):
@@ -294,7 +296,7 @@ def colour(c):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("colours", nargs="*", default=["cyan"])
-    ap.add_argument("--layout", default="floor", choices=LAYOUTS)
+    ap.add_argument("--layout", default=DEFAULT_LAYOUT, choices=LAYOUTS)
     ap.add_argument("--size", type=int, default=DEFAULT_SIZE)
     ap.add_argument("--out", default="deliverables/assets")
     ap.add_argument("--strip", help="write a PNG strip of the six phases (first colour) instead of SVGs")
@@ -319,7 +321,8 @@ def main():
         return
     for c in a.colours:
         name, hexval = colour(c)
-        suffix = ("" if a.layout == "floor" else f"-{a.layout}") + (f"-{a.size}" if a.size != DEFAULT_SIZE and a.layout in ("floor", "plain", "bricks") else "")
+        sz = 64 if a.layout in ("arch", "arch-brick") else a.size
+        suffix = "" if (a.layout, sz) == (DEFAULT_LAYOUT, DEFAULT_SIZE) else f"-{a.layout}-{sz}"
         path = os.path.join(a.out, f"buddy-idle-{name}{suffix}.svg")
         open(path, "w").write(svg(frames, hexval, a.layout, a.size))
         print(f"{path}: {os.path.getsize(path)} bytes")

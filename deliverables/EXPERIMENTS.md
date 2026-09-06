@@ -374,11 +374,63 @@ opening cut straight out of the small-brick wall;
 `buddy-idle-cyan-arch-brick.svg`, 12,414 bytes). The arch SVG was verified
 in Chromium like the others (phase order, feet on the floor row).
 
-**Open:** which layout (owner's call); Solidity generator and its gas (the
-wall layouts carry a 12 KB path, which is fine for a view call but is the
-first thing to trim if the contract's bytecode budget matters); how each
-marketplace of interest treats SMIL in practice (measured, not assumed)
-before relying on the animation.
+**Decided (owner, 2026-09-06): the buddy alone, the middle size** (plain,
+48 px canvas; he fills half the tile). The seven files are
+`assets/buddy-idle-<colour>.svg`, 6,014 bytes each;
+`assets/buddy-thumbnail-seven.png` shows them together. The other layouts
+stay available in the tool (`--layout`, `--size`) and on the options
+sheet, but are no longer shipped as files.
+
+**Open:** Solidity generator and its gas; how each marketplace of interest
+treats SMIL in practice (measured, not assumed) before relying on the
+animation.
+
+---
+
+## Road to seven tokens · plan (2026-09-06)
+
+What stands between the Chamber as it is and seven minted tokens, in the
+order it has to happen. Owner decisions are marked ◆.
+
+1. **Engine.** Grow the parameter block from 40 to 42 bytes (behaviour,
+   colour, 32 seed bytes, 8 block digits) and build the seven mechanics
+   (E11) into one Chamber PRG, Dance first. Each mechanic gets a scripted
+   minimal64 test the way the wall got one (drive the buddy, read his
+   position and state back). ◆ Which colour goes with which mechanic;
+   ◆ the seven token names.
+2. **Owner play-through** of every mechanic in READY 64 (the E13 gate: no
+   mint before the suite passes and the owner has played it).
+3. **Freeze the base.** Hash the final PRG, record the block offset and
+   every patchable byte (a patch map like `ONCHAIN-CASTLES.md`'s), and
+   store the PRG in the deliverables with its size. From here the room
+   engine never changes; later fixes are new tokens (fix-forward).
+4. **Contracts.** (a) Store the Chamber PRG on chain as base 2 (the same
+   blob pattern the Tony token uses for base 1). (b) The seven-token
+   contract: per id two bytes (behaviour, colour); `prgFor(id)` = base 2
+   with the 42-byte block written at the fixed offset at render time
+   (`blockhash(block.number - 1)`, the block number as digits, the two
+   bytes); `tokenURI(id)` = JSON with name, description, attributes
+   (mechanic, colour, base hash), `image` = the idle-dance SVG built in
+   Solidity from the sprite rows and the colour byte (E15),
+   `animation_url` = the launcher's page over `prgFor(id)`. The
+   description carries the credits (Maciej Małecki, Rafał Dudek, Sami
+   Juntunen, MIT; nopsta, GPL-2.0) and the plain statement about nopsta
+   in the project's wording. ◆ The description text.
+5. **Prove the contract off chain.** A Python reference produces the
+   exact bytes the contract must produce (base 2 + block) and the SVG;
+   the Solidity is run in a local EVM against it, byte for byte, for all
+   seven ids and several block values; the produced PRGs run on the
+   minimal64 harness; the SVGs render in Chromium as in E15.
+6. **Deploy and mint** (owner's keys, owner's gas): base 2 blobs, the
+   token contract, seven mints. Then verify on READY 64 and on a
+   marketplace: fresh metadata, the SVG animating or at least frame A,
+   the wall changing between renders.
+7. **Afterwards.** Anything found later is fixed in new tokens, never in
+   these; the ledger keeps the findings.
+
+Estimate: step 1 about one session, steps 3–5 one to two sessions, steps
+2 and 6 are the owner's. Nothing in this plan touches the chain until
+step 6.
 
 ---
 
