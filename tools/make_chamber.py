@@ -32,7 +32,11 @@ buddy's own).  What the seed draws:
     two) is cleared, then the glowing candle of room 10, a 3x3 block $BD-$C5, is
     drawn at rows top..top+2, columns left+1..left+3;
   - the FLOOR: the eight block digits carved into the top course, right-aligned
-    against the right pillar (columns 27-34).
+    against the right pillar (columns 27-34);
+  - the BATS: seed bytes 24-27 choose each bat's flight path (eight authored
+    ones), start column and row, and whether it is there: one render in
+    sixteen has no bats, one in four a single bat. All within a band 30 px
+    above Tony's highest jump: they are scenery, never a danger.
 The buddy gets the player's own dark backdrop (sprite 7, Y-expanded, the BG
 frame of whatever pose he wears) so the wall no longer shows through him.
 The buddy's mechanics: buddyUpdate is split into a DECIDE part (what does he
@@ -86,9 +90,36 @@ muralSeed:       .byte {seed_bytes}
 muralBlock:      .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
 muralBehaviour:  .byte 0                                        // 0 Follow, 1 Dance
 muralColour:     .byte 5                                        // green, the buddy's original colour
+muralBats:       .byte 0, 0, 0, 0, 0, 0, 0, 0                   // written by the game at room entry, for the tests:
+                                                                // presence, pathA, colA, rowA, pathB, colB, rowB, 0
 
 materials:
 ''')
+src = sub(src, """// bat flight paths: long glides with slight rises and dips, all up high
+path0:          .byte   16, 0, 4, 1, 4, -1, 4, -1, 4, 1    // left third, X 64-128
+path1:          .byte   12, 0, 3, -1, 3, 1, 3, 1, 3, -1     // right, X 240-288
+
+pathsPtrsLo:    .byte <path0, <path1
+pathsPtrsHi:    .byte >path0, >path1
+pathLengths:    .byte 10, 10
+""", """// bat flight paths, eight of them, chosen per bat from the seed at every
+// render (pairs of frames and a rise or dip per frame; the bat turns round at
+// the end of its path; every path nets to zero so it keeps its height, and
+// none strays more than 8 px, so the bats stay 30 px above Tony's highest
+// jump). Travel = 2 px a frame times the frames: 24..64 px.
+path0:          .byte   16, 0, 4, 1, 4, -1, 4, -1, 4, 1    // the long glide (64 px)
+path1:          .byte   12, 0, 3, -1, 3, 1, 3, 1, 3, -1     // a shorter glide (48 px)
+path2:          .byte   8, 0, 4, 1, 4, -1                   // a short flutter (32 px)
+path3:          .byte   6, -1, 6, 1, 6, 1, 6, -1            // a wave (48 px)
+path4:          .byte   10, 0, 2, 2, 2, -2, 10, 0, 2, -2, 2, 2  // glides with two hops (56 px)
+path5:          .byte   4, 1, 4, -1, 4, 1, 4, -1, 4, 1, 4, -1   // bobbing (48 px)
+path6:          .byte   20, 0, 6, 1, 6, -1                  // a long glide with one dip (64 px)
+path7:          .byte   3, -2, 3, 2, 3, 2, 3, -2            // a tight nervous flutter (24 px)
+
+pathsPtrsLo:    .byte <path0, <path1, <path2, <path3, <path4, <path5, <path6, <path7
+pathsPtrsHi:    .byte >path0, >path1, >path2, >path3, >path4, >path5, >path6, >path7
+pathLengths:    .byte 10, 10, 6, 8, 12, 12, 6, 8
+""")
 src = sub(src, '.import binary "demo-level-materials.bin"', '.import binary "chamber-materials.bin"')
 src = sub(src, 'loadNegated("demo-level-charset.bin")', 'loadNegated("chamber-charset.bin")')
 os.makedirs("src/kickass/level/chamber", exist_ok=True)
@@ -312,6 +343,7 @@ muralStamp: {
         inx
         cpx #8
     bne digitLoop
+    jsr muralBatsStamp
     rts
 
     // in: X = stream (0-2); out: carry = next bit (MSB first); preserves X and Y
@@ -357,6 +389,99 @@ muralStamp: {
     modeTable:   .byte 3, 3, 3, 0, 0, 1, 1, 2         // eighth x3, quarter x2, half x2, dense x1: fewer bricks = more common
     kTable:      .byte 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9
     jTable:      .byte 1, 2, 3, 4, 5, 2, 3, 4
+}
+// BATS from the seed (the owner's ask): each bat's flight path (eight to
+// choose from), start column and row, and whether it is there at all, written
+// into the room's object tables before initObjects reads them, and reported
+// in muralBats. Seed bytes 24-27. Presence from seed[27] & 15: 0 none (one
+// render in sixteen), 1-2 only the left bat, 3-4 only the right, else both.
+// Rows 2-9 keep every path's lowest point 30 px above Tony's highest jump;
+// the left bat starts in columns 2-9 and the right in 24-29, so with travel
+// of at most 64 px they never meet (their sprites must not touch).
+muralBatsStamp: {
+    lda level_objectPositionXPtr.lo
+    sta writeX
+    sta writeX2
+    lda level_objectPositionXPtr.hi
+    sta writeX + 1
+    sta writeX2 + 1
+    lda level_objectPositionYPtr.lo
+    sta writeY
+    sta writeY2
+    lda level_objectPositionYPtr.hi
+    sta writeY + 1
+    sta writeY2 + 1
+    lda level_movableObjectValue2Ptr.lo
+    sta writeV
+    sta writeV2
+    lda level_movableObjectValue2Ptr.hi
+    sta writeV + 1
+    sta writeV2 + 1
+    // the left bat: path seed[24] & 7, column 2 + (seed[24] >> 3 & 7), row 2 + (seed[25] & 7)
+    ldy #0
+    lda muralSeed + 24
+    and #7
+    sta muralBats + 1
+    sta writeV: $ffff, y
+    lda muralSeed + 24
+    lsr
+    lsr
+    lsr
+    and #7
+    clc
+    adc #2
+    sta muralBats + 2
+    sta writeX: $ffff, y
+    lda muralSeed + 25
+    and #7
+    clc
+    adc #2
+    sta muralBats + 3
+    sta writeY: $ffff, y
+    // the right bat: path seed[25] >> 3 & 7, column 24 + colB[seed[26] & 7], row 2 + (seed[26] >> 3 & 7)
+    iny
+    lda muralSeed + 25
+    lsr
+    lsr
+    lsr
+    and #7
+    sta muralBats + 4
+    sta writeV2: $ffff, y
+    lda muralSeed + 26
+    and #7
+    tax
+    lda colB, x
+    sta muralBats + 5
+    sta writeX2: $ffff, y
+    lda muralSeed + 26
+    lsr
+    lsr
+    lsr
+    and #7
+    clc
+    adc #2
+    sta muralBats + 6
+    sta writeY2: $ffff, y
+    // presence
+    lda muralSeed + 27
+    and #15
+    sta muralBats
+    ldx #%11111111              // both
+    cmp #5
+    bcs presence
+    ldx #%11111110              // 3-4: the right bat only (bit 0 is the left bat)
+    cmp #3
+    bcs presence
+    ldx #%11111101              // 1-2: the left bat only
+    cmp #1
+    bcs presence
+    ldx #%11111100              // 0: a quiet night
+    presence:
+    txa
+    and level_roomStates
+    sta level_roomStates
+    rts
+    colB: .byte 24, 25, 26, 27, 28, 29, 26, 28
 }
 muralRowA:  .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 5
 muralRowA1: .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 6

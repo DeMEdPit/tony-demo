@@ -62,11 +62,30 @@ def predict(seed):
     return mode, wall, candle
 
 
+PATH_TRAVEL = [64, 48, 32, 48, 56, 48, 64, 24]        # pixels, per path
+PATH_NAMES = ["long glide", "shorter glide", "short flutter", "wave", "glide with two hops", "bobbing",
+              "long glide with a dip", "tight flutter"]
+COL_B = [24, 25, 26, 27, 28, 29, 26, 28]
+
+
+def bats(seed):
+    """What the seed does to the bats (mirrors muralBatsStamp): presence, and (path, column, row) per bat."""
+    pres = seed[27] & 15
+    presence = "none" if pres == 0 else "left only" if pres <= 2 else "right only" if pres <= 4 else "both"
+    a = (seed[24] & 7, 2 + ((seed[24] >> 3) & 7), 2 + (seed[25] & 7))
+    b = ((seed[25] >> 3) & 7, COL_B[seed[26] & 7], 2 + ((seed[26] >> 3) & 7))
+    return presence, a, b
+
+
 def show(seed, digits):
     mode, wall, candle = predict(seed)
     names = ["quarter (A&B)", "half (A)", "three-quarter (A|B, rare)", "eighth (A&B&C)"]
     where = f"candle at column {candle[0] + 1}, rows {candle[1]}-{candle[1] + 2}" if candle else "no candle"
     print(f"   density mode {mode}: {names[mode]}; {where}; floor reads {''.join(str(d) for d in digits)}")
+    presence, a, b = bats(seed)
+    def bat(t):
+        return f"path {t[0]} ({PATH_NAMES[t[0]]}, {PATH_TRAVEL[t[0]]} px), column {t[1]}, row {t[2]}"
+    print(f"   bats: {presence}; left {bat(a)}; right {bat(b)}")
     lit = set()
     if candle:
         k, j = (candle[0] - 5) // 2, (candle[1] - 2) // 2

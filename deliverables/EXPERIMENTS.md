@@ -299,7 +299,7 @@ measured 10 jumps in 120 s, plan changes 40. The long measurements needed
 the harness to take its script from a file (`m64run PRG @script`), since
 a two-minute frame-by-frame script exceeds the command line.
 
-The base is now **feature complete**: one build, 40,504 bytes, serves all
+The base is now **feature complete**: one build, 40,582 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is
 still open): Shadow blue (the owner's ask: the darkest of the seven for
 the Shadow; the C64's blue, which reads as a dark purple on a black
@@ -465,10 +465,34 @@ dedicated colour per token (decided with the seven mechanics, E11).
 
 **Block format since E11's build (2026-09-06):** the marker is
 `MURAL02\0` and the contract writes 42 bytes after it: 32 seed, 8 digits,
-behaviour, colour. In the current build (`tony-chamber.prg`, 40,504 bytes,
+behaviour, colour. In the current build (`tony-chamber.prg`, 40,582 bytes,
 all seven mechanics) the block sits at file offset `0x04CC9` (address
 `$54C8`); find it by the marker, never by a fixed offset, until the base is
 frozen.
+
+**The bats join the render (owner's ask, 2026-09-06).** The engine flies
+each bat along an authored path chosen by one byte, so the seed now picks,
+at every render, each bat's path (eight authored: glides, flutters, a wave,
+hops, bobbing, a dip; travel 24–64 px, every path netting to zero and
+straying at most 8 px), its start column (left bat 2–9, right bat 24–29,
+so with the travel they never meet: their sprites must not touch), its row
+(2–9), and whether it is there: seed byte 27's low four bits give a quiet
+night with no bats one render in sixteen, a single bat one in four, both
+otherwise. Seed bytes 24–27; written into the room's object tables by
+`muralBatsStamp` before `initObjects` reads them, presence through the
+room-state bits, and the choices reported in eight bytes after the block
+for the tests. Safety was the design constraint: the bats stay a band
+above Tony's reach (a bat's lowest point at least 30 px above the top of
+his jump), because a bat within reach would bring the game's death, five
+lives and game-over screen into an art token. `tools/verify_bats.py` (16
+seeds on minimal64): every report byte as the Python model predicts, the
+sprites present or hidden as the seed says, each bat starting at its
+column and row (the engine places a bat 4 px below its row's top, a
+measured fact), travelling its path's distance, keeping within 8 px of its
+row, never within 30 px of the jump line, the two never meeting; one torn
+sprite-register read in 300 frames at the 256 crossing is a sampling
+artefact and is dropped. `assets`: `screenshots/chamber-bats-m64.png`
+(four seeds: both bats, left only, right only, none).
 
 **Open:** the owner's play-through in READY 64; the room base (the buddy
 engine) is not yet deployed; the contract that performs the 42-byte write.
@@ -610,6 +634,9 @@ step 6.
   for the buddy and 56..286 for Tony (E11).
 - The player's X and Y are settled before the buddy's update runs in a
   frame; the duck's animation number is written after it (E11).
+- A bat's sprite starts 4 px below the top of its row (Y = 54 + 8·row),
+  X = 24 + 8·column; a bat's path is replayed with the same signs after
+  the turn, so a path must net to zero to hold its height (E14).
 - Tony's jump: 26 frames, apex 23 pixels, three frames each of −4, −2 and
   −1 with a hover at the top, then the mirror image down; the duck's four
   frames are standing, bending, down, rising (E11).

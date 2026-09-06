@@ -130,6 +130,8 @@ muralSeed:       .byte $C8, $3F, $A3, $8F, $73, $CA, $43, $B5, $26, $1D, $05, $9
 muralBlock:      .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
 muralBehaviour:  .byte 0                                        // 0 Follow, 1 Dance
 muralColour:     .byte 5                                        // green, the buddy's original colour
+muralBats:       .byte 0, 0, 0, 0, 0, 0, 0, 0                   // written by the game at room entry, for the tests:
+                                                                // presence, pathA, colA, rowA, pathB, colB, rowB, 0
 
 materials:
     .import binary "chamber-materials.bin"
@@ -176,13 +178,23 @@ level_objectSizes:          .fill       _level_objectSizes.size(),          _lev
 
 level_roomStates:           .fill       30, 0
 
-// bat flight paths: long glides with slight rises and dips, all up high
-path0:          .byte   16, 0, 4, 1, 4, -1, 4, -1, 4, 1    // left third, X 64-128
-path1:          .byte   12, 0, 3, -1, 3, 1, 3, 1, 3, -1     // right, X 240-288
+// bat flight paths, eight of them, chosen per bat from the seed at every
+// render (pairs of frames and a rise or dip per frame; the bat turns round at
+// the end of its path; every path nets to zero so it keeps its height, and
+// none strays more than 8 px, so the bats stay 30 px above Tony's highest
+// jump). Travel = 2 px a frame times the frames: 24..64 px.
+path0:          .byte   16, 0, 4, 1, 4, -1, 4, -1, 4, 1    // the long glide (64 px)
+path1:          .byte   12, 0, 3, -1, 3, 1, 3, 1, 3, -1     // a shorter glide (48 px)
+path2:          .byte   8, 0, 4, 1, 4, -1                   // a short flutter (32 px)
+path3:          .byte   6, -1, 6, 1, 6, 1, 6, -1            // a wave (48 px)
+path4:          .byte   10, 0, 2, 2, 2, -2, 10, 0, 2, -2, 2, 2  // glides with two hops (56 px)
+path5:          .byte   4, 1, 4, -1, 4, 1, 4, -1, 4, 1, 4, -1   // bobbing (48 px)
+path6:          .byte   20, 0, 6, 1, 6, -1                  // a long glide with one dip (64 px)
+path7:          .byte   3, -2, 3, 2, 3, 2, 3, -2            // a tight nervous flutter (24 px)
 
-pathsPtrsLo:    .byte <path0, <path1
-pathsPtrsHi:    .byte >path0, >path1
-pathLengths:    .byte 10, 10
+pathsPtrsLo:    .byte <path0, <path1, <path2, <path3, <path4, <path5, <path6, <path7
+pathsPtrsHi:    .byte >path0, >path1, >path2, >path3, >path4, >path5, >path6, >path7
+pathLengths:    .byte 10, 10, 6, 8, 12, 12, 6, 8
 
 demoLevelCharset: {
     loadNegated("chamber-charset.bin")

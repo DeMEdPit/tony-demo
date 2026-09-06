@@ -2987,6 +2987,7 @@ muralStamp: {
         inx
         cpx #8
     bne digitLoop
+    jsr muralBatsStamp
     rts
 
     // in: X = stream (0-2); out: carry = next bit (MSB first); preserves X and Y
@@ -3032,6 +3033,99 @@ muralStamp: {
     modeTable:   .byte 3, 3, 3, 0, 0, 1, 1, 2         // eighth x3, quarter x2, half x2, dense x1: fewer bricks = more common
     kTable:      .byte 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 9
     jTable:      .byte 1, 2, 3, 4, 5, 2, 3, 4
+}
+// BATS from the seed (the owner's ask): each bat's flight path (eight to
+// choose from), start column and row, and whether it is there at all, written
+// into the room's object tables before initObjects reads them, and reported
+// in muralBats. Seed bytes 24-27. Presence from seed[27] & 15: 0 none (one
+// render in sixteen), 1-2 only the left bat, 3-4 only the right, else both.
+// Rows 2-9 keep every path's lowest point 30 px above Tony's highest jump;
+// the left bat starts in columns 2-9 and the right in 24-29, so with travel
+// of at most 64 px they never meet (their sprites must not touch).
+muralBatsStamp: {
+    lda level_objectPositionXPtr.lo
+    sta writeX
+    sta writeX2
+    lda level_objectPositionXPtr.hi
+    sta writeX + 1
+    sta writeX2 + 1
+    lda level_objectPositionYPtr.lo
+    sta writeY
+    sta writeY2
+    lda level_objectPositionYPtr.hi
+    sta writeY + 1
+    sta writeY2 + 1
+    lda level_movableObjectValue2Ptr.lo
+    sta writeV
+    sta writeV2
+    lda level_movableObjectValue2Ptr.hi
+    sta writeV + 1
+    sta writeV2 + 1
+    // the left bat: path seed[24] & 7, column 2 + (seed[24] >> 3 & 7), row 2 + (seed[25] & 7)
+    ldy #0
+    lda muralSeed + 24
+    and #7
+    sta muralBats + 1
+    sta writeV: $ffff, y
+    lda muralSeed + 24
+    lsr
+    lsr
+    lsr
+    and #7
+    clc
+    adc #2
+    sta muralBats + 2
+    sta writeX: $ffff, y
+    lda muralSeed + 25
+    and #7
+    clc
+    adc #2
+    sta muralBats + 3
+    sta writeY: $ffff, y
+    // the right bat: path seed[25] >> 3 & 7, column 24 + colB[seed[26] & 7], row 2 + (seed[26] >> 3 & 7)
+    iny
+    lda muralSeed + 25
+    lsr
+    lsr
+    lsr
+    and #7
+    sta muralBats + 4
+    sta writeV2: $ffff, y
+    lda muralSeed + 26
+    and #7
+    tax
+    lda colB, x
+    sta muralBats + 5
+    sta writeX2: $ffff, y
+    lda muralSeed + 26
+    lsr
+    lsr
+    lsr
+    and #7
+    clc
+    adc #2
+    sta muralBats + 6
+    sta writeY2: $ffff, y
+    // presence
+    lda muralSeed + 27
+    and #15
+    sta muralBats
+    ldx #%11111111              // both
+    cmp #5
+    bcs presence
+    ldx #%11111110              // 3-4: the right bat only (bit 0 is the left bat)
+    cmp #3
+    bcs presence
+    ldx #%11111101              // 1-2: the left bat only
+    cmp #1
+    bcs presence
+    ldx #%11111100              // 0: a quiet night
+    presence:
+    txa
+    and level_roomStates
+    sta level_roomStates
+    rts
+    colB: .byte 24, 25, 26, 27, 28, 29, 26, 28
 }
 muralRowA:  .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 5
 muralRowA1: .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 6
