@@ -2308,9 +2308,11 @@ sleeperDecide: {
 //    frame for frame: every step, every jump, every duck, in order, until the
 //    recording runs out (which it never does: it is always the last 4 s).
 // MIRROR stands at the player's reflection about the centre line between the
-//    pillars (x' = MIRROR_SUM - x, clamped to the pillars) and contradicts him
-//    the other way too: crouches while he is in the air, bounces while he is
-//    crouched (a funhouse mirror, the owner's idea).
+//    pillars (x' = MIRROR_SUM - x, clamped to the pillars), faces the way the
+//    player's reflection would (the opposite of the player's facing, read from
+//    his animation every frame, so a turn in place is answered too), and
+//    contradicts him the other way as well: crouches while he is in the air,
+//    bounces while he is crouched (a funhouse mirror, the owner's idea).
 // WANDER lives there: a plan at a time (stroll, pause, sit, a jump on the
 //    spot), the choice and its length rolled from a shift register stirred
 //    every frame by the chip's oscillator 3 ($D41B), the pauses lengthened by
@@ -2525,6 +2527,17 @@ buddyDecide: {
             sta target
     placed:
     jsr buddyPlace
+    lda physPlayerAnimation         // face the way his reflection faces: the opposite of him
+    cmp #20
+    bcs mirrorFaced
+    tay
+    lda echoPose, y
+    and #3
+    cmp #2
+    beq mirrorFaced                 // an animation without a side: keep facing
+    eor #1
+    sta buddyFacing
+    mirrorFaced:
     lda physPlayerY                 // he is in the air: crouch (shown once the buddy is on the ground)
     cmp #(BUDDY_FLOOR_Y - 8)
     bcs mirrorGround

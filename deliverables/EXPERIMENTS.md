@@ -299,7 +299,7 @@ measured 10 jumps in 120 s, plan changes 40. The long measurements needed
 the harness to take its script from a file (`m64run PRG @script`), since
 a two-minute frame-by-frame script exceeds the command line.
 
-The base is now **feature complete**: one build, 40,248 bytes, serves all
+The base is now **feature complete**: one build, 40,504 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is
 still open): Shadow blue (the owner's ask: the darkest of the seven for
 the Shadow; the C64's blue, which reads as a dark purple on a black
@@ -328,7 +328,13 @@ Mirror crouches (shown once he is on the ground; he cannot crouch
 mid-bounce), and while Tony is crouched the Mirror bounces without pause
 until Tony stands. Left-right unchanged. Measured: Tony in the air 21
 frames, the Mirror crouched throughout; Tony down 120 frames, the Mirror
-bounced five times with four frames on the ground between. Open: the owner's
+bounced five times with four frames on the ground between. Then, from
+play: a crouched Tony turning in place got no answer, since the Mirror's
+facing came only from his own movement. His facing is now the opposite
+of Tony's at every frame, read from Tony's animation (the Echo's pose
+table gives the side), so a turn in place, crouched or standing, flips
+him the other way; measured: two turns while crouched, answered, and the
+opposite facing at every frame of the run. Open: the owner's
 play-through of the seven in READY 64, the colour mapping, then the freeze.
 
 ## E12 — Chain-reactive tokens · proposed
@@ -459,9 +465,9 @@ dedicated colour per token (decided with the seven mechanics, E11).
 
 **Block format since E11's build (2026-09-06):** the marker is
 `MURAL02\0` and the contract writes 42 bytes after it: 32 seed, 8 digits,
-behaviour, colour. In the current build (`tony-chamber.prg`, 40,248 bytes,
-all seven mechanics) the block sits at file offset `0x04BC9` (address
-`$53C8`); find it by the marker, never by a fixed offset, until the base is
+behaviour, colour. In the current build (`tony-chamber.prg`, 40,504 bytes,
+all seven mechanics) the block sits at file offset `0x04CC9` (address
+`$54C8`); find it by the marker, never by a fixed offset, until the base is
 frozen.
 
 **Open:** the owner's play-through in READY 64; the room base (the buddy
