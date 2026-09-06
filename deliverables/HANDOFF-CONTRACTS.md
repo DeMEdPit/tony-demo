@@ -71,8 +71,11 @@ every render from the current block. The room itself stays black and grey.
 - **Colours (colour byte, a C64 colour index):** the owner's seven: cyan 3,
   green 5, yellow 7, light blue 14, blue 6, light red 10, purple 4. Which
   colour goes with which mechanic is **not decided yet**.
-- **The wall (seed bytes):** drawn from 32 bytes: the block hash written at
-  render time, so every fresh render is a different wall. The **block
+- **The wall, the candle and the bats (seed bytes):** drawn from 32 bytes:
+  the block hash written at render time, so every fresh render is a
+  different wall, a different candle, and different bats (which of eight
+  flight paths each flies, where it starts, and whether it is there: no
+  bats one render in sixteen, a single bat one in four). The **block
   number** is carved into the floor from 8 digit bytes.
 - **The image:** the buddy alone in his colour, doing the idle dance the
   game plays when he stands still, as an animated SVG built in the contract.
@@ -109,8 +112,16 @@ viewer sees are, literally, that block's hash: three bit streams run
 through the bytes and decide which of 150 brick slots are filled. Three
 seed bits pick how full the wall is (fewer bricks is common, a nearly full
 wall is the rare roll) and two more decide whether one of the room's
-candles is lit and where. Every fresh render is a different wall, and no
+candles is lit and where; four more bytes choose the bats. Every fresh
+render is a different wall, and no
 one, including the contract, can say in advance what it will be.
+
+**The bats are the block too.** The two bats near the ceiling fly paths
+the game already knows how to fly; the same 32 bytes choose which path
+each flies, where it starts and how high, and whether it is there at all.
+One render in sixteen is a quiet night with no bats; one in four has a
+single bat. They stay well above Tony's reach: they are scenery, never a
+danger.
 
 **The number in the floor is the block number.** Eight digits carved into
 the floor's right end say which block the render was made at. So a render
@@ -153,9 +164,9 @@ rules of section 1):
 
 ## 4. The base program and its parameter block
 
-Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 40,504 bytes,
+Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 40,582 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `3cb6456b533b48171c7c9ed7ce6ecdd6a3558d13bcd7d4cabcf8ffece3f96e23`.
+sha256 `ee23bf0063835829869c452fc7ce7a3f9e28ad9df8191476d399b1e58e05cbaf`.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its
@@ -183,7 +194,9 @@ How the seed is used (so a test can predict a wall; the Python model is
 the wall density through the table `3,3,3,0,0,1,1,2` (fewer bricks common,
 the near-full wall rare); `seed[30] & 3 != 0` means a candle (three in
 four); `seed[29]` places it (low 4 bits column, next 3 bits row). Any 32
-bytes are valid. A wall seen at block N cannot be recomputed on chain more
+bytes are valid; bytes 24–27 choose the bats (paths, start columns and
+rows, presence; the model is `bats()` in `tools/stamp_mural.py`). A wall
+seen at block N cannot be recomputed on chain more
 than 256 blocks later; the renders are impressions, not a series. If a
 permanent "birth wall" is wanted, store the mint block's hash at mint and
 render it alongside (owner's decision, not made).
@@ -267,8 +280,9 @@ which makes the test trivial. Shape of the file:
 - **Runs.** Every produced PRG must boot and behave on the native minimal64
   harness (`tools/m64-harness/m64run`, built from nopsta's source):
   `tools/verify_buddy.py PRG` drives all seven mechanics and checks each
-  against what it must do. `tools/stamp_mural.py PRG --show` predicts the
-  wall for the seed you wrote.
+  against what it must do; `tools/verify_bats.py PRG` checks the seeded
+  bats over sixteen seeds. `tools/stamp_mural.py PRG --show` predicts the
+  wall, the candle and the bats for the seed you wrote.
 - **Image.** The SVG for each colour equals the reference file.
 - **Page.** `dataURI(prg, modes)` opens and plays in READY 64 and in the
   OpenSea frame; the owner plays each mechanic there (the gate).
@@ -325,12 +339,13 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 | path | what |
 |---|---|
-| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (40,504 bytes; default block: Follow, green, block 25850267) |
+| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (40,582 bytes; default block: Follow, green, block 25850267) |
 | `deliverables/prg/minimal64/tony-chamber-the-<name>.prg` | the same build stamped for each of the seven (provisional colours) |
 | `tools/make_chamber.py` | generates the Chamber sources from the buddy build (block, mural, mechanics) |
 | `tools/build_chamber_room.py` | the room map, charset and materials |
 | `tools/stamp_mural.py` | writes seed, digits, behaviour, colour into a PRG; `--show` predicts the wall |
 | `tools/verify_buddy.py` | scripted tests of all seven mechanics on minimal64 |
+| `tools/verify_bats.py` | the seeded bats checked over sixteen seeds on minimal64 |
 | `tools/buddy_thumbnail.py` | the SVG reference; `deliverables/assets/buddy-idle-*.svg` its outputs |
 | `tools/m64-harness/` | the native minimal64 test runner (`build.sh` builds it from nopsta's source) |
 | `deliverables/EXPERIMENTS.md` | the ledger: every decision, measurement and open item |
