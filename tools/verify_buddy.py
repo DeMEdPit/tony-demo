@@ -266,9 +266,20 @@ def shy(prg, A):
     cowered = any(crouch[f] for f in range(60))
     crept = bx[-1] - bx[170]                               # he came back while the player was far
     far_dist = min(dist[170:])
-    ok = fled >= 40 and pinned is not None and closest_free >= 44 and cowered and crept >= 30 and far_dist >= 100 and col == 10
+    # the corner escape (found by the owner in play, kept on purpose): cornered at the pillar and crouching, he bolts
+    # the other way the moment the player squeezes past him, since "away from the player" has flipped sides
+    p2 = stamp(prg, 5, 10)
+    u = frames(p2, A, ["playerX", "buddyX", "buddyCrouch"], [(LEFT, 130)])
+    os.unlink(p2)
+    ux, ub, uc = u["playerX"], u["buddyX"], u["buddyCrouch"]
+    cornered = next((f for f in range(130) if ub[f] <= MIN_X and uc[f]), None)
+    passed = next((f for f in range(130) if ux[f] < ub[f]), None)
+    escaped = next((f for f in range(130) if passed is not None and f > passed and ub[f] >= 100 and not uc[f]), None)
+    escape_ok = cornered is not None and passed is not None and escaped is not None and cornered < passed < escaped
+    ok = fled >= 40 and pinned is not None and closest_free >= 44 and cowered and crept >= 30 and col == 10 and escape_ok
     return report("SHY", ok, f"player approaches: buddy runs {fled} px, at the pillar by frame {pinned}, closest while free {closest_free} px, cowers {cowered}; "
-                  f"player leaves: buddy creeps back {crept} px, nearest he comes {far_dist} px, colour {col}")
+                  f"player leaves: buddy creeps back {crept} px (nearest he came {far_dist} px); corner escape: cornered at {cornered}, "
+                  f"player squeezes past at {passed}, buddy bolts the other way by {escaped}; colour {col}")
 
 
 def sleeper(prg, A):
