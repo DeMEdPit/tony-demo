@@ -61,7 +61,7 @@ every render from the current block. The room itself stays black and grey.
   | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, jumps now and then, on the chip's dice | built, tested |
   | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, bolts past you when you are almost on him, creeps back when you leave | built, tested |
   | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
-  | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and changes it, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats | built, tested |
+  | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and teleports into the next, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats | built, tested |
 
   One build serves all eight: the byte selects the mechanic at run time.
   The Glitch's blackout is gated on his mechanic byte, not on the seed, so
@@ -168,9 +168,9 @@ rules of section 1):
 
 ## 4. The base program and its parameter block
 
-Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 40,838 bytes,
+Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 41,094 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `4481ef5440459d35d207ce1a5745c496962562201d262ef586d55b61fd2f2bcd`.
+sha256 `30c538065f2b73d80fd59f28882b55d4c0b7ee625d82ae92258c0623c068f630`.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its
@@ -187,8 +187,8 @@ The **parameter block** is 50 bytes, 64-byte aligned in memory:
 | 49 | 1 | colour, 0–15 | yes: the token's colour |
 
 So the contract writes **42 bytes** at `marker + 8`. In the current build the
-marker is at file offset `0x04DC1` and the 42 bytes start at file offset
-`0x04DC9` (address `$55C8`); file offsets count the 2-byte load address. The
+marker is at file offset `0x04EC1` and the 42 bytes start at file offset
+`0x04EC9` (address `$56C8`); file offsets count the 2-byte load address. The
 digits are bytes 0–9, not ASCII. Bytes never written keep the file's
 defaults (block 25850267, Follow, green).
 
@@ -223,7 +223,7 @@ render it alongside (owner's decision, not made).
     prg[OFF + 41] = bytes1(colour[id]);
     ```
 
-    (`OFF` = the seed's file offset, `0x04DC9` in the current build; write it
+    (`OFF` = the seed's file offset, `0x04EC9` in the current build; write it
     as a constant only at the freeze.)
 4. `animation_url = READY64_LAUNCHER.dataURI(prg, modes)`. **The `modes`
    value is not known here**: read the deployed Launcher's ABI and source and
@@ -343,7 +343,7 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 | path | what |
 |---|---|
-| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (40,838 bytes; default block: Follow, green, block 25850267) |
+| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (41,094 bytes; default block: Follow, green, block 25850267) |
 | `deliverables/prg/minimal64/tony-chamber-the-<name>.prg` | the same build stamped for each of the eight (provisional colours) |
 | `tools/make_chamber.py` | generates the Chamber sources from the buddy build (block, mural, mechanics) |
 | `tools/build_chamber_room.py` | the room map, charset and materials |

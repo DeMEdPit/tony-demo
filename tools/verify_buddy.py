@@ -336,10 +336,16 @@ def glitch(prg, A):
     palette = sorted(set(colours) - {0})
     blinks = colours.count(0)
     carved = digits == ref and all(digits)
-    ok = (len(worn) >= 3 and changes >= 3 and len(palette) >= 6 and 0 < blinks < n // 8 and max(bx) - min(bx) >= 40
+    # teleports: a jump of 16 px or more between frames (a change of mechanic teleports him; one burst in eight too)
+    jumps = [f for f in range(1, n) if abs(bx[f] - bx[f - 1]) >= 16]
+    change_frames = [f for f in range(1, n) if mode[f] != mode[f - 1]]
+    teleported_on_change = sum(1 for c in change_frames if any(c <= j <= c + 12 for j in jumps))
+    ok = (len(worn) >= 3 and changes >= 3 and len(palette) >= 6 and 0 < blinks < n // 6 and max(bx) - min(bx) >= 40
+          and teleported_on_change >= 2 and MIN_X <= min(bx) and max(bx) <= MAX_X
           and not any(wall) and carved and not (en & 0b11000))
-    return report("GLITCH", ok, f"{n / 50:.0f} s: wore mechanics {worn} with {changes} changes; colours seen {palette} with {blinks} blink frames; "
-                  f"X {min(bx)}..{max(bx)}; room: wall cells lit {sum(1 for w in wall if w)} of 600, block number carved as in an ordinary room {carved}, "
+    return report("GLITCH", ok, f"{n / 50:.0f} s: wore mechanics {worn} with {changes} changes ({teleported_on_change} of them teleporting), "
+                  f"{len(jumps)} teleports in all; colours seen {palette} with {blinks} blink frames; X {min(bx)}..{max(bx)}; "
+                  f"room: wall cells lit {sum(1 for w in wall if w)} of 600, block number carved as in an ordinary room {carved}, "
                   f"bat sprites enabled {bool(en & 8)},{bool(en & 16)}")
 
 

@@ -300,7 +300,7 @@ measured 10 jumps in 120 s, plan changes 40. The long measurements needed
 the harness to take its script from a file (`m64run PRG @script`), since
 a two-minute frame-by-frame script exceeds the command line.
 
-The base is now **feature complete**: one build, 40,838 bytes, serves all
+The base is now **feature complete**: one build, 41,094 bytes, serves all
 seven and the Glitch. Provisional colours for the shipped programs (the owner's mapping is
 still open): Shadow blue (the owner's ask: the darkest of the seven for
 the Shadow; the C64's blue, which reads as a dark purple on a black
@@ -466,9 +466,9 @@ dedicated colour per token (decided with the seven mechanics, E11).
 
 **Block format since E11's build (2026-09-06):** the marker is
 `MURAL02\0` and the contract writes 42 bytes after it: 32 seed, 8 digits,
-behaviour, colour. In the current build (`tony-chamber.prg`, 40,838 bytes,
-all seven mechanics) the block sits at file offset `0x04DC9` (address
-`$55C8`); find it by the marker, never by a fixed offset, until the base is
+behaviour, colour. In the current build (`tony-chamber.prg`, 41,094 bytes,
+all seven mechanics) the block sits at file offset `0x04EC9` (address
+`$56C8`); find it by the marker, never by a fixed offset, until the base is
 frozen.
 
 **The bats join the render (owner's ask, 2026-09-06).** The engine flies
@@ -616,7 +616,12 @@ minimal64): wore four mechanics with four changes, all fifteen non-black
 colours seen, 67 blink frames of 1,500, moved 96 px; the 600 wall cells
 empty, the digits identical to an ordinary room's, both bat sprites off.
 The seven buddy tests and the bat test still pass (the Sleeper's doze is
-internal mode 8 now).
+internal mode 8 now). Then, the owner's ask: teleports. Every change of
+mechanic is now a teleport (he blinks out for twelve frames and is
+somewhere else between the pillars when he comes back, the spot from the
+dice), and one burst in eight is a teleport instead of a jitter. Test (30
+s): six changes, five of them teleporting, seventeen teleports in all, 227
+blink frames of 1,500, X 66..254, never past the pillars.
 
 **Bats, exhaustively (2026-09-06):** on paper, all 8 paths × 8 rows × 64
 column pairs: the lowest bat bottom is 153 (Tony's jump top is 183), the

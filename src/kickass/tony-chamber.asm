@@ -2177,6 +2177,7 @@ glitchTimer:  .word 0        // +52  frames until he changes it
 glitchBurst:  .byte 0        // +54  frames left of a burst of flicker and jitter
 glitchStep:   .byte 0        // +55  where he is in the colour cycle
 glitchFrame:  .byte 0        // +56
+glitchWarp:   .byte 0        // +57  frames left of a teleport: out, elsewhere, in
 
 // |player - buddy| and which side he is on (the Follow code has its own copy inline)
 buddyDistance: {
@@ -2303,8 +2304,11 @@ sleeperDecide: {
 // The Glitch (mechanic 7): the buddy in the ordinary slot, wearing one of the
 // seven mechanics at a time and changing it every 3-8 s on the same dice as
 // the Wanderer; cycling through the seven token colours, one every eight
-// frames; and now and then a burst of 8-15 frames in which his colour goes
-// random, he blinks out one frame in four, and he jitters a pixel sideways.
+// frames; now and then a burst of 8-15 frames in which his colour goes
+// random, he blinks out one frame in four, and he jitters a pixel sideways;
+// and a teleport at every change of mechanic (and one burst in eight): he
+// blinks out for twelve frames and is somewhere else in the room when he
+// comes back.
 // His room is the blackout: the mural routine draws no wall, no candle and
 // no bats when the behaviour byte is 7. Returns A = the mechanic worn.
 glitchTick: {
@@ -2337,6 +2341,8 @@ glitchTick: {
         sta sleepFar
         sta shyBolt
         sta wanderTimer
+        lda #12                 // and he teleports
+        sta glitchWarp
     holding:
     lda glitchTimer
     bne !+
@@ -2358,16 +2364,56 @@ glitchTick: {
     tax
     lda glitchColours, x
     sta buddyColourNow
+    lda glitchWarp              // a teleport in progress: out for twelve frames, elsewhere at the sixth
+    beq noWarp
+        dec glitchWarp
+        lda #0
+        sta buddyColourNow
+        lda glitchWarp
+        cmp #6
+        beq warpNow
+        jmp done
+        warpNow:
+            lda wanderRng       // somewhere between the pillars: 64 + (0..127), or 88 farther right
+            and #127
+            clc
+            adc #64
+            sta buddyX
+            lda #0
+            sta buddyX + 1
+            lda wanderRng
+            bmi warpFar
+            jmp done
+            warpFar:
+                lda buddyX
+                clc
+                adc #88
+                sta buddyX
+                bcc !+
+                    inc buddyX + 1
+                !:
+            jmp done
+    noWarp:
     lda glitchBurst             // bursts
     bne inBurst
         lda wanderRng
         cmp #3                  // three chances in 256 a frame: one burst in about 85 frames
-        bcs done
+        bcc burstStart
+        jmp done
+        burstStart:
         lda wanderRng
         and #7
         clc
         adc #8
         sta glitchBurst
+        lda wanderRng           // one burst in eight is a teleport instead
+        and #%00111000
+        bne inBurst
+            lda #12
+            sta glitchWarp
+            lda #0
+            sta glitchBurst
+            jmp done
     inBurst:
         dec glitchBurst
         lda wanderRng
