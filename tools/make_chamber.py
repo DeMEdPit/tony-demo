@@ -456,6 +456,9 @@ src = sub(src, """    lda eyesColor
     lda muralColour""")
 
 # --- the mechanics: split buddyUpdate into decide and act, dispatch on the behaviour byte
+src = sub(src, """.label BUDDY_HOP_LEN  = 14
+""", """.label BUDDY_HOP_LEN  = 26  // Tony's own jump, measured: 26 frames to a 23-pixel apex
+""")
 src = sub(src, """.label BUDDY_HOP_COOL = 20
 """, """.label BUDDY_HOP_COOL = 20
 .label DANCE_RISE     = 6   // ENV3 must climb this much in one frame to count as a hit
@@ -562,26 +565,27 @@ src = sub(src, """    notHopping:
 src = sub(src, """    standing:
         // the real idle: 6 phases at the player's own idle tempo
 """, """    standing:
-        lda buddyCrouch             // sitting, hiding or dozing: the crouch, fully down
+        lda buddyCrouch             // sitting, hiding or dozing: the crouch, fully down (frame 2 of the duck)
         beq idleCycle
             lda buddyFacing
             beq crouchL
-                lda duckRightAnimationBG + 3
+                lda duckRightAnimationBG + 2
                 sta buddyBg
-                lda duckRightAnimationTL + 3
-                ldx duckRightAnimationBL + 3
+                lda duckRightAnimationTL + 2
+                ldx duckRightAnimationBL + 2
                 jmp setPose
             crouchL:
-                lda duckLeftAnimationBG + 3
+                lda duckLeftAnimationBG + 2
                 sta buddyBg
-                lda duckLeftAnimationTL + 3
-                ldx duckLeftAnimationBL + 3
+                lda duckLeftAnimationTL + 2
+                ldx duckLeftAnimationBL + 2
                 jmp setPose
         idleCycle:
         // the real idle: 6 phases at the player's own idle tempo
 """)
 src = sub(src, """hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
-""", f"""hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
+""", f"""// Tony's jump, frame by frame (physPlayerY deltas measured on minimal64): the buddy jumps exactly as he does
+hopArc:       .byte 252, 252, 252, 254, 254, 254, 255, 255, 255, 0, 255, 0, 255, 1, 0, 1, 0, 1, 1, 1, 2, 2, 2, 4, 4, 4
 // mechanics state, in this order (tools/verify_buddy.py finds it from the hop arc)
 wantHop:      .byte 0        // +14
 envPrev:      .byte 0        // +15

@@ -155,7 +155,7 @@ rules of section 1):
 
 Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 40,248 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `0429a3a152d0b799c45831cdb7812cb59bcf4f95542e275af3de8abf3cc64937`.
+sha256 `be5ebaeb739297c262967dbaa5a9526eb225284c576902557465f7cf100f7ee3`.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its

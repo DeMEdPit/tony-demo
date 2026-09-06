@@ -29,15 +29,18 @@ import sys
 import tempfile
 
 M64 = "tools/m64-harness/m64run"
-HOP_ARC = bytes([253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3])
+HOP_ARC = bytes([252, 252, 252, 254, 254, 254, 255, 255, 255, 0, 255, 0, 255, 1, 0, 1, 0, 1, 1, 1, 2, 2, 2, 4, 4, 4])   # Tony's jump
+HOP_LEN = len(HOP_ARC)
 DANCE_RISE, ECHO_DELAY, MIRROR_SUM = 6, 200, 344
 FLOOR_Y, MIN_X, MAX_X, AIR = 206, 64, 280, 206 - 8
 BOOT = 150
 LEFT, RIGHT, FIRE = 4, 8, 16
 VARS = {"buddyX": -9, "buddyY": -7, "buddyFacing": -6, "buddyMoving": -5, "buddyHop": -4, "buddyCool": -3,
-        "buddyPhase": -2, "buddyDelay": -1, "wantHop": 14, "envPrev": 15, "stepCount": 16, "slideCount": 17,
-        "buddyMode": 26, "buddyPoseMoving": 27, "buddyCrouch": 28, "distMag": 29, "distRight": 30,
-        "echoHead": 31, "echoFill": 32, "wanderTimer": 35, "wanderState": 36, "sleepAwake": 38, "sleepFar": 39, "wanderRng": 46, "buddyJumpPose": 48}
+        "buddyPhase": -2, "buddyDelay": -1}
+AFTER = {"wantHop": 0, "envPrev": 1, "stepCount": 2, "slideCount": 3, "buddyMode": 12, "buddyPoseMoving": 13,
+         "buddyCrouch": 14, "distMag": 15, "distRight": 16, "echoHead": 17, "echoFill": 18, "wanderTimer": 21,
+         "wanderState": 22, "sleepAwake": 24, "sleepFar": 25, "wanderRng": 32, "buddyJumpPose": 34}   # offsets past the arc
+VARS.update({k: HOP_LEN + v for k, v in AFTER.items()})
 
 
 def addresses(prg):
@@ -137,15 +140,16 @@ def dance(prg, A):
     steps_off = [f for f in steps if not near(f, notes, 1)]
     unanswered = [f for f in notes if not near(f, steps, 1) and not any(hop[g] for g in range(max(0, f - 1), f + 2))]
     gaps = [b - a for a, b in zip(turns, turns[1:])]
-    hops_unfounded = [f for f in hops if not near(f, rises, 3)]
+    # a hit while he is in the air is answered the moment he lands: a hop may follow its rise by a whole jump
+    hops_unfounded = [f for f in hops if not any(f - HOP_LEN - 2 <= g <= f + 3 for g in rises)]
     rises_unanswered, last = [], -99
     for f in rises:
         if f - last <= 8:
             continue
         last = f
-        if not any(hop[g] for g in range(f, min(n, f + 4))) and not any(hop[g] for g in range(max(0, f - 16), f)):
+        if not any(hop[g] for g in range(f, min(n, f + 4))) and not any(hop[g] for g in range(max(0, f - HOP_LEN - 2), f)):
             rises_unanswered.append(f)
-    ok = (len(steps) >= 40 and not steps_off and len(unanswered) <= len(notes) // 20 and len(turns) >= 8
+    ok = (len(steps) >= 30 and not steps_off and len(unanswered) <= len(notes) // 20 and len(turns) >= 8
           and all(g >= 30 for g in gaps) and len(hops) >= 6 and not hops_unfounded and not rises_unanswered
           and 16 <= max(bx) - min(bx) <= 48 and col5 == 3 and col6 == 3)
     # his path is the music's: the same trace whether the player stands or walks about

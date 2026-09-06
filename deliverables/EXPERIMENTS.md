@@ -276,6 +276,19 @@ minimal64 (`tools/verify_dance.py` is retired into it):
   for 100 frames; wakes 9 frames into the approach; follows 76 px; dozes
   off at frame 409 and stays put.
 
+**From the owner's play-through (2026-09-06):** the crouch was frame 3 of
+the duck sequence, which is Tony halfway back up (the four frames are
+standing, bending, down, rising); it is frame 2 now, the one fully down,
+for the Echo, the Wanderer's sit, the Shy One's cower and the Sleeper's
+doze. And the buddy's hop was the first Follow build's 14-frame, 12-pixel
+arc; the owner noticed he never jumped as high as Tony. Tony's jump was
+measured on the emulator (26 frames, apex 23 pixels, the deltas −4 −4 −4
+−2 −2 −2 −1 −1 −1 0 −1 0 −1 +1 0 +1 0 +1 +1 +1 +2 +2 +2 +4 +4 +4) and is
+now the buddy's arc in every mechanic that hops; the Echo replays Tony's
+height directly and was already exact. Tests re-run: all seven pass (the
+Dance test now allows a hop to answer a hit made during the previous
+jump, since a jump lasts 26 frames).
+
 The base is now **feature complete**: one build, 40,248 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is
 still open): Shadow green, Dancer cyan, Echo yellow, Mirror light blue,
@@ -555,6 +568,9 @@ step 6.
   for the buddy and 56..286 for Tony (E11).
 - The player's X and Y are settled before the buddy's update runs in a
   frame; the duck's animation number is written after it (E11).
+- Tony's jump: 26 frames, apex 23 pixels, three frames each of −4, −2 and
+  −1 with a hover at the top, then the mirror image down; the duck's four
+  frames are standing, bending, down, rising (E11).
 - The tune's player keeps a 25-byte image of the SID registers at $A474
   and copies it to the chip every frame; the tune moves its notes legato,
   by frequency, with a hard restart only every 160 frames (E11).
