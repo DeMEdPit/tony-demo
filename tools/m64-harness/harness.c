@@ -32,10 +32,48 @@ extern void m64_keyRelease(uint32_t key);
 extern void m64_joystickPush(uint32_t joystick, uint32_t direction);
 extern void m64_joystickRelease(uint32_t joystick, uint32_t direction);
 extern uint8_t m64_cpuRead(uint16_t address);
+extern void m64_audioInit(uint32_t bufferLength, uint32_t sampleRate);
+extern int32_t m64_getAudioSamplesAvailable(void);
+extern unsigned char *m64_getAudioBuffer(void);
+extern void sid_update(void);
+extern uint32_t SIDAUDIOBUFFERLENGTH;
+
+/* audio:FILE writes everything the SID plays from then on as a 16-bit mono WAV at 44.1 kHz */
+static FILE *wav = NULL;
+static uint32_t wavSamples = 0;
+static void wavHeader(FILE *f, uint32_t samples) {
+    uint32_t rate = 44100, bytes = samples * 2, chunk = 36 + bytes, fmt = 16, byteRate = rate * 2;
+    uint16_t pcm = 1, ch = 1, align = 2, bits = 16;
+    fseek(f, 0, SEEK_SET);
+    fwrite("RIFF", 1, 4, f); fwrite(&chunk, 4, 1, f); fwrite("WAVEfmt ", 1, 8, f); fwrite(&fmt, 4, 1, f);
+    fwrite(&pcm, 2, 1, f); fwrite(&ch, 2, 1, f); fwrite(&rate, 4, 1, f); fwrite(&byteRate, 4, 1, f);
+    fwrite(&align, 2, 1, f); fwrite(&bits, 2, 1, f); fwrite("data", 1, 4, f); fwrite(&bytes, 4, 1, f);
+}
+static void wavDrain(void) {
+    if (!wav) return;
+    sid_update();                                   /* clock the SID up to now */
+    while (m64_getAudioSamplesAvailable() >= (int32_t)SIDAUDIOBUFFERLENGTH) {
+        float *b = (float *)m64_getAudioBuffer();
+        for (uint32_t i = 0; i < SIDAUDIOBUFFERLENGTH; i++) {
+            float v = b[i] * 0.75f;                  /* the emulator's scale peaks just over full scale; leave headroom */
+            if (v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
+            int16_t s = (int16_t)(v * 32767.0f);
+            fwrite(&s, 2, 1, wav);
+        }
+        wavSamples += SIDAUDIOBUFFERLENGTH;
+    }
+}
+static void wavClose(void) {
+    if (!wav) return;
+    wavDrain();
+    wavHeader(wav, wavSamples);
+    fclose(wav); wav = NULL;
+    printf("wav: %u samples (%.1f s)\n", wavSamples, wavSamples / 44100.0);
+}
 extern uint32_t harness_getPC(void);
 
 static void frames(int n) {
-    for (int i = 0; i < n; i++) m64_update(20); /* ~1 PAL frame per call */
+    for (int i = 0; i < n; i++) { m64_update(20); wavDrain(); } /* ~1 PAL frame per call */
 }
 
 static void shot(const char *path) {
@@ -103,6 +141,13 @@ int main(int argc, char **argv) {
             frames(n ? atoi(n + 1) : 5);
             m64_keyRelease(key);
             frames(5);
+        } else if (!strncmp(cmd, "audio:", 6)) {   /* audio:FILE  start writing a WAV of the SID output */
+            wavClose();
+            m64_audioInit(1024, 44100);
+            wav = fopen(cmd + 6, "wb"); wavSamples = 0;
+            if (wav) { uint8_t zero[44] = {0}; fwrite(zero, 1, 44, wav); }
+        } else if (!strcmp(cmd, "audio-stop")) {
+            wavClose();
         } else if (!strcmp(cmd, "pc")) {
             printf("pc ~ $%04x\n", harness_getPC());
         } else if (!strncmp(cmd, "peek:", 5)) {
@@ -127,5 +172,6 @@ int main(int argc, char **argv) {
             printf("poke $%04x <- $%02x\n", a, val);
         }
     }
+    wavClose();
     return 0;
 }
