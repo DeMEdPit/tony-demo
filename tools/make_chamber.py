@@ -460,10 +460,27 @@ src = sub(src, """.label BUDDY_HOP_COOL = 20
 """, """.label BUDDY_HOP_COOL = 20
 .label DANCE_RISE     = 6   // ENV3 must climb this much in one frame to count as a hit
 .label DANCE_SLIDE    = 6   // pixels he side-steps on every note (one per frame)
+.label ECHO_DELAY     = 75  // frames behind the player (1.5 s); the ring holds 128
+.label MIRROR_SUM     = 344 // twice the centre line between the pillars (64..280)
+.label SHY_FLEE_AT    = 56  // closer than this: he runs
+.label SHY_CALM_AT    = 110 // farther than this: he creeps back
+.label SLEEP_WAKE_AT  = 48  // an approach inside this wakes him
+.label SLEEP_AWAKE    = 150 // half-frames awake before he dozes off again (300 frames, 6 s)
 """)
 src = sub(src, """    // signed 16-bit distance to the player -> mag + targetRight
-""", """    // decide: Follow is below; the other mechanics are in buddyDecide
+""", """    // decide: which mechanic runs this frame. Follow is below; the others
+    // are in buddyDecide; the Sleeper is Follow while he is awake.
+    lda #0
+    sta nextPoseMoving
+    sta nextCrouch
     lda muralBehaviour
+    sta buddyMode
+    cmp #6
+    bne !+
+        jsr sleeperDecide       // returns 0 (awake: Follow) or 7 (dozing)
+        sta buddyMode
+    !:
+    lda buddyMode
     beq follow
         jsr buddyDecide
         jmp act
@@ -493,6 +510,10 @@ src = sub(src, """    // always turn towards the player
     !:
 
     act:
+    lda nextCrouch                  // the pose flags, committed once per frame
+    sta buddyCrouch
+    lda nextPoseMoving
+    sta buddyPoseMoving
     // one pixel the way he faces, clamped to the space between the pillars
     lda buddyMoving
     beq noMove
@@ -524,19 +545,172 @@ src = sub(src, """    // hop when the player leaves the ground
             sta buddyHop
             lda #0
             sta wantHop""")
+# the pose: walking when he moves or only looks as if he does; crouched when a mechanic says so
+src = sub(src, """    notHopping:
+    lda buddyMoving
+    beq standing""", """    notHopping:
+    lda buddyMoving
+    ora buddyPoseMoving
+    beq standing""")
+src = sub(src, """    standing:
+        // the real idle: 6 phases at the player's own idle tempo
+""", """    standing:
+        lda buddyCrouch             // sitting, hiding or dozing: the crouch, fully down
+        beq idleCycle
+            lda buddyFacing
+            beq crouchL
+                lda duckRightAnimationBG + 3
+                sta buddyBg
+                lda duckRightAnimationTL + 3
+                ldx duckRightAnimationBL + 3
+                jmp setPose
+            crouchL:
+                lda duckLeftAnimationBG + 3
+                sta buddyBg
+                lda duckLeftAnimationTL + 3
+                ldx duckLeftAnimationBL + 3
+                jmp setPose
+        idleCycle:
+        // the real idle: 6 phases at the player's own idle tempo
+""")
 src = sub(src, """hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
 """, f"""hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
-wantHop:      .byte 0
-envPrev:      .byte 0
-stepCount:    .byte 0
-slideCount:   .byte 0
-noteOld:      .word 0
-noteNew:      .word 0
-noteDiff:     .word 0
-noteStep:     .word 0
+// mechanics state, in this order (tools/verify_buddy.py finds it from the hop arc)
+wantHop:      .byte 0        // +14
+envPrev:      .byte 0        // +15
+stepCount:    .byte 0        // +16
+slideCount:   .byte 0        // +17
+noteOld:      .word 0        // +18
+noteNew:      .word 0        // +20
+noteDiff:     .word 0        // +22
+noteStep:     .word 0        // +24
+buddyMode:    .byte 0        // +26  the mechanic running this frame (7 = the Sleeper dozing)
+buddyPoseMoving: .byte 0     // +27  show the walk although the act part does not step
+buddyCrouch:  .byte 0        // +28  show the crouch
+distMag:      .byte 0        // +29  |player - buddy|, saturated at 255
+distRight:    .byte 0        // +30  1 when the player is to the right
+echoHead:     .byte 0        // +31
+echoFill:     .byte 0        // +32
+echoAirPrev:  .byte 0        // +33
+mirrorAirPrev: .byte 0       // +34
+wanderTimer:  .byte 0        // +35
+wanderState:  .byte 0        // +36  0 pause, 1 stroll, 2 sit
+shyToggle:    .byte 0        // +37
+sleepAwake:   .byte 0        // +38
+sleepFar:     .byte 0        // +39
+sleepTimer:   .byte 0        // +40
+sleepHalf:    .byte 0        // +41
+target:       .word 0        // +42  scratch: where Echo and Mirror put him
+nextCrouch:   .byte 0        // +44  the pose flags the mechanics ask for, committed by the act part
+nextPoseMoving: .byte 0      // +45
+wanderRng:    .byte 0        // +46  the Wanderer's dice: a shift register stirred by oscillator 3
 
-// The mechanics other than Follow. Each leaves buddyMoving, buddyFacing and
-// wantHop for this frame; the act part of buddyUpdate does the rest.
+// |player - buddy| and which side he is on (the Follow code has its own copy inline)
+buddyDistance: {{
+    sec
+    lda physPlayerX
+    sbc buddyX
+    sta distMag
+    lda physPlayerX + 1
+    sbc buddyX + 1
+    bpl right
+        ldy #0
+        sty distRight
+        cmp #$ff
+        bne far
+        sec
+        lda #0
+        sbc distMag
+        sta distMag
+        rts
+    right:
+        ldy #1
+        sty distRight
+        cmp #0
+        beq done
+    far:
+        lda #$ff
+        sta distMag
+    done:
+    rts
+}}
+
+// Put him at `target` (Echo, Mirror): facing and the walking pose follow from
+// the move; the act part does not step, it only writes the sprite.
+buddyPlace: {{
+    sec
+    lda target
+    sbc buddyX
+    sta noteDiff
+    lda target + 1
+    sbc buddyX + 1
+    bmi left
+        ora noteDiff
+        beq done                    // no move: keep facing, stand
+        lda #1
+        sta buddyFacing
+        bne moved
+    left:
+        lda #0
+        sta buddyFacing
+    moved:
+        lda #1
+        sta nextPoseMoving
+    done:
+    lda target
+    sta buddyX
+    lda target + 1
+    sta buddyX + 1
+    rts
+}}
+
+// The Sleeper: dozes until the player comes close, is awake (and Follow) for
+// SLEEP_AWAKE half-frames, then dozes off again. Returns A = 0 awake, 7 dozing.
+sleeperDecide: {{
+    jsr buddyDistance
+    lda sleepAwake
+    bne awake
+        lda distMag
+        cmp #SLEEP_WAKE_AT
+        bcs stillFar
+            lda sleepFar            // an approach: he was far a moment ago
+            beq dozing
+                lda #1
+                sta sleepAwake
+                lda #SLEEP_AWAKE
+                sta sleepTimer
+                lda #0
+                sta sleepFar
+                rts                 // A = 0: awake, Follow runs
+        stillFar:
+            lda #1
+            sta sleepFar
+        dozing:
+            lda #7
+            rts
+    awake:
+        lda sleepHalf
+        eor #1
+        sta sleepHalf
+        beq !+
+            lda #0
+            rts
+        !:
+        dec sleepTimer
+        bne !+
+            lda #0
+            sta sleepAwake
+            sta sleepFar
+            lda #7
+            rts
+        !:
+        lda #0
+        rts
+}}
+
+// The mechanics other than Follow. Each leaves buddyMoving, buddyFacing,
+// wantHop, buddyPoseMoving and buddyCrouch for this frame; the act part of
+// buddyUpdate does the rest.
 //
 // DANCE listens to two things, both inside the machine:
 //  - the beat: voice 1's note, read from the image of the sound-chip registers
@@ -549,16 +723,51 @@ noteStep:     .word 0
 //  - the hits: voice 3's envelope read back from the chip itself ($D41C). A
 //    rise of DANCE_RISE or more in a frame is a note hit: a hop, queued until
 //    he is on the ground again, so a double hit is a double bounce.
+// ECHO records the player's position every frame in a 128-entry ring and
+//    stands where the player stood ECHO_DELAY frames ago; a jump is echoed
+//    when the recorded position leaves the ground.
+// MIRROR stands at the player's reflection about the centre line between the
+//    pillars (x' = MIRROR_SUM - x, clamped to the pillars) and jumps with him.
+// WANDER lives there: a plan at a time (stroll, pause, sit), the choice and
+//    its length rolled from a shift register stirred every frame by the chip's
+//    oscillator 3 ($D41B), the pauses lengthened by the render's mood (two seed
+//    bits). He turns at the pillars and takes no notice of the player.
+// SHY runs when the player is closer than SHY_FLEE_AT (and cowers at the
+//    pillar when he can run no farther), creeps back at half speed when the
+//    player is farther than SHY_CALM_AT, and watches him in between.
 .label SID_IMAGE = ${SID_IMAGE:04X}
 buddyDecide: {{
     lda #0
     sta buddyMoving
-    lda muralBehaviour
-    cmp #1
-    beq dance
-        lda #0
-        sta wantHop
-        rts                         // 2-6 (Echo, Mirror, Wander, Shy, Sleeper): not built yet, he stands
+    ldx buddyMode
+    cpx #1
+    bne !+
+        jmp dance
+    !:
+    cpx #2
+    bne !+
+        jmp echo
+    !:
+    cpx #3
+    bne !+
+        jmp mirror
+    !:
+    cpx #4
+    bne !+
+        jmp wander
+    !:
+    cpx #5
+    bne !+
+        jmp shy
+    !:
+    cpx #7
+    bne !+
+        jmp doze
+    !:
+    lda #0
+    sta wantHop
+    rts
+
     dance:
     reread:                         // the player runs in the interrupt: read lo, hi, lo again
         lda SID_IMAGE
@@ -628,14 +837,281 @@ buddyDecide: {{
     sec
     sbc envPrev
     stx envPrev
-    bcc done                        // falling or flat: no hit
+    bcc danceDone                   // falling or flat: no hit
     cmp #DANCE_RISE
-    bcc done
+    bcc danceDone
         lda #1
         sta wantHop                 // queued until he is on the ground
-    done:
+    danceDone:
+    rts
+
+    echo:
+    lda #0
+    sta wantHop
+    ldx echoHead                    // record this frame
+    lda physPlayerX
+    sta echoLo, x
+    lda physPlayerX + 1
+    sta echoHi, x
+    lda physPlayerY
+    sta echoY, x
+    inx
+    txa
+    and #127
+    sta echoHead
+    lda echoFill                    // nothing to replay until the ring holds the delay
+    cmp #ECHO_DELAY
+    bcs replay
+        inc echoFill
+        rts
+    replay:
+    lda echoHead
+    clc
+    adc #(128 - ECHO_DELAY)
+    and #127
+    tax
+    lda echoLo, x
+    sta target
+    lda echoHi, x
+    sta target + 1
+    jsr buddyPlace
+    lda echoY, x                    // the recorded jump, on its rising edge
+    cmp #(BUDDY_FLOOR_Y - 8)
+    bcs echoGround
+        lda echoAirPrev
+        bne echoDone
+            lda #1
+            sta wantHop
+            sta echoAirPrev
+            rts
+    echoGround:
+        lda #0
+        sta echoAirPrev
+    echoDone:
+    rts
+
+    mirror:
+    lda #0
+    sta wantHop
+    sec                             // target = MIRROR_SUM - playerX
+    lda #<MIRROR_SUM
+    sbc physPlayerX
+    sta target
+    lda #>MIRROR_SUM
+    sbc physPlayerX + 1
+    sta target + 1
+    bne highSide
+        lda target                  // 0..255: not left of the left pillar
+        cmp #BUDDY_MIN_XLO
+        bcs placed
+            lda #BUDDY_MIN_XLO
+            sta target
+            jmp placed
+    highSide:
+        cmp #1                      // 256..: not right of the right pillar
+        bne clampRight
+        lda target
+        cmp #(BUDDY_MAX_XLO + 1)
+        bcc placed
+        clampRight:
+            lda #1
+            sta target + 1
+            lda #BUDDY_MAX_XLO
+            sta target
+    placed:
+    jsr buddyPlace
+    lda physPlayerY                 // jump with him, on the rising edge
+    cmp #(BUDDY_FLOOR_Y - 8)
+    bcs mirrorGround
+        lda mirrorAirPrev
+        bne mirrorDone
+            lda #1
+            sta wantHop
+            sta mirrorAirPrev
+            rts
+    mirrorGround:
+        lda #0
+        sta mirrorAirPrev
+    mirrorDone:
+    rts
+
+    wander:
+    lda #0
+    sta wantHop
+    lda wanderRng                   // the dice: a shift register stirred by oscillator 3 every frame
+    asl
+    bcc !+
+        eor #$1D
+    !:
+    eor $D41B
+    sta wanderRng
+    lda wanderTimer
+    beq newPlan
+        dec wanderTimer
+        jmp wanderAct
+    newPlan:
+        lda wanderRng
+        sta noteDiff                // (scratch)
+        and #7                      // 0-3 stroll, 4-6 pause, 7 sit
+        cmp #4
+        bcc planStroll
+        cmp #7
+        beq planSit
+        planPause:
+            lda #0
+            sta wanderState
+            lda noteDiff
+            lsr
+            lsr
+            lsr
+            and #63
+            clc
+            adc #30
+            jmp moodier
+        planSit:
+            lda #2
+            sta wanderState
+            lda noteDiff
+            lsr
+            lsr
+            lsr
+            and #127
+            clc
+            adc #90
+            jmp moodier
+        planStroll:
+            lda #1
+            sta wanderState
+            lda noteDiff
+            lsr
+            lsr
+            lsr
+            and #1
+            sta buddyFacing         // the dice pick the way
+            lda noteDiff
+            lsr
+            lsr
+            and #63
+            clc
+            adc #40                 // 40..103 pixels
+            sta wanderTimer
+            jmp wanderAct
+        moodier:                    // the render's mood: seed bits lengthen the rests
+            sta wanderTimer
+            lda muralSeed + 28
+            and #3
+            beq wanderAct
+            tax
+            !:
+                lda wanderTimer
+                clc
+                adc #20
+                bcs !+
+                sta wanderTimer
+                dex
+                bne !-
+            !:
+    wanderAct:
+        lda wanderState
+        cmp #1
+        bne notStroll
+            lda buddyX + 1          // turn at the pillars
+            bne rightHalf
+                lda buddyX
+                cmp #(BUDDY_MIN_XLO + 1)
+                bcs strollOn
+                    lda #1
+                    sta buddyFacing
+                    bne strollOn
+            rightHalf:
+                lda buddyX
+                cmp #BUDDY_MAX_XLO
+                bcc strollOn
+                    lda #0
+                    sta buddyFacing
+            strollOn:
+            lda #1
+            sta buddyMoving
+            rts
+        notStroll:
+        cmp #2
+        bne wanderDone
+            lda #1
+            sta nextCrouch
+        wanderDone:
+        rts
+
+    shy:
+    lda #0
+    sta wantHop
+    jsr buddyDistance
+    lda distMag
+    cmp #SHY_FLEE_AT
+    bcs notClose
+        lda distRight               // run the other way
+        eor #1
+        sta buddyFacing
+        beq fleeLeft
+            lda buddyX + 1
+            beq fleeOn
+            lda buddyX
+            cmp #BUDDY_MAX_XLO
+            bcc fleeOn
+            jmp cower
+        fleeLeft:
+            lda buddyX + 1
+            bne fleeOn
+            lda buddyX
+            cmp #(BUDDY_MIN_XLO + 1)
+            bcs fleeOn
+        cower:                      // nowhere left to run: hide
+            lda #1
+            sta nextCrouch
+            rts
+        fleeOn:                     // two pixels a frame, the player's own speed: one here, one in the act part
+            lda buddyFacing
+            beq fleeStepLeft
+                inc buddyX
+                bne fleeMove
+                    inc buddyX + 1
+                jmp fleeMove
+            fleeStepLeft:
+                lda buddyX
+                bne !+
+                    dec buddyX + 1
+                !:
+                dec buddyX
+            fleeMove:
+            lda #1
+            sta buddyMoving
+            rts
+    notClose:
+    lda distRight                   // watch him
+    sta buddyFacing
+    lda distMag
+    cmp #SHY_CALM_AT
+    bcc shyDone
+        lda #1                      // far away: creep back at half speed
+        sta nextPoseMoving
+        lda shyToggle
+        eor #1
+        sta shyToggle
+        beq shyDone
+            lda #1
+            sta buddyMoving
+    shyDone:
+    rts
+
+    doze:                           // the Sleeper, asleep
+    lda #0
+    sta wantHop
+    lda #1
+    sta nextCrouch
     rts
 }}
+echoLo: .fill 128, 0
+echoHi: .fill 128, 0
+echoY:  .fill 128, BUDDY_FLOOR_Y
 """)
 open("src/kickass/tony-chamber.asm", "w").write(src)
 print("wrote src/kickass/tony-chamber.asm")

@@ -25,7 +25,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E8 | Room census: which rooms can join which | done | `tools/onchain_castle.py census` |
 | E9 | Mini castles as byte patches over the mainnet PRG | in progress | `ONCHAIN-CASTLES.md`, `onchain/castles/` |
 | E10 | Room builder (Workbench extension) | proposed | this file, §E10 |
-| E11 | Buddy behaviours as instruments | in progress | `tony-chamber-dance-cyan.prg`, `tools/verify_dance.py` |
+| E11 | Buddy behaviours as instruments | done (engine) | `tony-chamber-the-*.prg`, `tools/verify_buddy.py` |
 | E12 | Chain-reactive tokens (render-time / run-time) | proposed | this file, §E12 |
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
 | E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
@@ -144,7 +144,7 @@ patch tool ≈ 1 session; builder MVP in the Workbench ≈ 2–4; tile colours
 +1; behaviour table +1. `pm-chamber` in akalabeth already extracted and
 credited the tile groups.
 
-## E11 — Buddy behaviours as instruments · in progress
+## E11 — Buddy behaviours as instruments · done (engine)
 
 Follow / mirror / lead / hide are cheap and teach nothing about the machine.
 Behaviours chosen as **probes** do: a buddy driven by the SID's oscillator-3
@@ -224,8 +224,51 @@ registers carry the colour byte. Follow regression passes (walks after the playe
 player's jump, green). **Taught:** minimal64 implements both readback
 registers of the SID (`$D41B` oscillator 3, `$D41C` envelope 3) in its
 `sid_read`, and the values behave like the chip's: the on-chain machine can
-be listened to. Open: the assignment of colours to mechanics; Echo, Mirror,
-Wander, Shy, Sleeper (behaviour bytes 2–6 stand still until built).
+be listened to.
+
+**Built (2026-09-06, later): the other five.** All in `buddyDecide`, each
+leaving what he wants this frame (moving, facing, a hop, the walking pose,
+the crouch) for the act part; the crouch and walking-pose flags are
+committed once per frame by the act part, because the Sleeper's test caught
+two samples in a hundred between the flag's reset and its set (a sampling
+race, not a behaviour). `tools/verify_buddy.py` drives all seven on
+minimal64 (`tools/verify_dance.py` is retired into it):
+
+- **Echo** (2): a 128-entry ring of the player's X and Y, written every
+  frame; he stands where the player stood 75 frames ago (1.5 s) and hops
+  when the recorded position leaves the ground (rising edge). Test: his X
+  equals the player's X 75 frames earlier at every one of 264 frames (0
+  misses), the echoed hop lands 74 frames after the player's jump.
+- **Mirror** (3): x′ = 344 − x, the reflection about the centre line between
+  the pillars, clamped to 64..280; he jumps with the player. Test: 0 misses
+  over 294 frames of walking both ways, faces the other way while the
+  player walks, hops on the player's jump frame.
+- **Wander** (4): one plan at a time — stroll (40–103 px, direction from the
+  dice), pause, sit (the crouch) — rolled from an 8-bit shift register
+  stirred every frame by the chip's oscillator 3 (`$D41B`); the render's
+  mood (two bits of seed byte 28) lengthens the rests; he turns at the
+  pillars and never looks at the player. The first cut rolled the raw
+  oscillator byte and hugged the left pillar (range 42 px in 40 s: the
+  sawtooth's samples were correlated). Test: 40 s alone covers the whole
+  room 64..280, 12 turns, 16 plans, a sit of 137 frames, a pause of 305.
+- **Shy** (5): closer than 56 px he runs the other way at two pixels a
+  frame (the player's own speed, measured: Tony walks 2 px/frame; at one he
+  was simply caught) and cowers in the crouch when the pillar stops him;
+  between 56 and 110 he stands and watches; beyond 110 he creeps back at
+  half speed with the walking pose. Test: runs 56 px to the pillar by frame
+  33, never closer than 54 px while he could still run, cowers; when the
+  player walks off he creeps back 83 px and stops at 109 px.
+- **Sleeper** (6): dozes in the crouch; wakes when the player *approaches*
+  (inside 48 px, having been farther a moment before), is the Follow buddy
+  for 300 frames, then dozes off wherever he is. Test: crouched and still
+  for 100 frames; wakes 9 frames into the approach; follows 76 px; dozes
+  off at frame 409 and stays put.
+
+The base is now **feature complete**: one build, 39,480 bytes, serves all
+seven. Provisional colours for the shipped programs (the owner's mapping is
+still open): Shadow green, Dancer cyan, Echo yellow, Mirror light blue,
+Wanderer blue, Shy One light red, Sleeper purple. Open: the owner's
+play-through of the seven in READY 64, the colour mapping, then the freeze.
 
 ## E12 — Chain-reactive tokens · proposed
 
@@ -355,9 +398,10 @@ dedicated colour per token (decided with the seven mechanics, E11).
 
 **Block format since E11's build (2026-09-06):** the marker is
 `MURAL02\0` and the contract writes 42 bytes after it: 32 seed, 8 digits,
-behaviour, colour. In the current build (`tony-chamber.prg`, 38,200 bytes)
-the block sits at file offset `0x043C9` (address `$4BC8`); find it by the
-marker, never by a fixed offset, until the base is frozen.
+behaviour, colour. In the current build (`tony-chamber.prg`, 39,480 bytes,
+all seven mechanics) the block sits at file offset `0x048C9` (address
+`$50C8`); find it by the marker, never by a fixed offset, until the base is
+frozen.
 
 **Open:** the owner's play-through in READY 64; the room base (the buddy
 engine) is not yet deployed; the contract that performs the 42-byte write.
@@ -495,6 +539,8 @@ step 6.
   frames per phase, a 1.8 s loop (E15).
 - The SID's readback registers ($D41B oscillator 3, $D41C envelope 3) are
   implemented in minimal64 and behave like the chip's (E11).
+- Tony walks two pixels a frame; the room between the pillars is X 64..280
+  for the buddy and 56..286 for Tony (E11).
 - The tune's player keeps a 25-byte image of the SID registers at $A474
   and copies it to the chip every frame; the tune moves its notes legato,
   by frequency, with a hard restart only every 160 frames (E11).

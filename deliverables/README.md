@@ -13,13 +13,19 @@ any emulator (verified in VICE as well).
 | file | bytes | what it is |
 |---|---|---|
 | `tony-buddy.prg` | 37,310 | the tall pillar chamber: no menu, no dashboard, loads straight in — your Tony plus the green mimic Tony (follows, faces you, hops when you jump, idles like the real one), two bats up high |
-| `tony-chamber.prg` | 38,200 | the Chamber: the tall pillar room with a brick ceiling and plain pillars, Tony, the buddy and two bats; its back wall (bricks and density — fewer bricks common, the near-full wall the rare roll), one candle that appears three times in four somewhere on the upper or middle wall, and the block number carved into the floor's right end are drawn from the 42-byte parameter block in the file (`tools/stamp_mural.py`: 32 seed bytes, 8 block digits, the buddy's behaviour byte and colour byte; a contract writes them at render time). Default block: block 25850267, behaviour 0 Follow, colour 5 green |
-| `tony-chamber-block-25850271.prg` | 38,200 | same build, seed "block 25850271": eighth wall (the most common roll), no candle |
-| `tony-chamber-block-25850251.prg` | 38,200 | same build, seed "block 25850251": eighth wall, candle low right |
-| `tony-chamber-block-25850252.prg` | 38,200 | same build, seed "block 25850252": quarter wall, candle upper middle |
-| `tony-chamber-block-25850254.prg` | 38,200 | same build, seed "block 25850254": half wall, candle low middle |
-| `tony-chamber-block-25850256.prg` | 38,200 | same build, seed "block 25850256": the rare three-quarter wall, candle |
-| `tony-chamber-dance-cyan.prg` | 38,200 | the same build with behaviour 1 (Dance) and colour 3 (cyan) stamped: the buddy side-steps and turns with the bass line, a body-width each way, and bounces on voice 3's hits, read from the chip; his path is the music's, not Tony's. `tools/verify_dance.py` is its scripted test |
+| `tony-chamber.prg` | 39,480 | the Chamber: the tall pillar room with a brick ceiling and plain pillars, Tony, the buddy and two bats; its back wall (bricks and density — fewer bricks common, the near-full wall the rare roll), one candle that appears three times in four somewhere on the upper or middle wall, and the block number carved into the floor's right end are drawn from the 42-byte parameter block in the file (`tools/stamp_mural.py`: 32 seed bytes, 8 block digits, the buddy's behaviour byte and colour byte; a contract writes them at render time). Default block: block 25850267, behaviour 0 Follow, colour 5 green |
+| `tony-chamber-block-25850271.prg` | 39,480 | same build, seed "block 25850271": eighth wall (the most common roll), no candle |
+| `tony-chamber-block-25850251.prg` | 39,480 | same build, seed "block 25850251": eighth wall, candle low right |
+| `tony-chamber-block-25850252.prg` | 39,480 | same build, seed "block 25850252": quarter wall, candle upper middle |
+| `tony-chamber-block-25850254.prg` | 39,480 | same build, seed "block 25850254": half wall, candle low middle |
+| `tony-chamber-block-25850256.prg` | 39,480 | same build, seed "block 25850256": the rare three-quarter wall, candle |
+| `tony-chamber-the-shadow.prg` | 39,480 | the same build with the token's behaviour and a provisional colour stamped: The Shadow (Follow, green): keeps his distance, faces Tony, hops when Tony jumps. `tools/verify_buddy.py` is the scripted test of all seven |
+| `tony-chamber-the-dancer.prg` | 39,480 | the same build with the token's behaviour and a provisional colour stamped: The Dancer (Dance, cyan): side-steps and turns with the bass line, bounces on voice 3's hits read from the chip; his path is the music's, not Tony's. `tools/verify_buddy.py` is the scripted test of all seven |
+| `tony-chamber-the-echo.prg` | 39,480 | the same build with the token's behaviour and a provisional colour stamped: The Echo (Echo, yellow): stands where Tony stood 1.5 s ago and jumps when he did. `tools/verify_buddy.py` is the scripted test of all seven |
+| `tony-chamber-the-mirror.prg` | 39,480 | the same build with the token's behaviour and a provisional colour stamped: The Mirror (Mirror, light blue): Tony's reflection about the room's centre line, jumps with him. `tools/verify_buddy.py` is the scripted test of all seven |
+| `tony-chamber-the-wanderer.prg` | 39,480 | the same build with the token's behaviour and a provisional colour stamped: The Wanderer (Wander, blue): strolls, pauses and sits on the chip's dice, turns at the pillars, ignores Tony. `tools/verify_buddy.py` is the scripted test of all seven |
+| `tony-chamber-the-shy-one.prg` | 39,480 | the same build with the token's behaviour and a provisional colour stamped: The Shy One (Shy, light red): runs when Tony comes close, cowers at the pillar, creeps back when he leaves. `tools/verify_buddy.py` is the scripted test of all seven |
+| `tony-chamber-the-sleeper.prg` | 39,480 | the same build with the token's behaviour and a provisional colour stamped: The Sleeper (Sleeper, purple): dozes crouched until Tony comes close, follows a while, dozes off. `tools/verify_buddy.py` is the scripted test of all seven |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 

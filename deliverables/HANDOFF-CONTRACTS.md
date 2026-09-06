@@ -56,14 +56,18 @@ every render from the current block. The room itself stays black and grey.
   |---|---|---|---|---|
   | 1 | The Shadow | 0 Follow | keeps his distance, faces you, hops when you jump | built |
   | 2 | The Dancer | 1 Dance | steps and turns with the bass line, bounces on the hits, read from the chip | built, tested |
-  | 3 | The Echo | 2 Echo | replays your moves a second or two behind you | to build |
-  | 4 | The Mirror | 3 Mirror | moves opposite to you about the room's centre line | to build |
-  | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, looks, sits | to build |
-  | 6 | The Shy One | 5 Shy | runs when you approach, creeps back, hides behind a pillar | to build |
-  | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | to build |
+  | 3 | The Echo | 2 Echo | stands where you stood 1.5 s ago, jumps when you did | built, tested |
+  | 4 | The Mirror | 3 Mirror | stands at your reflection about the room's centre line, jumps with you | built, tested |
+  | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, on the chip's dice | built, tested |
+  | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, creeps back when you leave | built, tested |
+  | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
 
-  One build serves all seven: the byte selects the mechanic at run time. A
-  program with bytes 2–6 today shows the buddy standing still.
+  One build serves all seven: the byte selects the mechanic at run time.
+  All seven exist and pass their scripted tests; the base is feature
+  complete and waits only on the owner's play-through and the colour
+  mapping before the freeze. Provisional colours in the shipped files:
+  Shadow green, Dancer cyan, Echo yellow, Mirror light blue, Wanderer
+  blue, Shy One light red, Sleeper purple.
 - **Colours (colour byte, a C64 colour index):** the owner's seven: cyan 3,
   green 5, yellow 7, light blue 14, blue 6, light red 10, purple 4. Which
   colour goes with which mechanic is **not decided yet**.
@@ -149,11 +153,13 @@ rules of section 1):
 
 ## 4. The base program and its parameter block
 
-Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 38,200 bytes,
-a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program).
-Byte-for-byte reproducible from the repository (section 9). **Not frozen
-yet**: five mechanics are still to be built, and each build moves the block.
-Find the block by its marker, never by a fixed offset, until the freeze.
+Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 39,480 bytes,
+a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
+sha256 `b4585b47ee6bd95e0e5f7312d5cdc1ca3356d97ee2012799b7ca3e09497fa064`.
+Byte-for-byte reproducible from the repository (section 9). **Feature
+complete, not frozen**: the freeze follows the owner's play-through and any
+change it asks for; a rebuild moves the block. Find the block by its
+marker, never by a fixed offset, until the freeze.
 
 The **parameter block** is 50 bytes, 64-byte aligned in memory:
 
@@ -166,8 +172,8 @@ The **parameter block** is 50 bytes, 64-byte aligned in memory:
 | 49 | 1 | colour, 0–15 | yes: the token's colour |
 
 So the contract writes **42 bytes** at `marker + 8`. In the current build the
-marker is at file offset `0x043C1` and the 42 bytes start at file offset
-`0x043C9` (address `$4BC8`); file offsets count the 2-byte load address. The
+marker is at file offset `0x048C1` and the 42 bytes start at file offset
+`0x048C9` (address `$50C8`); file offsets count the 2-byte load address. The
 digits are bytes 0–9, not ASCII. Bytes never written keep the file's
 defaults (block 25850267, Follow, green).
 
@@ -200,7 +206,7 @@ render it alongside (owner's decision, not made).
     prg[OFF + 41] = bytes1(colour[id]);
     ```
 
-    (`OFF` = the seed's file offset, `0x043C9` in the current build; write it
+    (`OFF` = the seed's file offset, `0x048C9` in the current build; write it
     as a constant only at the freeze.)
 4. `animation_url = READY64_LAUNCHER.dataURI(prg, modes)`. **The `modes`
    value is not known here**: read the deployed Launcher's ABI and source and
@@ -260,9 +266,9 @@ which makes the test trivial. Shape of the file:
   this repository already run.
 - **Runs.** Every produced PRG must boot and behave on the native minimal64
   harness (`tools/m64-harness/m64run`, built from nopsta's source):
-  `tools/verify_dance.py PRG` checks Follow and Dance today; a test per
-  mechanic will exist by the freeze. `tools/stamp_mural.py PRG --show`
-  predicts the wall for the seed you wrote.
+  `tools/verify_buddy.py PRG` drives all seven mechanics and checks each
+  against what it must do. `tools/stamp_mural.py PRG --show` predicts the
+  wall for the seed you wrote.
 - **Image.** The SVG for each colour equals the reference file.
 - **Page.** `dataURI(prg, modes)` opens and plays in READY 64 and in the
   OpenSea frame; the owner plays each mechanic there (the gate).
@@ -286,21 +292,13 @@ names; the description text; whether a "birth wall" is stored at mint.
 Nothing forces all seven out at once. A collection contract can define
 the seven and mint them one at a time, whenever the owner sends the
 transaction. The only constraint is the base program: it is frozen when it
-is deployed, and the mechanics that do not exist yet (bytes 2–6) show a
-standing buddy on it. Two honest ways to go first:
-
-- **Wait for the freeze** (about one more session of engine work): one
-  base, all seven mechanics in it, tokens minted in any order over any
-  period.
-- **Two bases**: deploy base 2a now (Follow and Dance, i.e. The Shadow and
-  The Dancer) and mint The Dancer; later deploy base 2b with all seven and
-  mint the other five on it. The contract then keeps a base per token id
-  (or per range), which is a few lines. The Dancer stays on 2a forever
-  (fix-forward), which is fine, since Dance is complete on 2a. Cost: a
-  second 38 KB base deployment later.
-
-Either is sound. If The Dancer should go out now, the two-base design is
-the one to write; ask the owner which.
+is deployed. Since all seven mechanics now exist in one build, the natural
+order is: the owner plays the seven, the base is frozen, the base and the
+contract are deployed once, and The Dancer (or any of them) is minted
+first, the rest whenever the owner likes. The alternative, a first base
+with only Follow and Dance and a second base later, is no longer needed;
+keep it in mind only if the owner wants The Dancer out before playing the
+other six, in which case the contract keeps a base per token id.
 
 ## 8b. What the contracts agent needs, and how to get it
 
@@ -327,12 +325,12 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 | path | what |
 |---|---|
-| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (38,200 bytes; default block: Follow, green, block 25850267) |
-| `deliverables/prg/minimal64/tony-chamber-dance-cyan.prg` | the same build stamped behaviour 1, colour 3 |
+| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (39,480 bytes; default block: Follow, green, block 25850267) |
+| `deliverables/prg/minimal64/tony-chamber-the-<name>.prg` | the same build stamped for each of the seven (provisional colours) |
 | `tools/make_chamber.py` | generates the Chamber sources from the buddy build (block, mural, mechanics) |
 | `tools/build_chamber_room.py` | the room map, charset and materials |
 | `tools/stamp_mural.py` | writes seed, digits, behaviour, colour into a PRG; `--show` predicts the wall |
-| `tools/verify_dance.py` | scripted test of Follow and Dance on minimal64 |
+| `tools/verify_buddy.py` | scripted tests of all seven mechanics on minimal64 |
 | `tools/buddy_thumbnail.py` | the SVG reference; `deliverables/assets/buddy-idle-*.svg` its outputs |
 | `tools/m64-harness/` | the native minimal64 test runner (`build.sh` builds it from nopsta's source) |
 | `deliverables/EXPERIMENTS.md` | the ledger: every decision, measurement and open item |
@@ -340,7 +338,7 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 Rebuild: `python3 tools/build_chamber_room.py && python3 tools/make_chamber.py && ./gradlew build -x downloadDeps`
 (the exomizer step fails at the end; ignore it, the PRG is at
-`src/kickass/tony-chamber.prg`). Then `python3 tools/verify_dance.py src/kickass/tony-chamber.prg`.
+`src/kickass/tony-chamber.prg`). Then `python3 tools/verify_buddy.py src/kickass/tony-chamber.prg`.
 
 ## 10. Things not to do
 
