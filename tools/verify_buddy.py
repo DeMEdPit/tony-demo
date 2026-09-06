@@ -207,27 +207,34 @@ def echo(prg, A):
 
 
 def mirror(prg, A):
+    """Left-right: the reflection about the centre line. Up-down: the opposite - crouched while the player is in
+    the air, bouncing while the player is crouched."""
     p = stamp(prg, 3, 14)
     DOWN = 2
-    plan = [(RIGHT, 80), (LEFT, 160), (None, 10), (FIRE, 4), (None, 40), (DOWN, 30), (None, 10)]
+    plan = [(RIGHT, 80), (LEFT, 160), (None, 10), (FIRE, 4), (None, 40), (DOWN, 120), (None, 40)]
     t = frames(p, A, ["playerX", "playerY", "playerAnim", "buddyX", "buddyHop", "buddyFacing", "buddyCrouch"], plan)
     col = run(p, f"wait:{BOOT},peek:D02C")[0] & 15
     os.unlink(p)
     px, py, pa, bx, hop, fac, crouch = t["playerX"], t["playerY"], t["playerAnim"], t["buddyX"], t["buddyHop"], t["buddyFacing"], t["buddyCrouch"]
     n = len(px)
     DUCK = (2, 3, 18, 19)
-    crouch_bad = [f for f in range(1, n) if crouch[f] != (1 if pa[f] in DUCK else 0) and crouch[f] != (1 if pa[f - 1] in DUCK else 0)]
     want = [min(MAX_X, max(MIN_X, MIRROR_SUM - x)) for x in px]
     bad = [f for f in range(1, n) if bx[f] not in (want[f - 1], want[f])]
-    # while the player walks right (and the reflection is not pinned), the mirror faces left
-    opposite = all(fac[f] == 0 for f in range(5, 80) if want[f] != want[f - 1])
-    jump = next((f for f in range(n) if py[f] < AIR), None)
-    hops = [f for f in range(1, n) if hop[f - 1] == 0 and hop[f] != 0]
-    ducked = sum(1 for f in range(n) if pa[f] in DUCK)
-    ok = not bad and opposite and jump is not None and any(abs(h - jump) <= 3 for h in hops) and ducked >= 20 and not crouch_bad and col == 14
+    opposite = all(fac[f] == 0 for f in range(5, 80) if want[f] != want[f - 1])      # player walks right: he faces left
+    air = [f for f in range(n) if py[f] < AIR]
+    # crouched while the player is in the air (from the frame after take-off; he cannot crouch mid-bounce)
+    crouch_bad = [f for f in air[1:] if not crouch[f] and not hop[f]]
+    crouch_wrong = [f for f in range(n) if crouch[f] and py[f] >= AIR and py[f - 1] >= AIR]
+    down = [f for f in range(n) if pa[f] in DUCK]
+    bounces = sum(1 for f in range(1, n) if hop[f] and not hop[f - 1] and pa[f] in DUCK)
+    idle_down = sum(1 for f in down[3:] if not hop[f])                                # frames on the ground while the player is down
+    hops_up = sum(1 for f in range(1, n) if hop[f] and not hop[f - 1] and pa[f] not in DUCK and py[f] >= AIR)
+    ok = (not bad and opposite and len(air) >= 20 and not crouch_bad and not crouch_wrong and len(down) >= 100
+          and bounces >= 2 and idle_down <= 4 and hops_up == 0 and col == 14)
     return report("MIRROR", ok, f"{n} frames: buddy X = {MIRROR_SUM} - player X, clamped {MIN_X}..{MAX_X}, at every frame ({len(bad)} misses), "
-                  f"faces the other way {opposite}, player jumps at {jump}, buddy hops at {hops}, player ducks {ducked} frames, "
-                  f"buddy crouches with him ({len(crouch_bad)} misses), colour {col}")
+                  f"faces the other way {opposite}; player in the air {len(air)} frames: buddy crouched ({len(crouch_bad)} misses, "
+                  f"{len(crouch_wrong)} crouches with the player down); player crouched {len(down)} frames: buddy bounces {bounces} times, "
+                  f"on the ground meanwhile {idle_down} frames; jumps on his own {hops_up}, colour {col}")
 
 
 def wander(prg, A):

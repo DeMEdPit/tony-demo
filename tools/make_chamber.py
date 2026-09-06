@@ -763,7 +763,9 @@ sleeperDecide: {{
 //    frame for frame: every step, every jump, every duck, in order, until the
 //    recording runs out (which it never does: it is always the last 4 s).
 // MIRROR stands at the player's reflection about the centre line between the
-//    pillars (x' = MIRROR_SUM - x, clamped to the pillars) and jumps with him.
+//    pillars (x' = MIRROR_SUM - x, clamped to the pillars) and contradicts him
+//    the other way too: crouches while he is in the air, bounces while he is
+//    crouched (a funhouse mirror, the owner's idea).
 // WANDER lives there: a plan at a time (stroll, pause, sit, a jump on the
 //    spot), the choice and its length rolled from a shift register stirred
 //    every frame by the chip's oscillator 3 ($D41B), the pauses lengthened by
@@ -950,7 +952,7 @@ buddyDecide: {{
     mirror:
     lda #0
     sta wantHop
-    jsr playerCrouch                // crouch when he crouches
+    sta buddyCool                   // no pause between bounces
     sec                             // target = MIRROR_SUM - playerX
     lda #<MIRROR_SUM
     sbc physPlayerX
@@ -978,18 +980,25 @@ buddyDecide: {{
             sta target
     placed:
     jsr buddyPlace
-    lda physPlayerY                 // jump with him, on the rising edge
+    lda physPlayerY                 // he is in the air: crouch (shown once the buddy is on the ground)
     cmp #(BUDDY_FLOOR_Y - 8)
     bcs mirrorGround
-        lda mirrorAirPrev
-        bne mirrorDone
-            lda #1
-            sta wantHop
-            sta mirrorAirPrev
-            rts
+        lda #1
+        sta nextCrouch
+        rts
     mirrorGround:
-        lda #0
-        sta mirrorAirPrev
+    lda physPlayerAnimation         // he is crouched: bounce, and keep bouncing while he stays down
+    cmp #ANIM_DUCK_LEFT
+    beq mirrorBounce
+    cmp #ANIM_DUCK_RIGHT
+    beq mirrorBounce
+    cmp #ANIM_DUCK_QUICK_LEFT
+    beq mirrorBounce
+    cmp #ANIM_DUCK_QUICK_RIGHT
+    bne mirrorDone
+    mirrorBounce:
+        lda #1
+        sta wantHop
     mirrorDone:
     rts
 

@@ -318,7 +318,17 @@ Tony is almost on him, not only once Tony is past. Cornered and crouching,
 he now bolts straight at Tony and through him when Tony comes within 16
 pixels, and keeps going until Tony is behind him, where the ordinary flee
 carries him on the same way. Measured: cornered at frame 34, bolts at 55
-with Tony 6 pixels off, clear of the corner by 71. Open: the owner's
+with Tony 6 pixels off, clear of the corner by 71.
+
+**The Mirror contradicts him up and down too (owner's idea, 2026-09-06).**
+The literal mirror copied the jump and the crouch; nobody watching thinks
+"reflection", they see a second Tony doing the opposite, and a crouch
+answered with a crouch broke that. Now: while Tony is in the air the
+Mirror crouches (shown once he is on the ground; he cannot crouch
+mid-bounce), and while Tony is crouched the Mirror bounces without pause
+until Tony stands. Left-right unchanged. Measured: Tony in the air 21
+frames, the Mirror crouched throughout; Tony down 120 frames, the Mirror
+bounced five times with four frames on the ground between. Open: the owner's
 play-through of the seven in READY 64, the colour mapping, then the freeze.
 
 ## E12 — Chain-reactive tokens · proposed
