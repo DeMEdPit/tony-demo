@@ -69,6 +69,9 @@ field report on the first play-test and what it changed.
 
 ## Documents
 
+- **`THE-GLITCH.md`** — the eighth token: what the Glitch does, the blackout
+  room, how the idea arrived and why it was built the simple way, the
+  decisions made on evidence, and what it means for the contract.
 - **`HANDOFF-CONTRACTS.md`** — for the agent writing and deploying the
   Chamber contracts: what is on mainnet, the base program and its 42-byte
   parameter block, what `tokenURI` must do, the SVG image exactly, how to
