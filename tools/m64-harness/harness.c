@@ -9,7 +9,9 @@
  *
  * commands: wait:N        run N PAL frames
  *           shot:FILE     dump the pixel buffer as binary PPM
- *           joy:MASK:N    hold joystick-2 lines MASK for N frames
+ *           joy:MASK:N    hold joystick-2 lines MASK for N frames (then release, +5 frames)
+ *           hold:MASK     press joystick-2 lines MASK and leave them pressed
+ *           release:MASK  release joystick-2 lines MASK (no frames run: pair with wait:N)
  *           key:CODE:N    hold key CODE (keyboard.h codes) for N frames
  *           peek:HEX      print one byte of CPU-visible memory
  */
@@ -68,6 +70,10 @@ int main(int argc, char **argv) {
             frames(atoi(cmd + 5));
         } else if (!strncmp(cmd, "shot:", 5)) {
             shot(cmd + 5);
+        } else if (!strncmp(cmd, "hold:", 5)) {
+            m64_joystickPush(1, atoi(cmd + 5));
+        } else if (!strncmp(cmd, "release:", 8)) {
+            m64_joystickRelease(1, atoi(cmd + 8));
         } else if (!strncmp(cmd, "joy:", 4)) {
             uint32_t mask = (uint32_t)strtoul(cmd + 4, NULL, 10);
             char *n = strchr(cmd + 4, ':');

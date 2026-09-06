@@ -11,8 +11,9 @@ the player's register image, a jump of half a semitone or more) and never
 otherwise; he must turn round every fourth note; every hop must sit on a rise
 of voice 3's envelope (ENV3, $D41C, a hit while airborne answered on landing)
 and every clear rise must produce a hop;
-he must not follow the player; the sprite colour registers must carry the
-colour byte. FOLLOW (behaviour 0) is the regression: he still walks after the
+he must side-step with the notes, a body-width each way around his spot, and
+his path must be exactly the same whether or not the player moves; the
+sprite colour registers must carry the colour byte. FOLLOW (behaviour 0) is the regression: he still walks after the
 player and hops when the player jumps, in his original green.
 
 Usage:  python3 tools/verify_dance.py [deliverables/prg/minimal64/tony-chamber.prg]
@@ -92,7 +93,7 @@ def dance(prg, A):
     ok = (len(steps) >= 40 and not steps_off_beat and len(notes_unanswered) <= len(notes) // 20
           and len(turns) >= 8 and all(g >= 30 for g in turn_gaps)
           and len(hops) >= 6 and not hops_unfounded and not rises_unanswered
-          and min(bx) == max(bx) and col5 == 3 and col6 == 3)
+          and 16 <= max(bx) - min(bx) <= 48 and abs(bx[0] - 120) <= 24 and col5 == 3 and col6 == 3)
     print(f"DANCE  {FRAMES / 50:.0f} s: notes on voice 1 {len(notes)}, pose steps {len(steps)} (off the beat {len(steps_off_beat)}, "
           f"notes unanswered {len(notes_unanswered)}), turns {len(turns)} (every {min(turn_gaps) if turn_gaps else 0}..{max(turn_gaps) if turn_gaps else 0} frames), "
           f"ENV3 rises {len(rises)}, hops {len(hops)} (without a rise {len(hops_unfounded)}, rises without a hop {len(rises_unanswered)}), "
@@ -102,11 +103,17 @@ def dance(prg, A):
 
 
 def dance_ignores_player(prg, A):
+    """His path is the music's: the same X trace whether the player stands or walks about."""
     prg1 = stamp(prg, 1, 3)
-    v = run(prg1, f"wait:{BOOT},peek:{A['buddyX']:X},joy:{RIGHT}:120,peek:{A['buddyX']:X}")
+    n = 400
+    still = run(prg1, f"wait:{BOOT}," + f"peek:{A['buddyX']:X},wait:1," * n)
+    walk = "".join((f"release:{4 if (f // 60) % 2 else RIGHT},hold:{RIGHT if (f // 60) % 2 else 4}," if f % 60 == 0 else "")
+                   + f"peek:{A['buddyX']:X},wait:1," for f in range(n))        # 60 frames right, 60 left, ...
+    moving = run(prg1, f"wait:{BOOT},hold:{RIGHT}," + walk[len(f"release:4,hold:{RIGHT},"):])
     os.unlink(prg1)
-    ok = v[0] == v[1]
-    print(f"DANCE  the player walks 120 frames: buddy X {v[0]} -> {v[1]} (must not follow) -> {'OK' if ok else 'FAIL'}")
+    ok = still == moving and len(still) == n
+    print(f"DANCE  {n} frames, player still vs walking to and fro: buddy X traces {'identical' if ok else 'DIFFER'}, "
+          f"range {min(still)}..{max(still)} -> {'OK' if ok else 'FAIL'}")
     return ok
 
 

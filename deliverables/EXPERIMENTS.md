@@ -181,6 +181,10 @@ was picked with that in view. Which colour goes with which mechanic is
 still open. Build order: the two bytes, then Dance, then the rest, each
 with a scripted test on minimal64.
 
+**Names (owner, 2026-09-06):** The Shadow (Follow), The Dancer (Dance),
+The Echo, The Mirror, The Wanderer, The Shy One, The Sleeper; the mechanic
+stays an attribute.
+
 **Built (2026-09-06): the two bytes, and Dance.** The Chamber's parameter
 block is now 42 bytes after the marker `MURAL02\0`: 32 seed bytes, 8
 block digits, the behaviour byte, the colour byte (`tools/make_chamber.py`,
@@ -195,9 +199,11 @@ inside the machine, and nothing outside it:
   registers that the tune's player keeps in RAM and copies to the chip every
   frame (`$A474`, found in the player by its copy loop `LDA image,X / STA
   $D400,X`). A move of half a semitone or more (|new − old| ≥ old/32) is a
-  step: the pose advances one phase of the idle cycle, and every fourth step
-  he turns round. Between steps the pose holds: he moves only when the music
-  moves;
+  step: the pose advances one phase of the idle cycle and he side-steps six
+  pixels the way he faces, and every fourth step he turns round, so he
+  shuffles a body-width each way around his spot (the owner's ask after the
+  first cut, where he stood still). Between steps the pose holds: he moves
+  only when the music moves;
 - *the hits*: voice 3's envelope read back from the chip itself (`$D41C`).
   A rise of 6 or more in a frame is a note hit and queues a hop, answered
   the moment he is on the ground, so the tune's double hits become double
@@ -212,8 +218,9 @@ changes, not the gates or the envelope, and the envelope gives the accents.
 `tools/verify_dance.py` (18 s on minimal64): 68 notes on voice 1, 56 pose
 steps, none off the beat, none unanswered; 17 turns, never closer than 39
 frames; 79 envelope rises, 14 hops, every one on a rise, no rise without a
-hop; he does not follow the player; the sprite colour registers carry the
-colour byte. Follow regression passes (walks after the player, hops at the
+hop; his path is the music's alone: the X trace over 400 frames is
+identical whether the player stands or walks to and fro; the sprite colour
+registers carry the colour byte. Follow regression passes (walks after the player, hops at the
 player's jump, green). **Taught:** minimal64 implements both readback
 registers of the SID (`$D41B` oscillator 3, `$D41C` envelope 3) in its
 `sid_read`, and the values behave like the chip's: the on-chain machine can

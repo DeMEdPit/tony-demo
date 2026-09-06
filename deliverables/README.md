@@ -19,7 +19,7 @@ any emulator (verified in VICE as well).
 | `tony-chamber-block-25850252.prg` | 38,200 | same build, seed "block 25850252": quarter wall, candle upper middle |
 | `tony-chamber-block-25850254.prg` | 38,200 | same build, seed "block 25850254": half wall, candle low middle |
 | `tony-chamber-block-25850256.prg` | 38,200 | same build, seed "block 25850256": the rare three-quarter wall, candle |
-| `tony-chamber-dance-cyan.prg` | 38,200 | the same build with behaviour 1 (Dance) and colour 3 (cyan) stamped: the buddy steps and turns with the bass line and bounces on voice 3's hits, read from the chip; he ignores Tony. `tools/verify_dance.py` is its scripted test |
+| `tony-chamber-dance-cyan.prg` | 38,200 | the same build with behaviour 1 (Dance) and colour 3 (cyan) stamped: the buddy side-steps and turns with the bass line, a body-width each way, and bounces on voice 3's hits, read from the chip; his path is the music's, not Tony's. `tools/verify_dance.py` is its scripted test |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 

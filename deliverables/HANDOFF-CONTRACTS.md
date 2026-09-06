@@ -49,10 +49,21 @@ Each token is the buddy with one **mechanic** and one **colour**; the
 room's back wall, one candle and a number carved in the floor are drawn at
 every render from the current block. The room itself stays black and grey.
 
-- **Mechanics (behaviour byte):** 0 Follow (built), 1 Dance (built, tested),
-  2 Echo, 3 Mirror, 4 Wander, 5 Shy, 6 Sleeper (to build; a program with
-  bytes 2–6 today shows the buddy standing still). One build serves all
-  seven: the byte selects the mechanic at run time.
+- **Mechanics and names (behaviour byte).** The owner's names, decided
+  2026-09-06; the mechanic stays an attribute:
+
+  | id | name | behaviour byte | what he does | status |
+  |---|---|---|---|---|
+  | 1 | The Shadow | 0 Follow | keeps his distance, faces you, hops when you jump | built |
+  | 2 | The Dancer | 1 Dance | steps and turns with the bass line, bounces on the hits, read from the chip | built, tested |
+  | 3 | The Echo | 2 Echo | replays your moves a second or two behind you | to build |
+  | 4 | The Mirror | 3 Mirror | moves opposite to you about the room's centre line | to build |
+  | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, looks, sits | to build |
+  | 6 | The Shy One | 5 Shy | runs when you approach, creeps back, hides behind a pillar | to build |
+  | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | to build |
+
+  One build serves all seven: the byte selects the mechanic at run time. A
+  program with bytes 2–6 today shows the buddy standing still.
 - **Colours (colour byte, a C64 colour index):** the owner's seven: cyan 3,
   green 5, yellow 7, light blue 14, blue 6, light red 10, purple 4. Which
   colour goes with which mechanic is **not decided yet**.
@@ -67,6 +78,74 @@ this repository), **not a patch over the Tony token's bytes**, so it needs
 its own on-chain storage, the way the Tony token stores its PRG in data
 blobs. The castles work (`ONCHAIN-CASTLES.md`) is the other line, patches
 over base 1, and is not part of this collection.
+
+## 3a. What a viewer is looking at, and why
+
+Plain-language context, for the description text and for anyone reading
+the contract.
+
+**The machine.** nopsta wrote minimal64, a Commodore 64 emulator in
+JavaScript, and stored it on Ethereum in 2022 as data contracts. He has
+since passed away. This work was made after he was gone and independently
+of him. A token's page runs that emulator in the viewer's browser with no
+server, no file fetched from anywhere, and no Commodore firmware: the
+program drives the hardware directly.
+
+**The program.** Tony: Born for Adventure is a 2023 Commodore 64 demo by
+Maciej Małecki (code), Rafał Dudek (graphics) and Sami Juntunen (music),
+published MIT. The Chamber is one room built from its engine: the tall
+pillar room, Tony, two bats, and the buddy, a second Tony in the token's
+colour who behaves according to the token's mechanic. Tony is yours to
+walk, jump and climb with the joystick; the buddy is the token's.
+
+**The wall is the block.** The back wall is bricks drawn from 32 bytes.
+When a marketplace or a viewer asks the token for its page, the contract
+writes the hash of the newest block into those 32 bytes, so the bricks a
+viewer sees are, literally, that block's hash: three bit streams run
+through the bytes and decide which of 150 brick slots are filled. Three
+seed bits pick how full the wall is (fewer bricks is common, a nearly full
+wall is the rare roll) and two more decide whether one of the room's
+candles is lit and where. Every fresh render is a different wall, and no
+one, including the contract, can say in advance what it will be.
+
+**The number in the floor is the block number.** Eight digits carved into
+the floor's right end say which block the render was made at. So a render
+is a photograph of the chain at one moment: the wall is what that block's
+hash looked like, the floor says which block. A chain can only read the
+last 256 block hashes, so a wall seen at block N cannot be recomputed on
+chain an hour later. The renders are impressions, not a series. (If the
+owner wants a permanent "birth wall", the mint block's hash can be stored
+at mint and rendered alongside.)
+
+**The buddy listens.** Each token's buddy has one mechanic. The Dancer, for
+instance, reads the tune as the game plays it: the player keeps an image
+of the sound-chip registers in memory, and the buddy steps and turns when
+the bass line moves, and bounces when voice 3's envelope, read back from
+the chip itself, jumps. No timing table and no data from outside the
+machine: he is dancing to what the chip is actually doing.
+
+**The picture.** The token image is the buddy alone in his colour, doing
+the little dance the game plays when a character stands still, built in
+the contract from the game's own sprite bytes as an animated SVG.
+
+**Why nothing is stored per render and nothing is fetched.** The tokens
+are keyless: no admin, no server, no URL. Everything a viewer receives is a
+`data:` URI assembled in a view call from bytes already on chain. A render
+costs the reader gas and the owner nothing. Bugs found later are fixed in
+new tokens, never by changing these.
+
+**A draft description, for the owner to edit** (it follows the wording
+rules of section 1):
+
+> The Dancer. One room of Tony: Born for Adventure, running on a Commodore
+> 64 emulator kept on Ethereum, with no server and no firmware. Tony's cyan
+> double dances to the tune: he steps with the bass line and bounces on the
+> hits, read from the sound chip. The bricks of the back wall are the hash of
+> the block this was rendered at, and the number in the floor is that block.
+> Every fresh render is a new wall. Code Maciej Małecki, graphics Rafał
+> Dudek, music Sami Juntunen (MIT). Emulator: minimal64 by nopsta (GPL-2.0),
+> who stored the machine on Ethereum in 2022 and has since passed away; this
+> work was made after he was gone and independently of him.
 
 ## 4. The base program and its parameter block
 
@@ -201,6 +280,48 @@ which makes the test trivial. Shape of the file:
 
 Decisions the owner still has to make: colour ↔ mechanic mapping; the seven
 names; the description text; whether a "birth wall" is stored at mint.
+
+## 8a. Releasing The Dancer first
+
+Nothing forces all seven out at once. A collection contract can define
+the seven and mint them one at a time, whenever the owner sends the
+transaction. The only constraint is the base program: it is frozen when it
+is deployed, and the mechanics that do not exist yet (bytes 2–6) show a
+standing buddy on it. Two honest ways to go first:
+
+- **Wait for the freeze** (about one more session of engine work): one
+  base, all seven mechanics in it, tokens minted in any order over any
+  period.
+- **Two bases**: deploy base 2a now (Follow and Dance, i.e. The Shadow and
+  The Dancer) and mint The Dancer; later deploy base 2b with all seven and
+  mint the other five on it. The contract then keeps a base per token id
+  (or per range), which is a few lines. The Dancer stays on 2a forever
+  (fix-forward), which is fine, since Dance is complete on 2a. Cost: a
+  second 38 KB base deployment later.
+
+Either is sound. If The Dancer should go out now, the two-base design is
+the one to write; ask the owner which.
+
+## 8b. What the contracts agent needs, and how to get it
+
+Nothing for the Chamber is on chain yet, so there is nothing to read from
+Etherscan: the agent deploys the base. Everything needed is in this
+repository, and read access to the fork (`DeMEdPit/tony-demo`, branch
+`claude/tony-c64-demo-expert-wp40it`) is the simplest way to hand it over.
+The PRG files are committed (they are force-added, since `*.prg` is
+ignored by default). If a file bundle is preferred instead, it is:
+
+1. `deliverables/prg/minimal64/tony-chamber.prg`, the base (take it again
+   at the freeze; the hash and offsets in this document are updated then).
+2. `deliverables/assets/buddy-idle-*.svg`, the seven image files; the four
+   `d` path strings inside them are the constants the contract needs.
+3. The seven (behaviour, colour) pairs and names (section 3), the
+   description text (section 3a, once the owner has edited it).
+4. To verify rather than trust: `tools/stamp_mural.py` (the byte
+   reference), `tools/buddy_thumbnail.py` (the image reference),
+   `tools/verify_dance.py`, and `tools/m64-harness/` with nopsta's source
+   (github.com/nopsta/minimal64) to run any produced PRG headless.
+5. This document and `deliverables/EXPERIMENTS.md`.
 
 ## 9. Where things are in this repository
 

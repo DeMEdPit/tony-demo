@@ -1799,6 +1799,7 @@ showEnemies: {
 .label BUDDY_HOP_LEN  = 14
 .label BUDDY_HOP_COOL = 20
 .label DANCE_RISE     = 6   // ENV3 must climb this much in one frame to count as a hit
+.label DANCE_SLIDE    = 6   // pixels he side-steps on every note (one per frame)
 
 buddyInit: {
     lda #120
@@ -2090,6 +2091,7 @@ hopArc:       .byte 253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3
 wantHop:      .byte 0
 envPrev:      .byte 0
 stepCount:    .byte 0
+slideCount:   .byte 0
 noteOld:      .word 0
 noteNew:      .word 0
 noteDiff:     .word 0
@@ -2103,8 +2105,9 @@ noteStep:     .word 0
 //    that the tune's player keeps in RAM and copies to the chip every frame
 //    (SID_IMAGE, found in the player by its copy loop). A move of half a
 //    semitone or more (|new - old| >= old / 32) is a step: the pose advances
-//    one phase, and every fourth step he turns round. Between steps the pose
-//    holds, so he moves only when the music moves.
+//    one phase and he side-steps DANCE_SLIDE pixels the way he faces; every
+//    fourth step he turns round, so he shuffles a body-width each way.
+//    Between steps the pose holds: he moves only when the music moves.
 //  - the hits: voice 3's envelope read back from the chip itself ($D41C). A
 //    rise of DANCE_RISE or more in a frame is a note hit: a hop, queued until
 //    he is on the ground again, so a double hit is a double bounce.
@@ -2163,6 +2166,8 @@ buddyDecide: {
     sbc noteStep + 1
     bcc noStep
         inc buddyPhase              // one pose per note
+        lda #DANCE_SLIDE            // and one side-step
+        sta slideCount
         inc stepCount
         lda stepCount
         and #3
@@ -2171,6 +2176,12 @@ buddyDecide: {
             eor #1
             sta buddyFacing
     noStep:
+    lda slideCount                  // a side-step in progress: one pixel per frame
+    beq noSlide
+        dec slideCount
+        lda #1
+        sta buddyMoving
+    noSlide:
     lda #0
     sta buddyDelay                  // the pose moves only with the music
     sta buddyCool                   // and he may bounce again the moment he lands
