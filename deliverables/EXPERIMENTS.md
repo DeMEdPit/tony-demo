@@ -210,23 +210,44 @@ contract make every render a dated impression.
 
 **Built (2026-09-06), after the owner cut it down to the one idea:** no HUD,
 the full 25 rows, a brick ceiling, the same floor, the two pillars, Tony,
-the green buddy, two bats — and the only thing the chain touches is the back
-wall. `tony-chamber.prg` (37,678 B, ROM-free, boots straight in) carries a
-32-byte **seed** right after an 8-byte marker `MURAL01\0` (file offset
-`0x041C9`, address `$49C8`, 64-aligned). At every room draw the game stamps
-15 × 10 slots of 2×2 dotted bricks, one seed bit per slot (MSB first, 150 of
-256 bits used), between the room decompression and its character
-translation, so the bricks go through the same char mapping and material
-lookup as the rest of the map. Verified on minimal64: the screen matches
-the seed bit for bit (30/30 slots checked), two seeds side by side in
-`assets/chamber-two-seeds-m64.png`. `tools/stamp_mural.py` writes a seed
-(a block hash as hex, or sha256 of a text) and prints the wall it draws; a
-contract does the same 32-byte write at render time. Generated sources:
-`tools/build_chamber_room.py`, `tools/make_chamber.py`
-(`level/chamber/data.asm`, `tony-chamber.asm`). **Open:** the owner's
-play-through in READY 64; the contract-side write (the room base is the
-buddy engine, not yet deployed); whether the wall should be denser or
-sparser (a rule other than "bit = brick" is a one-line change).
+the green buddy, two bats — and the chain touches only what the seed block
+says. `tony-chamber.prg` (37,942 B, ROM-free, boots straight in) carries a
+**40-byte seed block** right after an 8-byte marker `MURAL01\0` (file offset
+`0x042C9`, address `$4AC8`, 64-aligned): 32 seed bytes (the block hash) and
+8 block-number digits. At every room draw the game stamps, between the room
+decompression and its character translation:
+
+- **the wall** — 15 × 10 slots of 2×2 dotted bricks. Three bit streams run
+  through the seed (A from byte 0, B from 19, C from 25, wrapping at 32) and a
+  **density mode**, `seed[31] & 3`, picks how they combine per slot: A&B
+  (about a quarter filled), A (half), A|B (three quarters), A&B&C (an
+  eighth). Same seed, same wall, forever; a different hash, a different wall
+  and often a different density;
+- **the sconces** — `seed[30] & 3` of them (0–3) at five fixed wall
+  positions, chosen by 3-bit picks (`seed[29]` bits 0–2 and 3–5, `seed[28]`
+  bits 0–2, mapped 0,1,2,3,4,1,2,3), a position lit twice stays one;
+- **the floor inscription** — the eight block digits carved into the top
+  course of the floor, columns 16–23, as ten new glyphs (`$01–$0A` in the
+  chamber's own charset: the floor brick face with the game's title-font
+  digit cut out; wall material, so Tony stands on them).
+
+Also fixed: the buddy showed the wall through his transparent pixels. Tony
+never did because the engine gives him a third, Y-expanded, dark backdrop
+sprite; the buddy now has the same on sprite 7 (free in this build), pointed
+at the BG frame of whatever pose he wears and repainted in the top-of-frame
+interrupt with the player's backdrop colour.
+
+Verified on minimal64 for five seeds (all four density modes, 0–2 sconces):
+every one of the 150 wall slots, the five sconce positions and the eight
+floor digits match `tools/stamp_mural.py`'s bit-exact prediction of the 6502
+routine. Captures: `assets/chamber-five-seeds-m64.png`,
+`assets/chamber-zoom-buddy-floor.png`. Generated sources:
+`tools/build_chamber_room.py` (map, `chamber-charset.bin`,
+`chamber-materials.bin`), `tools/make_chamber.py` (`level/chamber/data.asm`,
+`tony-chamber.asm`). The combination space is 2^150 walls × 4 densities ×
+the sconce choices — not a preset list. **Open:** the owner's play-through in
+READY 64; the contract-side 40-byte write at render time (the room base is
+the buddy engine, not yet deployed); colour scheme as a trait.
 
 ---
 

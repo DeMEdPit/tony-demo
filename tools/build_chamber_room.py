@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
-"""The Chamber: the tall Colonnade (40x25, no dashboard) with a BRICK ceiling.
+"""The Chamber: the tall Colonnade (40x25, no dashboard) with a BRICK ceiling,
+its own character set and material table.
 
 Ceiling and floor use the same two-row brick courses; two pillars run from
 ceiling to floor. The back wall between the pillars is left empty on purpose:
 at run time the game stamps a mural of dotted bricks there from a 32-byte
-seed (tools/make_chamber.py, tools/stamp_mural.py). One static dotted brick
-is placed in the mural area so its four characters are part of the room's
-used-character set (the engine only carries the characters a room uses);
-the mural routine overwrites every slot, so it never shows as such.
+seed, up to three wall sconces, and carves the block number into the floor
+(tools/make_chamber.py, tools/stamp_mural.py).
 
-Emits src/level-custom/chamber-room.bin and a preview PNG.
-Run from repo root: python3 tools/build_chamber_room.py
+Characters the run-time routine needs must be part of the room's used set
+(the engine only carries the characters a room uses), so they are placed in
+the static map INSIDE the mural area, which the routine overwrites entirely:
+the four dotted-brick chars, the four sconce chars, and the ten carved digits.
+
+The ten carved digits are new glyphs: the floor brick texture with the
+game's own title-font digit cut out of it. They replace characters $01-$0A
+(unused by this room) in a copy of the level charset, `chamber-charset.bin`,
+and get wall material in `chamber-materials.bin` so Tony can stand on them.
+
+Emits src/level-custom/chamber-room.bin, chamber-charset.bin,
+chamber-materials.bin and preview PNGs. Run from repo root.
 """
 import os
 import sys
@@ -18,6 +27,10 @@ import sys
 sys.path.insert(0, "tools")
 
 W, H = 40, 25
+DIGIT_BASE = 0x01                 # carved digits live at $01..$0A
+DIGIT_TEXTURE = 0x32              # the floor brick face the digits are cut into
+SCONCE = (0x69, 0x6A, 0x6D, 0x6E)
+MURAL = (0xB0, 0xB1, 0xB2, 0xB3)
 g = [[0x00] * W for _ in range(H)]
 
 
@@ -46,28 +59,57 @@ for i, row in enumerate(PILLAR):                     # rows 2..22
     put(2 + i, 0, *row)
     put(2 + i, 35, *row)
 
-# the mural's four characters, so the room "uses" them (overwritten at run time)
-put(2, 5, 0xB0, 0xB1)
-put(3, 5, 0xB2, 0xB3)
+# run-time characters, parked inside the mural area (rows 2-21, cols 5-34)
+put(2, 5, MURAL[0], MURAL[1]); put(3, 5, MURAL[2], MURAL[3])
+put(4, 5, SCONCE[0], SCONCE[1]); put(5, 5, SCONCE[2], SCONCE[3])
+put(6, 5, *[DIGIT_BASE + d for d in range(10)])
 
 os.makedirs("src/level-custom", exist_ok=True)
-out = "src/level-custom/chamber-room.bin"
-with open(out, "wb") as f:
+with open("src/level-custom/chamber-room.bin", "wb") as f:
     for row in g:
         f.write(bytes(row))
-print(f"wrote {out} ({W}x{H})")
+print("wrote src/level-custom/chamber-room.bin (40x25)")
 
-from ctm_tool import CTM, char_rows
+# --- the chamber's own charset and materials -------------------------------
+cs = bytearray(open("build/charpad/demo-level-charset.bin", "rb").read())   # ink = 1 bits (negated at load)
+mt = bytearray(open("build/charpad/demo-level-materials.bin", "rb").read())
+prg = open("deliverables/onchain/tony-token-edition.prg", "rb").read()
+font = prg[0xBC20 - 0x0801 + 2:][:296]                                       # title font: @ A-Z 0-9
+texture = cs[DIGIT_TEXTURE * 8:DIGIT_TEXTURE * 8 + 8]
+for d in range(10):
+    glyph = font[(27 + d) * 8:(27 + d) * 8 + 8]
+    carved = bytes(texture[r] & ~glyph[r] & 0xFF for r in range(8))        # brick minus the digit
+    cs[(DIGIT_BASE + d) * 8:(DIGIT_BASE + d) * 8 + 8] = carved
+    mt[DIGIT_BASE + d] = 1                                                   # wall: Tony stands on them
+for c in SCONCE:
+    mt[c] = 0                                                                # decoration only
+open("src/level-custom/chamber-charset.bin", "wb").write(bytes(cs))
+open("src/level-custom/chamber-materials.bin", "wb").write(bytes(mt))
+print("wrote src/level-custom/chamber-charset.bin and chamber-materials.bin")
+
+# --- previews ----------------------------------------------------------------
 from PIL import Image
-ctm = CTM("src/charpad/castle_map.ctm")
+def rows_of(code):
+    return [[(cs[code * 8 + r] >> (7 - x)) & 1 for x in range(8)] for r in range(8)]
 im = Image.new("L", (W * 8, H * 8), 0)
 px = im.load()
 for cy in range(H):
     for cx in range(W):
-        rows = char_rows(ctm.char_bitmap(g[cy][cx]))
+        rows = rows_of(g[cy][cx])
         for ry in range(8):
             for rx in range(8):
                 if rows[ry][rx]:
                     px[cx * 8 + rx, cy * 8 + ry] = 255
 im.save("deliverables/assets/chamber-room-preview.png")
-print("wrote deliverables/assets/chamber-room-preview.png")
+S = 6
+strip = Image.new("L", ((10 + 4) * 8 * S, 8 * S), 0); sp = strip.load()
+for i, code in enumerate([DIGIT_TEXTURE, DIGIT_TEXTURE] + [DIGIT_BASE + d for d in range(10)] + [DIGIT_TEXTURE, DIGIT_TEXTURE]):
+    rows = rows_of(code)
+    for ry in range(8):
+        for rx in range(8):
+            if rows[ry][rx]:
+                for yy in range(S):
+                    for xx in range(S):
+                        sp[(i * 8 + rx) * S + xx, ry * S + yy] = 255
+strip.save("deliverables/assets/chamber-digits-preview.png")
+print("wrote previews")

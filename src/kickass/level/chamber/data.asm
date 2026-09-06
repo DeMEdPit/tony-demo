@@ -120,14 +120,17 @@ chamberColonnade: // 0
         objectExt(SO_BAT, 0, 27, 4, 1)      // territory (sprites must not touch)
     ))
 
-// The mural seed. A contract (or tools/stamp_mural.py) overwrites the 32
-// bytes after the marker; the marker makes the block findable in any build.
+// The seed block. A contract (or tools/stamp_mural.py) overwrites the 40
+// bytes after the marker: 32 seed bytes (the block hash) and 8 block-number
+// digits. The marker makes the block findable in any build; 64-aligned so it
+// never crosses a page.
 .align 64
 muralMarker: .byte $4D, $55, $52, $41, $4C, $30, $31, $00   // "MURAL01\0"
 muralSeed:   .byte $F8, $F7, $9B, $7F, $AE, $43, $D1, $F0, $1E, $A0, $8E, $F3, $B0, $71, $2A, $21, $A8, $4A, $FC, $BE, $7E, $9B, $D7, $66, $98, $69, $92, $8F, $C4, $53, $EC, $67
+muralBlock:  .byte 2, 5, 8, 5, 0, 2, 5, 0                   // block 25850250
 
 materials:
-    .import binary "demo-level-materials.bin"
+    .import binary "chamber-materials.bin"
 
 level_fire:
     #import "../demo/bitmaps/fire.asm"
@@ -180,6 +183,6 @@ pathsPtrsHi:    .byte >path0, >path1
 pathLengths:    .byte 10, 10
 
 demoLevelCharset: {
-    loadNegated("demo-level-charset.bin")
+    loadNegated("chamber-charset.bin")
 }
 demoLevelCharsetEnd:
