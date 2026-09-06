@@ -1800,7 +1800,7 @@ showEnemies: {
 .label BUDDY_HOP_COOL = 20
 .label DANCE_RISE     = 6   // ENV3 must climb this much in one frame to count as a hit
 .label DANCE_SLIDE    = 6   // pixels he side-steps on every note (one per frame)
-.label ECHO_DELAY     = 75  // frames behind the player (1.5 s); the ring holds 128
+.label ECHO_DELAY     = 200 // frames behind the player (4 s); the ring holds 256
 .label MIRROR_SUM     = 344 // twice the centre line between the pillars (64..280)
 .label SHY_FLEE_AT    = 56  // closer than this: he runs
 .label SHY_CALM_AT    = 110 // farther than this: he creeps back
@@ -1843,6 +1843,7 @@ buddyUpdate: {
     lda #0
     sta nextPoseMoving
     sta nextCrouch
+    sta nextJumpPose
     lda muralBehaviour
     sta buddyMode
     cmp #6
@@ -1915,6 +1916,8 @@ buddyUpdate: {
     sta buddyCrouch
     lda nextPoseMoving
     sta buddyPoseMoving
+    lda nextJumpPose
+    sta buddyJumpPose
     // one pixel the way he faces, clamped to the space between the pillars
     lda buddyMoving
     beq noMove
@@ -2003,6 +2006,7 @@ buddyUpdate: {
 
     // pose: hop / walk cycle / breathing idle, in the facing direction
     lda buddyHop
+    ora buddyJumpPose
     beq notHopping
         lda buddyFacing
         beq !+
@@ -2155,6 +2159,8 @@ target:       .word 0        // +42  scratch: where Echo and Mirror put him
 nextCrouch:   .byte 0        // +44  the pose flags the mechanics ask for, committed by the act part
 nextPoseMoving: .byte 0      // +45
 wanderRng:    .byte 0        // +46  the Wanderer's dice: a shift register stirred by oscillator 3
+nextJumpPose: .byte 0        // +47  show the jump although the act part is not hopping (Echo)
+buddyJumpPose: .byte 0       // +48
 
 // |player - buddy| and which side he is on (the Follow code has its own copy inline)
 buddyDistance: {
@@ -2274,9 +2280,10 @@ sleeperDecide: {
 //  - the hits: voice 3's envelope read back from the chip itself ($D41C). A
 //    rise of DANCE_RISE or more in a frame is a note hit: a hop, queued until
 //    he is on the ground again, so a double hit is a double bounce.
-// ECHO records the player's position every frame in a 128-entry ring and
-//    stands where the player stood ECHO_DELAY frames ago; a jump is echoed
-//    when the recorded position leaves the ground.
+// ECHO records the player every frame - where he is, how high, which pose he
+//    wears - in a 256-entry ring, and plays it back ECHO_DELAY frames later,
+//    frame for frame: every step, every jump, every duck, in order, until the
+//    recording runs out (which it never does: it is always the last 4 s).
 // MIRROR stands at the player's reflection about the centre line between the
 //    pillars (x' = MIRROR_SUM - x, clamped to the pillars) and jumps with him.
 // WANDER lives there: a plan at a time (stroll, pause, sit), the choice and
@@ -2399,17 +2406,16 @@ buddyDecide: {
     echo:
     lda #0
     sta wantHop
-    ldx echoHead                    // record this frame
+    ldx echoHead                    // record this frame: where he is, how high, what he looks like
     lda physPlayerX
     sta echoLo, x
     lda physPlayerX + 1
     sta echoHi, x
     lda physPlayerY
     sta echoY, x
-    inx
-    txa
-    and #127
-    sta echoHead
+    lda physPlayerAnimation
+    sta echoAnim, x
+    inc echoHead
     lda echoFill                    // nothing to replay until the ring holds the delay
     cmp #ECHO_DELAY
     bcs replay
@@ -2417,27 +2423,45 @@ buddyDecide: {
         rts
     replay:
     lda echoHead
-    clc
-    adc #(128 - ECHO_DELAY)
-    and #127
+    sec
+    sbc #(ECHO_DELAY + 1)           // the entry recorded ECHO_DELAY frames ago
     tax
     lda echoLo, x
-    sta target
+    sta buddyX
     lda echoHi, x
-    sta target + 1
-    jsr buddyPlace
-    lda echoY, x                    // the recorded jump, on its rising edge
-    cmp #(BUDDY_FLOOR_Y - 8)
-    bcs echoGround
-        lda echoAirPrev
-        bne echoDone
-            lda #1
-            sta wantHop
-            sta echoAirPrev
-            rts
-    echoGround:
-        lda #0
-        sta echoAirPrev
+    sta buddyX + 1
+    lda echoY, x
+    sta buddyY
+    lda echoAnim, x                 // the pose he wore, and the way he faced
+    cmp #20
+    bcc !+
+        lda #6                      // anything unknown: idle, keep facing
+    !:
+    tay
+    lda echoPose, y
+    pha
+    and #3
+    cmp #2
+    beq keepFacing
+        sta buddyFacing
+    keepFacing:
+    pla
+    lsr
+    lsr                             // 0 idle, 1 walk, 2 crouch, 3 jump
+    beq echoDone
+    cmp #1
+    bne !+
+        sta nextPoseMoving
+        rts
+    !:
+    cmp #2
+    bne !+
+        lda #1
+        sta nextCrouch
+        rts
+    !:
+    lda #1
+    sta nextJumpPose
     echoDone:
     rts
 
@@ -2660,9 +2684,14 @@ buddyDecide: {
     sta nextCrouch
     rts
 }
-echoLo: .fill 128, 0
-echoHi: .fill 128, 0
-echoY:  .fill 128, BUDDY_FLOOR_Y
+echoLo:   .fill 256, 0
+echoHi:   .fill 256, 0
+echoY:    .fill 256, BUDDY_FLOOR_Y
+echoAnim: .fill 256, ANIM_IDLING_RIGHT
+// the player's animation number -> pose * 4 + facing (0 left, 1 right, 2 keep):
+// walk L/R, duck L/R, idle L/R, ladder, jump L/R, ladder stop, death L/R,
+// skull, bat, deadman L/R, bat L/R, quick duck L/R
+echoPose: .byte 4, 5, 8, 9, 0, 1, 2, 12, 13, 2, 0, 1, 2, 2, 0, 1, 2, 2, 8, 9
 
 // ---------------------------------------------------------------------
 // MURAL: the back wall, the sconces and the floor inscription are drawn from

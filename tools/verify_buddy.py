@@ -9,8 +9,8 @@ build and reads the machine back frame by frame with the harness's peek.
   0 Follow   (The Shadow)   walks after the player, hops when he jumps
   1 Dance    (The Dancer)   steps with the bass line, bounces on voice 3's hits,
                             his path independent of the player
-  2 Echo     (The Echo)     stands where the player stood ECHO_DELAY frames ago,
-                            hops when that recorded position left the ground
+  2 Echo     (The Echo)     replays the player ECHO_DELAY frames later, frame for
+                            frame: position, height and pose (walk, duck, jump)
   3 Mirror   (The Mirror)   stands at the player's reflection about the centre
                             line, clamped to the pillars, hops with him
   4 Wander   (The Wanderer) strolls, pauses and sits on the chip's dice, turns at
@@ -30,14 +30,14 @@ import tempfile
 
 M64 = "tools/m64-harness/m64run"
 HOP_ARC = bytes([253, 253, 254, 254, 255, 255, 0, 0, 1, 1, 2, 2, 3, 3])
-DANCE_RISE, ECHO_DELAY, MIRROR_SUM = 6, 75, 344
+DANCE_RISE, ECHO_DELAY, MIRROR_SUM = 6, 200, 344
 FLOOR_Y, MIN_X, MAX_X, AIR = 206, 64, 280, 206 - 8
 BOOT = 150
 LEFT, RIGHT, FIRE = 4, 8, 16
 VARS = {"buddyX": -9, "buddyY": -7, "buddyFacing": -6, "buddyMoving": -5, "buddyHop": -4, "buddyCool": -3,
         "buddyPhase": -2, "buddyDelay": -1, "wantHop": 14, "envPrev": 15, "stepCount": 16, "slideCount": 17,
         "buddyMode": 26, "buddyPoseMoving": 27, "buddyCrouch": 28, "distMag": 29, "distRight": 30,
-        "echoHead": 31, "echoFill": 32, "wanderTimer": 35, "wanderState": 36, "sleepAwake": 38, "sleepFar": 39, "wanderRng": 46}
+        "echoHead": 31, "echoFill": 32, "wanderTimer": 35, "wanderState": 36, "sleepAwake": 38, "sleepFar": 39, "wanderRng": 46, "buddyJumpPose": 48}
 
 
 def addresses(prg):
@@ -50,6 +50,7 @@ def addresses(prg):
     m = re.search(rb"\x38\xAD(..)\xED" + bytes([bx & 0xFF, bx >> 8]), data, re.S)   # SEC / LDA physPlayerX / SBC buddyX
     A["playerX"] = m.group(1)[0] | (m.group(1)[1] << 8)
     A["playerY"] = A["playerX"] + 2
+    A["playerAnim"] = A["playerX"] + 6
     m = re.search(rb"\xBD(..)\x9D\x00\xD4", data, re.S)                            # the tune's player: LDA image,X / STA $D400,X
     A["sidImage"] = m.group(1)[0] | (m.group(1)[1] << 8)
     return A
@@ -158,19 +159,41 @@ def dance(prg, A):
 
 
 def echo(prg, A):
+    """A routine - run left, five jumps, a duck, run right - must come back exactly, ECHO_DELAY frames later."""
     p = stamp(prg, 2, 7)
-    plan = [(RIGHT, 60), (LEFT, 60), (None, 10), (FIRE, 4), (None, 130)]
-    t = frames(p, A, ["playerX", "playerY", "buddyX", "buddyHop"], plan)
+    DOWN = 2
+    plan = [(LEFT, 40)] + [(FIRE, 4), (None, 36)] * 5 + [(DOWN, 40), (RIGHT, 60), (None, ECHO_DELAY + 40)]
+    t = frames(p, A, ["playerX", "playerY", "playerAnim", "buddyX", "buddyY", "buddyFacing",
+                      "buddyPoseMoving", "buddyCrouch", "buddyJumpPose"], plan)
     col = run(p, f"wait:{BOOT},peek:D02C")[0] & 15
     os.unlink(p)
-    px, py, bx, hop = t["playerX"], t["playerY"], t["buddyX"], t["buddyHop"]
+    px, py, pa = t["playerX"], t["playerY"], t["playerAnim"]
+    bx, by, bf, walk, crouch, jump = t["buddyX"], t["buddyY"], t["buddyFacing"], t["buddyPoseMoving"], t["buddyCrouch"], t["buddyJumpPose"]
     n = len(px)
-    bad = [f for f in range(ECHO_DELAY + 1, n) if bx[f] not in (px[f - ECHO_DELAY - 1], px[f - ECHO_DELAY], px[f - ECHO_DELAY + 1])]
-    jump = next((f for f in range(n) if py[f] < AIR), None)
-    hops = [f for f in range(1, n) if hop[f - 1] == 0 and hop[f] != 0]
-    ok = not bad and jump is not None and any(abs(h - (jump + ECHO_DELAY)) <= 2 for h in hops) and col == 7 and max(px) - min(px) >= 40
-    return report("ECHO", ok, f"{n} frames: buddy X = player X {ECHO_DELAY} frames earlier at every frame ({len(bad)} misses), "
-                  f"player jumps at {jump}, buddy hops at {hops}, player X {min(px)}..{max(px)}, colour {col}")
+    # the recording is taken inside the frame; find the exact lag (ECHO_DELAY or one more) and demand it everywhere
+    def misses(k):
+        return [f for f in range(k, n) if bx[f] != px[f - k] or by[f] != py[f - k]]
+    k, bad = min(((kk, misses(kk)) for kk in (ECHO_DELAY, ECHO_DELAY + 1, ECHO_DELAY - 1)), key=lambda x: len(x[1]))
+    POSE = {0: "walk", 1: "walk", 2: "duck", 3: "duck", 18: "duck", 19: "duck", 7: "jump", 8: "jump"}
+    WANT = {"walk": (1, 0, 0), "duck": (0, 1, 0), "jump": (0, 0, 1)}
+    def want(f):
+        return WANT.get(POSE.get(pa[f]), (0, 0, 0))
+    # the game sets the duck's animation a little later in the frame than the others, so a pose may change one
+    # frame late in the recording: allow that jitter at transitions, nothing else
+    pose_bad = [f for f in range(k + 1, n) if (walk[f], crouch[f], jump[f]) not in (want(f - k), want(f - k - 1), want(f - k + 1))]
+    FACING = {0: 0, 2: 0, 4: 0, 7: 0, 18: 0, 1: 1, 3: 1, 5: 1, 8: 1, 19: 1}
+    face_bad = [f for f in range(k, n) if pa[f - k] in FACING and bf[f] != FACING[pa[f - k]]]
+    # every jump and duck the player made in the recorded window comes back, and nothing extra
+    JUMP, DUCK = (7, 8), (2, 3, 18, 19)
+    player_jumps = sum(1 for f in range(1, n - k) if pa[f] in JUMP and pa[f - 1] not in JUMP)
+    echoed_jumps = sum(1 for f in range(k + 1, n) if jump[f] and not jump[f - 1])
+    player_ducks = sum(1 for f in range(1, n - k) if pa[f] in DUCK and pa[f - 1] not in DUCK)
+    echoed_ducks = sum(1 for f in range(k + 1, n) if crouch[f] and not crouch[f - 1])
+    ok = (not bad and not pose_bad and not face_bad and player_jumps >= 3 and echoed_jumps == player_jumps
+          and player_ducks >= 1 and echoed_ducks == player_ducks and col == 7 and max(px) - min(px) >= 40)
+    return report("ECHO", ok, f"{n} frames, lag {k}: position and height match the player {k} frames earlier at every frame ({len(bad)} misses), "
+                  f"pose ({len(pose_bad)} misses) and facing ({len(face_bad)} misses) too; player jumped {player_jumps} times, "
+                  f"echo {echoed_jumps}; ducked {player_ducks}, echo {echoed_ducks}; player X {min(px)}..{max(px)}, colour {col}")
 
 
 def mirror(prg, A):

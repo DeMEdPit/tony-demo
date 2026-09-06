@@ -234,11 +234,23 @@ two samples in a hundred between the flag's reset and its set (a sampling
 race, not a behaviour). `tools/verify_buddy.py` drives all seven on
 minimal64 (`tools/verify_dance.py` is retired into it):
 
-- **Echo** (2): a 128-entry ring of the player's X and Y, written every
-  frame; he stands where the player stood 75 frames ago (1.5 s) and hops
-  when the recorded position leaves the ground (rising edge). Test: his X
-  equals the player's X 75 frames earlier at every one of 264 frames (0
-  misses), the echoed hop lands 74 frames after the player's jump.
+- **Echo** (2): a 256-entry ring of the player's X, Y and animation
+  number, written every frame, played back 200 frames (4 s) later, frame
+  for frame: he stands where the player stood, at the height the player
+  was, wearing the pose the player wore (walk, duck, jump, idle, and the
+  way he faced), so every step, jump and duck comes back in order and the
+  playback runs on for four seconds after the player stops. The first cut
+  replayed only X and turned each recorded jump into one of the buddy's
+  own fixed hops, which collapsed five quick jumps into two and dropped
+  the ducks; the owner saw it and asked for the whole routine. Test: a
+  routine of running, four jumps and a duck comes back with position and
+  height equal to the player's 200 frames earlier at every one of 580
+  frames (0 misses), pose and facing too; four jumps echoed, one duck
+  echoed, nothing extra (the ghost also replays Tony's fall into the room
+  at boot, which is faithful). Measured on the way: the game sets the
+  duck's animation number a little later in the frame than the walk and
+  jump ones, so a recorded pose can change one frame late at that one
+  transition.
 - **Mirror** (3): x′ = 344 − x, the reflection about the centre line between
   the pillars, clamped to 64..280; he jumps with the player. Test: 0 misses
   over 294 frames of walking both ways, faces the other way while the
@@ -264,7 +276,7 @@ minimal64 (`tools/verify_dance.py` is retired into it):
   for 100 frames; wakes 9 frames into the approach; follows 76 px; dozes
   off at frame 409 and stays put.
 
-The base is now **feature complete**: one build, 39,480 bytes, serves all
+The base is now **feature complete**: one build, 40,248 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is
 still open): Shadow green, Dancer cyan, Echo yellow, Mirror light blue,
 Wanderer blue, Shy One light red, Sleeper purple. Open: the owner's
@@ -398,9 +410,9 @@ dedicated colour per token (decided with the seven mechanics, E11).
 
 **Block format since E11's build (2026-09-06):** the marker is
 `MURAL02\0` and the contract writes 42 bytes after it: 32 seed, 8 digits,
-behaviour, colour. In the current build (`tony-chamber.prg`, 39,480 bytes,
-all seven mechanics) the block sits at file offset `0x048C9` (address
-`$50C8`); find it by the marker, never by a fixed offset, until the base is
+behaviour, colour. In the current build (`tony-chamber.prg`, 40,248 bytes,
+all seven mechanics) the block sits at file offset `0x04BC9` (address
+`$53C8`); find it by the marker, never by a fixed offset, until the base is
 frozen.
 
 **Open:** the owner's play-through in READY 64; the room base (the buddy
@@ -541,6 +553,8 @@ step 6.
   implemented in minimal64 and behave like the chip's (E11).
 - Tony walks two pixels a frame; the room between the pillars is X 64..280
   for the buddy and 56..286 for Tony (E11).
+- The player's X and Y are settled before the buddy's update runs in a
+  frame; the duck's animation number is written after it (E11).
 - The tune's player keeps a 25-byte image of the SID registers at $A474
   and copies it to the chip every frame; the tune moves its notes legato,
   by frequency, with a hard restart only every 160 frames (E11).
