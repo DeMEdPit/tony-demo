@@ -30,6 +30,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
 | E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
 | E15 | Token thumbnail: the buddy's idle dance as an animated SVG | in progress | `assets/buddy-idle-*.svg`, `tools/buddy_thumbnail.py` |
+| E16 | The Glitch: a third Tony on the bat sprites when there are no bats | proposed | this file, §E16 |
 
 ---
 
@@ -571,6 +572,37 @@ sheet, but are no longer shipped as files.
 **Open:** Solidity generator and its gas; how each marketplace of interest
 treats SMIL in practice (measured, not assumed) before relying on the
 animation.
+
+---
+
+## E16 — The Glitch: a third Tony on the bat sprites when there are no bats · proposed
+
+The owner's idea (2026-09-06): one render in sixteen has no bats, which
+leaves the two bat sprites idle, and a Tony is exactly two sprites tall.
+So the no-bat renders could carry a third Tony, "the Glitch": cycling
+through the colours, flickering in and out, jittering, and switching
+mechanic every few seconds (a Wanderer one moment, a Dancer the next). No
+backdrop sprite is free for him (the eighth is the buddy's), so the wall
+would show through him, which suits a glitch. Feasible: the buddy code
+runs one buddy today, so a second needs its state saved and restored
+around a second update each frame and the sprite registers made
+selectable (5, 6 and 7 are hard-wired); sprites 3 and 4 count as enemies
+in the collision rule, so touching him must be masked out while he is
+active; his Echo would need its own ring (1 KB; there is room). Colour
+cycling, flicker and jitter are cheap. Estimate: one to two sessions with
+tests. It is engine-only: the same seed bytes drive him (no bats), so the
+block format and the handoff stay valid; only the base hash changes.
+Rarity per render: one in sixteen; with no candle as well, one in
+sixty-four (the dark room). Not built; the owner decides whether it goes
+in before the freeze, since after the freeze these seven tokens never get
+it (fix-forward: a later base is a later series).
+
+**Bats, exhaustively (2026-09-06):** on paper, all 8 paths × 8 rows × 64
+column pairs: the lowest bat bottom is 153 (Tony's jump top is 183), the
+narrowest gap between the bats 32 px; on the emulator, each of the eight
+paths on the lowest row with the two bats at their closest starting
+columns: lowest bottom 153, narrowest gap 32 px, all enabled, all within
+their bands.
 
 ---
 
