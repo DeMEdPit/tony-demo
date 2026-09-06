@@ -946,8 +946,8 @@ sleeperDecide: {{
 // comes back.
 // His room is the blackout: the mural routine draws no wall, no candle and
 // no bats when the behaviour byte is 7, the interrupt paints the room dark
-// grey and Tony grey, and the block number wears his colour (light grey
-// while he is blinked out). Returns A = the mechanic worn.
+// grey and Tony grey, and the block number's cells keep light-grey ink.
+// Returns A = the mechanic worn.
 glitchTick: {{
     lda wanderRng
     asl
@@ -1094,15 +1094,6 @@ glitchTick: {{
             !:
             dec buddyX
     done:
-    lda buddyColourNow          // the block number wears his colour too (light grey while he is blinked out)
-    bne !+
-        lda #15
-    !:
-    ldx #7
-    inkLoop:
-        sta c64lib.COLOR_RAM + 23*40 + 27, x
-        dex
-        bpl inkLoop
     lda glitchMode
     rts
     glitchColours: .byte 6, 3, 7, 14, 5, 10, 4

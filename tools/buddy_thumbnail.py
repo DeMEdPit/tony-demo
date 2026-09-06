@@ -219,6 +219,8 @@ def runs_path(rows, ox, oy):
 
 
 GLITCH_CYCLE = ["#2e2c9b", "#75cec8", "#edf171", "#706deb", "#56ac4d", "#c46c71", "#8e3c97"]   # the seven token colours
+TOKENS = [("the-shadow", "blue"), ("the-dancer", "cyan"), ("the-echo", "yellow"), ("the-mirror", "light-blue"),
+          ("the-wanderer", "green"), ("the-shy-one", "light-red"), ("the-sleeper", "purple"), ("the-glitch", None)]
 GLITCH_STEP = 0.4                          # seconds per colour: 2.8 s round the seven, against the 1.8 s idle loop
 
 
@@ -311,6 +313,7 @@ def main():
     ap.add_argument("--strip", help="write a PNG strip of the six phases (first colour) instead of SVGs")
     ap.add_argument("--sheet", help="write a comparison PNG of the given colour[:layout] specs instead of SVGs")
     ap.add_argument("--glitch", action="store_true", help="the Glitch's thumbnail: the fill cycles through the seven token colours")
+    ap.add_argument("--tokens", action="store_true", help="write the eight token thumbnails by name into OUT/tokens/")
     ap.add_argument("--sprites", default=SPRITE_DIR)
     a = ap.parse_args()
     frames = load_frames(a.sprites)
@@ -328,6 +331,15 @@ def main():
         name, hexval = colour(a.colours[0])
         phase_strip(frames, hexval, a.layout, a.size, a.strip)
         print(f"{a.strip}: {os.path.getsize(a.strip)} bytes")
+        return
+    if a.tokens:
+        d = os.path.join(a.out, "tokens")
+        os.makedirs(d, exist_ok=True)
+        for name, col in TOKENS:
+            path = os.path.join(d, f"{name}.svg")
+            open(path, "w").write(svg(frames, GLITCH_CYCLE[0], a.layout, a.size, glitch=True) if col is None
+                                  else svg(frames, NAMES[col], a.layout, a.size))
+            print(f"{path}: {os.path.getsize(path)} bytes")
         return
     if a.glitch:
         path = os.path.join(a.out, "buddy-idle-glitch.svg")

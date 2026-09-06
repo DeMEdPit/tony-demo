@@ -638,10 +638,16 @@ yellow and cyan poor, purple readable, so a buddy-coloured number would
 only work for the dark colours. Recommended and built: the seven keep
 black digits, and the Glitch's number wears his colour, frame by frame,
 light grey while he is blinked out (measured: the digits' ink cycles
-through all seven colours and 15, never 0). His thumbnail (E15) is the
+through all seven colours and 15, never 0). The owner then chose to leave
+the number alone even for him: it is light grey throughout the blackout
+again, as before (measured: ink 15 for 20 s). His thumbnail (E15) is the
 same idle dance with the fill cycling through the seven token colours,
 0.4 s each: `assets/buddy-idle-glitch.svg` (6,668 bytes), verified in
-Chromium colour by colour; `assets/buddy-idle-glitch-phases.png`.
+Chromium colour by colour; `assets/buddy-idle-glitch-phases.png`. The
+eight token thumbnails now exist by token name as well
+(`tools/buddy_thumbnail.py --tokens` → `assets/tokens/the-<name>.svg`,
+the seven at 6,056 bytes in their colours, the Glitch at 6,668), with
+`assets/buddy-thumbnail-eight.png` showing all eight.
 
 **Bats, exhaustively (2026-09-06):** on paper, all 8 paths × 8 rows × 64
 column pairs: the lowest bat bottom is 153 (Tony's jump top is 183), the
