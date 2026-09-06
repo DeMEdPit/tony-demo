@@ -61,8 +61,12 @@ every render from the current block. The room itself stays black and grey.
   | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, jumps now and then, on the chip's dice | built, tested |
   | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, bolts past you when you are almost on him, creeps back when you leave | built, tested |
   | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
+  | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and changes it, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats | built, tested |
 
-  One build serves all seven: the byte selects the mechanic at run time.
+  One build serves all eight: the byte selects the mechanic at run time.
+  The Glitch's blackout is gated on his mechanic byte, not on the seed, so
+  no other token's room can ever look like his; the colour byte is ignored
+  for him (he cycles the seven).
   All seven exist and pass their scripted tests; the base is feature
   complete and waits only on the owner's play-through and the colour
   mapping before the freeze. Provisional colours in the shipped files:
@@ -164,9 +168,9 @@ rules of section 1):
 
 ## 4. The base program and its parameter block
 
-Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 40,582 bytes,
+Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 40,838 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `ee23bf0063835829869c452fc7ce7a3f9e28ad9df8191476d399b1e58e05cbaf`.
+sha256 `4481ef5440459d35d207ce1a5745c496962562201d262ef586d55b61fd2f2bcd`.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its
@@ -179,12 +183,12 @@ The **parameter block** is 50 bytes, 64-byte aligned in memory:
 | 0 | 8 | marker `4D 55 52 41 4C 30 32 00` (`"MURAL02\0"`) | no (use it as a guard: require the bytes at the offset) |
 | 8 | 32 | seed | yes: `blockhash(block.number - 1)`, the newest hash a view can read |
 | 40 | 8 | block digits, one byte each, values 0–9, most significant first | yes: the low eight decimal digits of `block.number`, zero-padded |
-| 48 | 1 | behaviour, 0–6 | yes: the token's mechanic |
+| 48 | 1 | behaviour, 0–7 | yes: the token's mechanic (7 = the Glitch) |
 | 49 | 1 | colour, 0–15 | yes: the token's colour |
 
 So the contract writes **42 bytes** at `marker + 8`. In the current build the
-marker is at file offset `0x04CC1` and the 42 bytes start at file offset
-`0x04CC9` (address `$54C8`); file offsets count the 2-byte load address. The
+marker is at file offset `0x04DC1` and the 42 bytes start at file offset
+`0x04DC9` (address `$55C8`); file offsets count the 2-byte load address. The
 digits are bytes 0–9, not ASCII. Bytes never written keep the file's
 defaults (block 25850267, Follow, green).
 
@@ -219,7 +223,7 @@ render it alongside (owner's decision, not made).
     prg[OFF + 41] = bytes1(colour[id]);
     ```
 
-    (`OFF` = the seed's file offset, `0x04CC9` in the current build; write it
+    (`OFF` = the seed's file offset, `0x04DC9` in the current build; write it
     as a constant only at the freeze.)
 4. `animation_url = READY64_LAUNCHER.dataURI(prg, modes)`. **The `modes`
    value is not known here**: read the deployed Launcher's ABI and source and
@@ -339,8 +343,8 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 | path | what |
 |---|---|
-| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (40,582 bytes; default block: Follow, green, block 25850267) |
-| `deliverables/prg/minimal64/tony-chamber-the-<name>.prg` | the same build stamped for each of the seven (provisional colours) |
+| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (40,838 bytes; default block: Follow, green, block 25850267) |
+| `deliverables/prg/minimal64/tony-chamber-the-<name>.prg` | the same build stamped for each of the eight (provisional colours) |
 | `tools/make_chamber.py` | generates the Chamber sources from the buddy build (block, mural, mechanics) |
 | `tools/build_chamber_room.py` | the room map, charset and materials |
 | `tools/stamp_mural.py` | writes seed, digits, behaviour, colour into a PRG; `--show` predicts the wall |

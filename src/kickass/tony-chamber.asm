@@ -510,7 +510,7 @@ doEachFrameTop: {
     bne !-
     lda c64lib.SPRITE_2_COLOR   // sprite 7 is the buddy's backdrop now
     sta c64lib.SPRITE_7_COLOR
-    lda muralColour
+    lda buddyColourNow
     sta c64lib.SPRITE_5_COLOR
     sta c64lib.SPRITE_6_COLOR
 
@@ -1835,7 +1835,7 @@ buddyUpdate: {
     sta c64lib.SPRITE_EXPAND_Y
     lda c64lib.SPRITE_2_COLOR   // and wears the player's backdrop colour
     sta c64lib.SPRITE_7_COLOR
-    lda muralColour             // the buddy's colour comes from the parameter block
+    lda buddyColourNow          // the buddy's colour: the parameter block's, or the Glitch's cycle
     sta c64lib.SPRITE_5_COLOR
     sta c64lib.SPRITE_6_COLOR
 
@@ -1845,11 +1845,17 @@ buddyUpdate: {
     sta nextPoseMoving
     sta nextCrouch
     sta nextJumpPose
+    lda muralColour
+    sta buddyColourNow
     lda muralBehaviour
+    cmp #7
+    bne !+
+        jsr glitchTick          // the Glitch: returns the mechanic he wears this frame (0-6)
+    !:
     sta buddyMode
     cmp #6
     bne !+
-        jsr sleeperDecide       // returns 0 (awake: Follow) or 7 (dozing)
+        jsr sleeperDecide       // returns 0 (awake: Follow) or 8 (dozing)
         sta buddyMode
     !:
     lda buddyMode
@@ -2142,7 +2148,7 @@ noteOld:      .word 0        // +18
 noteNew:      .word 0        // +20
 noteDiff:     .word 0        // +22
 noteStep:     .word 0        // +24
-buddyMode:    .byte 0        // +26  the mechanic running this frame (7 = the Sleeper dozing)
+buddyMode:    .byte 0        // +26  the mechanic running this frame (8 = the Sleeper dozing)
 buddyPoseMoving: .byte 0     // +27  show the walk although the act part does not step
 buddyCrouch:  .byte 0        // +28  show the crouch
 distMag:      .byte 0        // +29  |player - buddy|, saturated at 255
@@ -2165,6 +2171,12 @@ wanderRng:    .byte 0        // +46  the Wanderer's dice: a shift register stirr
 nextJumpPose: .byte 0        // +47  show the jump although the act part is not hopping (Echo)
 buddyJumpPose: .byte 0       // +48
 shyBolt:      .byte 0        // +49  the Shy One is bolting out of a corner, past the player
+buddyColourNow: .byte 0      // +50  the colour the sprites wear this frame
+glitchMode:   .byte 0        // +51  the Glitch: the mechanic he wears now
+glitchTimer:  .word 0        // +52  frames until he changes it
+glitchBurst:  .byte 0        // +54  frames left of a burst of flicker and jitter
+glitchStep:   .byte 0        // +55  where he is in the colour cycle
+glitchFrame:  .byte 0        // +56
 
 // |player - buddy| and which side he is on (the Follow code has its own copy inline)
 buddyDistance: {
@@ -2245,7 +2257,7 @@ buddyPlace: {
 }
 
 // The Sleeper: dozes until the player comes close, is awake (and Follow) for
-// SLEEP_AWAKE half-frames, then dozes off again. Returns A = 0 awake, 7 dozing.
+// SLEEP_AWAKE half-frames, then dozes off again. Returns A = 0 awake, 8 dozing.
 sleeperDecide: {
     jsr buddyDistance
     lda sleepAwake
@@ -2266,7 +2278,7 @@ sleeperDecide: {
             lda #1
             sta sleepFar
         dozing:
-            lda #7
+            lda #8
             rts
     awake:
         lda sleepHalf
@@ -2281,11 +2293,127 @@ sleeperDecide: {
             lda #0
             sta sleepAwake
             sta sleepFar
-            lda #7
+            lda #8
             rts
         !:
         lda #0
         rts
+}
+
+// The Glitch (mechanic 7): the buddy in the ordinary slot, wearing one of the
+// seven mechanics at a time and changing it every 3-8 s on the same dice as
+// the Wanderer; cycling through the seven token colours, one every eight
+// frames; and now and then a burst of 8-15 frames in which his colour goes
+// random, he blinks out one frame in four, and he jitters a pixel sideways.
+// His room is the blackout: the mural routine draws no wall, no candle and
+// no bats when the behaviour byte is 7. Returns A = the mechanic worn.
+glitchTick: {
+    lda wanderRng
+    asl
+    bcc !+
+        eor #$1D
+    !:
+    eor $D41B
+    sta wanderRng
+    lda glitchTimer
+    ora glitchTimer + 1
+    bne holding
+        lda wanderRng           // a new mechanic: 0-6, a 7 becomes the Wanderer
+        and #7
+        cmp #7
+        bne !+
+            lda #4
+        !:
+        sta glitchMode
+        lda wanderRng           // and a new hold: 150 + 0..255 frames
+        clc
+        adc #150
+        sta glitchTimer
+        lda #0
+        adc #0
+        sta glitchTimer + 1
+        lda #0                  // the stateful mechanics start afresh
+        sta sleepAwake
+        sta sleepFar
+        sta shyBolt
+        sta wanderTimer
+    holding:
+    lda glitchTimer
+    bne !+
+        dec glitchTimer + 1
+    !:
+    dec glitchTimer
+    inc glitchFrame             // the colour cycle
+    lda glitchFrame
+    and #7
+    bne !+
+        inc glitchStep
+    !:
+    lda glitchStep
+    cmp #7
+    bcc !+
+        lda #0
+        sta glitchStep
+    !:
+    tax
+    lda glitchColours, x
+    sta buddyColourNow
+    lda glitchBurst             // bursts
+    bne inBurst
+        lda wanderRng
+        cmp #3                  // three chances in 256 a frame: one burst in about 85 frames
+        bcs done
+        lda wanderRng
+        and #7
+        clc
+        adc #8
+        sta glitchBurst
+    inBurst:
+        dec glitchBurst
+        lda wanderRng
+        and #3
+        bne !+
+            lda #0              // blinks out
+            sta buddyColourNow
+            jmp jitter
+        !:
+        lda wanderRng
+        lsr
+        lsr
+        and #15
+        sta buddyColourNow
+        jitter:
+        lda wanderRng
+        and #%00110000
+        beq done
+        cmp #%00100000
+        bcc jitterLeft
+            lda buddyX + 1      // a pixel to the right, short of the pillar
+            beq !+
+                lda buddyX
+                cmp #(BUDDY_MAX_XLO - 2)
+                bcs done
+            !:
+            inc buddyX
+            bne done
+                inc buddyX + 1
+            jmp done
+        jitterLeft:
+            lda buddyX + 1      // a pixel to the left, short of the pillar
+            bne !+
+                lda buddyX
+                cmp #(BUDDY_MIN_XLO + 2)
+                bcc done
+            !:
+            lda buddyX
+            bne !+
+                dec buddyX + 1
+            !:
+            dec buddyX
+    done:
+    lda glitchMode
+    rts
+    glitchColours: .byte 6, 3, 7, 14, 5, 10, 4
 }
 
 // The mechanics other than Follow. Each leaves buddyMoving, buddyFacing,
@@ -2349,7 +2477,7 @@ buddyDecide: {
     bne !+
         jmp shy
     !:
-    cpx #7
+    cpx #8
     bne !+
         jmp doze
     !:
@@ -2813,6 +2941,12 @@ muralStamp: {
     tax
     lda modeTable, x
     sta mode
+    lda muralBehaviour          // the Glitch's room is the blackout: no bricks at all
+    cmp #7
+    bne !+
+        lda #4
+        sta mode
+    !:
 
     ldx #0
     rowLoop:
@@ -2857,6 +2991,11 @@ muralStamp: {
             beq useOr
             cmp #3
             beq useAnd3
+            cmp #4
+            bne !+
+                lda #0          // mode 4: bare
+                jmp decide
+            !:
             lda bitA            // mode 0: A & B
             and bitB
             jmp decide
@@ -2911,6 +3050,11 @@ muralStamp: {
     rowDone:
 
     // the candle: present three times in four, its niche chosen from the seed
+    lda muralBehaviour          // the blackout has no candle
+    cmp #7
+    bne !+
+        jmp candleDone
+    !:
     lda muralSeed + 30
     and #3
     beq candleDone
@@ -3109,6 +3253,11 @@ muralBatsStamp: {
     // presence
     lda muralSeed + 27
     and #15
+    ldy muralBehaviour          // the blackout has no bats
+    cpy #7
+    bne !+
+        lda #0
+    !:
     sta muralBats
     ldx #%11111111              // both
     cmp #5

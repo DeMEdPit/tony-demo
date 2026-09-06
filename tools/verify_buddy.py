@@ -19,6 +19,8 @@ build and reads the machine back frame by frame with the harness's peek.
                             back when he is far
   6 Sleeper  (The Sleeper)  dozes crouched, wakes on an approach, follows a while,
                             dozes off again
+  7 Glitch   (The Glitch)   wears one of the seven at a time and changes it, cycles
+                            the colours, blinks and jitters, in the blackout room
 
 Usage:  python3 tools/verify_buddy.py [deliverables/prg/minimal64/tony-chamber.prg] [names...]
 """
@@ -39,7 +41,8 @@ VARS = {"buddyX": -9, "buddyY": -7, "buddyFacing": -6, "buddyMoving": -5, "buddy
         "buddyPhase": -2, "buddyDelay": -1}
 AFTER = {"wantHop": 0, "envPrev": 1, "stepCount": 2, "slideCount": 3, "buddyMode": 12, "buddyPoseMoving": 13,
          "buddyCrouch": 14, "distMag": 15, "distRight": 16, "echoHead": 17, "echoFill": 18, "wanderTimer": 21,
-         "wanderState": 22, "sleepAwake": 24, "sleepFar": 25, "wanderRng": 32, "buddyJumpPose": 34}   # offsets past the arc
+         "wanderState": 22, "sleepAwake": 24, "sleepFar": 25, "wanderRng": 32, "buddyJumpPose": 34,
+         "glitchMode": 37, "glitchBurst": 40}   # offsets past the arc
 VARS.update({k: HOP_LEN + v for k, v in AFTER.items()})
 
 
@@ -310,7 +313,37 @@ def sleeper(prg, A):
                   f"follows {followed} px; dozes off again at frame {dozed_again} and stays put {settled}, colour {col}")
 
 
-TESTS = {"follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper}
+def glitch(prg, A):
+    """The Glitch (7): wears one of the seven mechanics at a time and changes it; cycles the seven colours; bursts of
+    blinking and jitter; and his room is the blackout: no wall, no candle, no bats, the block number still carved."""
+    p = stamp(prg, 7, 1)
+    n = 1500
+    t = frames(p, A, ["buddyX", "glitchMode"], [(None, n)])
+    # the colour the sprites wear, sampled every frame
+    v = run(p, f"wait:{BOOT}," + "peek:D02C,wait:1," * n)
+    colours = [c & 15 for c in v]
+    # the room: screen memory of the mural area (rows 2-21, cols 5-34), the candle block, the digits, the bats
+    scr = run(p, f"wait:{BOOT},peek:D015," + "".join(f"peek:{0xC000 + r * 40 + c:X}," for r in range(2, 22) for c in range(5, 35)) + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)))
+    os.unlink(p)
+    # the digits are compared with an ordinary room's (the screen holds translated character codes)
+    p0 = stamp(prg, 0, 5)
+    ref = run(p0, f"wait:{BOOT}," + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)))
+    os.unlink(p0)
+    en, wall, digits = scr[0], scr[1:1 + 20 * 30], scr[1 + 20 * 30:]
+    bx, mode = t["buddyX"], t["glitchMode"]
+    worn = sorted(set(mode))
+    changes = sum(1 for f in range(1, n) if mode[f] != mode[f - 1])
+    palette = sorted(set(colours) - {0})
+    blinks = colours.count(0)
+    carved = digits == ref and all(digits)
+    ok = (len(worn) >= 3 and changes >= 3 and len(palette) >= 6 and 0 < blinks < n // 8 and max(bx) - min(bx) >= 40
+          and not any(wall) and carved and not (en & 0b11000))
+    return report("GLITCH", ok, f"{n / 50:.0f} s: wore mechanics {worn} with {changes} changes; colours seen {palette} with {blinks} blink frames; "
+                  f"X {min(bx)}..{max(bx)}; room: wall cells lit {sum(1 for w in wall if w)} of 600, block number carved as in an ordinary room {carved}, "
+                  f"bat sprites enabled {bool(en & 8)},{bool(en & 16)}")
+
+
+TESTS = {"follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper, "glitch": glitch}
 
 if __name__ == "__main__":
     args = sys.argv[1:]

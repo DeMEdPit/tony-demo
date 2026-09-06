@@ -30,7 +30,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
 | E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
 | E15 | Token thumbnail: the buddy's idle dance as an animated SVG | in progress | `assets/buddy-idle-*.svg`, `tools/buddy_thumbnail.py` |
-| E16 | The Glitch: a third Tony on the bat sprites when there are no bats | proposed | this file, §E16 |
+| E16 | The Glitch: the eighth mechanic, in the blackout room | built | `tony-chamber-the-glitch.prg`, `tools/verify_buddy.py glitch` |
 
 ---
 
@@ -300,8 +300,8 @@ measured 10 jumps in 120 s, plan changes 40. The long measurements needed
 the harness to take its script from a file (`m64run PRG @script`), since
 a two-minute frame-by-frame script exceeds the command line.
 
-The base is now **feature complete**: one build, 40,582 bytes, serves all
-seven. Provisional colours for the shipped programs (the owner's mapping is
+The base is now **feature complete**: one build, 40,838 bytes, serves all
+seven and the Glitch. Provisional colours for the shipped programs (the owner's mapping is
 still open): Shadow blue (the owner's ask: the darkest of the seven for
 the Shadow; the C64's blue, which reads as a dark purple on a black
 screen), Dancer cyan, Echo yellow, Mirror light blue, Wanderer green, Shy
@@ -466,9 +466,9 @@ dedicated colour per token (decided with the seven mechanics, E11).
 
 **Block format since E11's build (2026-09-06):** the marker is
 `MURAL02\0` and the contract writes 42 bytes after it: 32 seed, 8 digits,
-behaviour, colour. In the current build (`tony-chamber.prg`, 40,582 bytes,
-all seven mechanics) the block sits at file offset `0x04CC9` (address
-`$54C8`); find it by the marker, never by a fixed offset, until the base is
+behaviour, colour. In the current build (`tony-chamber.prg`, 40,838 bytes,
+all seven mechanics) the block sits at file offset `0x04DC9` (address
+`$55C8`); find it by the marker, never by a fixed offset, until the base is
 frozen.
 
 **The bats join the render (owner's ask, 2026-09-06).** The engine flies
@@ -575,7 +575,7 @@ animation.
 
 ---
 
-## E16 — The Glitch: a third Tony on the bat sprites when there are no bats · proposed
+## E16 — The Glitch: the eighth mechanic, in the blackout room · built
 
 The owner's idea (2026-09-06): one render in sixteen has no bats, which
 leaves the two bat sprites idle, and a Tony is exactly two sprites tall.
@@ -593,9 +593,30 @@ cycling, flicker and jitter are cheap. Estimate: one to two sessions with
 tests. It is engine-only: the same seed bytes drive him (no bats), so the
 block format and the handoff stay valid; only the base hash changes.
 Rarity per render: one in sixteen; with no candle as well, one in
-sixty-four (the dark room). Not built; the owner decides whether it goes
-in before the freeze, since after the freeze these seven tokens never get
-it (fix-forward: a later base is a later series).
+sixty-four (the dark room).
+
+**Built (2026-09-06), the simpler way.** With the owner and another session
+shaping a 64-token collection (seven mechanics × nine rooms + one), the
+Glitch became the sixty-fourth token rather than a per-render rarity, and
+a token's buddy is the ordinary buddy slot: no second character, no bat
+sprites, no two-buddy plumbing. Mechanic byte 7 = the Glitch: he wears one
+of the seven mechanics at a time and changes it every 150–405 frames on the
+Wanderer's dice (a 7 rolls to the Wanderer); the stateful mechanics start
+afresh at each change, and an Echo stint replays whatever the ring holds,
+which may be minutes old (a feature, for a glitch); he cycles the seven
+token colours one every eight frames; and about once in 85 frames a burst
+of 8–15 frames sets his colour at random, blinks him out (black) one
+frame in four, and jitters him a pixel sideways (short of the pillars).
+The colour the sprites wear now passes through `buddyColourNow` (the
+block's colour for everyone else). His room is the **blackout**, gated on
+the mechanic byte, not the seed, so no ordinary room can produce it: the
+mural routine draws no bricks (a fifth density, bare), no candle, and
+hides both bats; the block number is still carved. Test (30 s on
+minimal64): wore four mechanics with four changes, all fifteen non-black
+colours seen, 67 blink frames of 1,500, moved 96 px; the 600 wall cells
+empty, the digits identical to an ordinary room's, both bat sprites off.
+The seven buddy tests and the bat test still pass (the Sleeper's doze is
+internal mode 8 now).
 
 **Bats, exhaustively (2026-09-06):** on paper, all 8 paths × 8 rows × 64
 column pairs: the lowest bat bottom is 153 (Tony's jump top is 183), the
