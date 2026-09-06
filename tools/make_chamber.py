@@ -762,10 +762,11 @@ sleeperDecide: {{
 //    recording runs out (which it never does: it is always the last 4 s).
 // MIRROR stands at the player's reflection about the centre line between the
 //    pillars (x' = MIRROR_SUM - x, clamped to the pillars) and jumps with him.
-// WANDER lives there: a plan at a time (stroll, pause, sit), the choice and
-//    its length rolled from a shift register stirred every frame by the chip's
-//    oscillator 3 ($D41B), the pauses lengthened by the render's mood (two seed
-//    bits). He turns at the pillars and takes no notice of the player.
+// WANDER lives there: a plan at a time (stroll, pause, sit, a jump on the
+//    spot), the choice and its length rolled from a shift register stirred
+//    every frame by the chip's oscillator 3 ($D41B), the pauses lengthened by
+//    the render's mood (two seed bits); one stroll in eight starts with a
+//    running jump. He turns at the pillars and takes no notice of the player.
 // SHY runs when the player is closer than SHY_FLEE_AT (and cowers at the
 //    pillar when he can run no farther), creeps back at half speed when the
 //    player is farther than SHY_CALM_AT, and watches him in between.
@@ -1004,11 +1005,15 @@ buddyDecide: {{
     newPlan:
         lda wanderRng
         sta noteDiff                // (scratch)
-        and #7                      // 0-3 stroll, 4-6 pause, 7 sit
+        and #7                      // 0-3 stroll, 4-5 pause, 6 a jump on the spot, 7 sit
         cmp #4
         bcc planStroll
         cmp #7
         beq planSit
+        cmp #6
+        bne planPause
+            lda #1                  // a jump on the spot, then he stands a moment
+            sta wantHop
         planPause:
             lda #0
             sta wanderState
@@ -1040,6 +1045,13 @@ buddyDecide: {{
             lsr
             and #1
             sta buddyFacing         // the dice pick the way
+            lda noteDiff
+            and #%11100000          // one stroll in eight starts with a running jump
+            cmp #%11100000
+            bne !+
+                lda #1
+                sta wantHop
+            !:
             lda noteDiff
             lsr
             lsr

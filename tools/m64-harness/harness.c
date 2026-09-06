@@ -6,6 +6,7 @@
  * small command script so builds can be verified on the ROM-free target:
  *
  *   ./m64run GAME.PRG "wait:120,shot:a.ppm,joy:16:25,key:43:5,peek:2d"
+ *   ./m64run GAME.PRG @script.txt          (the same commands from a file; newlines count as commas)
  *
  * commands: wait:N        run N PAL frames
  *           shot:FILE     dump the pixel buffer as binary PPM
@@ -64,7 +65,21 @@ int main(int argc, char **argv) {
     m64_init(1 /* PAL */, 0);
     m64_injectAndRunPrg(prg, len, 0);
 
-    char *script = strdup(argv[2]);
+    char *script;
+    if (argv[2][0] == '@') {                 /* @FILE: read the script from a file (long scripts exceed argv) */
+        FILE *sf = fopen(argv[2] + 1, "rb");
+        if (!sf) { perror("script"); return 1; }
+        fseek(sf, 0, SEEK_END);
+        long slen = ftell(sf);
+        fseek(sf, 0, SEEK_SET);
+        script = malloc(slen + 1);
+        slen = fread(script, 1, slen, sf);
+        script[slen] = 0;
+        fclose(sf);
+        for (char *c = script; *c; c++) if (*c == '\n' || *c == '\r') *c = ',';
+    } else {
+        script = strdup(argv[2]);
+    }
     for (char *cmd = strtok(script, ","); cmd; cmd = strtok(NULL, ",")) {
         if (!strncmp(cmd, "wait:", 5)) {
             frames(atoi(cmd + 5));

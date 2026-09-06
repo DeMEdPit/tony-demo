@@ -292,6 +292,12 @@ Tony did; Follow and Mirror now crouch with him (the Mirror because a
 mirror that ignores a crouch would be wrong), once he stands still; the
 tests check the crouch appears with Tony's duck animation and goes when
 it goes.
+The Wanderer never jumped (measured: 0 jumps in 120 s alone; none of his
+plans asked for one). He now has a fourth plan, a jump on the spot (one
+roll in eight), and one stroll in eight starts with a running jump:
+measured 10 jumps in 120 s, plan changes 40. The long measurements needed
+the harness to take its script from a file (`m64run PRG @script`), since
+a two-minute frame-by-frame script exceeds the command line.
 
 The base is now **feature complete**: one build, 40,248 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is

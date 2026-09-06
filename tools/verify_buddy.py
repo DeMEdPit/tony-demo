@@ -67,7 +67,11 @@ def stamp(prg, behaviour, colour):
 
 
 def run(prg, script):
-    r = subprocess.run([M64, prg, script], capture_output=True, text=True)
+    """Run a harness script (from a file: long scripts exceed the command line) and return the peeked bytes."""
+    with tempfile.NamedTemporaryFile("w", suffix=".m64", delete=False) as f:
+        f.write(script)
+    r = subprocess.run([M64, prg, "@" + f.name], capture_output=True, text=True)
+    os.unlink(f.name)
     return [int(m, 16) for m in re.findall(r"peek \$[0-9a-f]+ = \$([0-9a-f]+)", r.stdout)]
 
 
@@ -229,9 +233,10 @@ def mirror(prg, A):
 def wander(prg, A):
     p = stamp(prg, 4, 5)
     n = 2000
-    t = frames(p, A, ["buddyX", "buddyCrouch", "buddyFacing", "wanderState"], [(None, n)])
+    t = frames(p, A, ["buddyX", "buddyCrouch", "buddyFacing", "wanderState", "buddyHop"], [(None, n)])
     os.unlink(p)
-    bx, crouch, fac, st = t["buddyX"], t["buddyCrouch"], t["buddyFacing"], t["wanderState"]
+    bx, crouch, fac, st, hop = t["buddyX"], t["buddyCrouch"], t["buddyFacing"], t["wanderState"], t["buddyHop"]
+    jumps = sum(1 for f in range(1, n) if hop[f] and not hop[f - 1])
     turns = sum(1 for f in range(1, n) if fac[f] != fac[f - 1])
     sits = max((sum(1 for _ in g) for k, g in __import__("itertools").groupby(crouch) if k), default=0)
     still = 0
@@ -240,9 +245,10 @@ def wander(prg, A):
         still = still + 1 if bx[f] == bx[f - 1] and not crouch[f] else 0
         best = max(best, still)
     plans = sum(1 for f in range(1, n) if st[f] != st[f - 1])
-    ok = max(bx) - min(bx) >= 80 and turns >= 3 and sits >= 60 and best >= 20 and MIN_X <= min(bx) and max(bx) <= MAX_X and plans >= 8
+    ok = (max(bx) - min(bx) >= 80 and turns >= 3 and sits >= 60 and best >= 20 and MIN_X <= min(bx) and max(bx) <= MAX_X
+          and plans >= 8 and jumps >= 1)
     return report("WANDER", ok, f"{n / 50:.0f} s alone: X {min(bx)}..{max(bx)} (room {MIN_X}..{MAX_X}), turns {turns}, plan changes {plans}, "
-                  f"longest sit {sits} frames, longest pause {best} frames")
+                  f"longest sit {sits} frames, longest pause {best} frames, jumps {jumps}")
 
 
 def shy(prg, A):
