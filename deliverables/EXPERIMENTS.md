@@ -301,8 +301,17 @@ a two-minute frame-by-frame script exceeds the command line.
 
 The base is now **feature complete**: one build, 40,248 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is
-still open): Shadow green, Dancer cyan, Echo yellow, Mirror light blue,
-Wanderer blue, Shy One light red, Sleeper purple. Open: the owner's
+still open): Shadow purple (the owner's ask: the Shadow should be the dark
+purple), Dancer cyan, Echo yellow, Mirror light blue, Wanderer blue, Shy
+One light red, Sleeper green.
+
+**The Shy One's corner escape (found by the owner in play, kept on
+purpose).** Cornered at a pillar and crouching, he bolts the other way at
+full speed the moment Tony squeezes past him: Tony's floor runs eight
+pixels beyond the buddy's at each pillar, so Tony can get to the far side
+of him, and "away from the player" flips. Nothing was written for it; the
+flee rule produced it, the trace showed it before the owner did, and the
+test now asserts it (cornered, passed, bolted, in that order) so it stays. Open: the owner's
 play-through of the seven in READY 64, the colour mapping, then the freeze.
 
 ## E12 — Chain-reactive tokens · proposed
