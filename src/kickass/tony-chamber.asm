@@ -1804,6 +1804,7 @@ showEnemies: {
 .label MIRROR_SUM     = 344 // twice the centre line between the pillars (64..280)
 .label SHY_FLEE_AT    = 56  // closer than this: he runs
 .label SHY_CALM_AT    = 110 // farther than this: he creeps back
+.label SHY_BOLT_AT    = 16  // cornered and the player this close: he bolts straight past him
 .label SLEEP_WAKE_AT  = 48  // an approach inside this wakes him
 .label SLEEP_AWAKE    = 150 // half-frames awake before he dozes off again (300 frames, 6 s)
 
@@ -2163,6 +2164,7 @@ nextPoseMoving: .byte 0      // +45
 wanderRng:    .byte 0        // +46  the Wanderer's dice: a shift register stirred by oscillator 3
 nextJumpPose: .byte 0        // +47  show the jump although the act part is not hopping (Echo)
 buddyJumpPose: .byte 0       // +48
+shyBolt:      .byte 0        // +49  the Shy One is bolting out of a corner, past the player
 
 // |player - buddy| and which side he is on (the Follow code has its own copy inline)
 buddyDistance: {
@@ -2312,9 +2314,12 @@ sleeperDecide: {
 //    every frame by the chip's oscillator 3 ($D41B), the pauses lengthened by
 //    the render's mood (two seed bits); one stroll in eight starts with a
 //    running jump. He turns at the pillars and takes no notice of the player.
-// SHY runs when the player is closer than SHY_FLEE_AT (and cowers at the
-//    pillar when he can run no farther), creeps back at half speed when the
-//    player is farther than SHY_CALM_AT, and watches him in between.
+// SHY runs when the player is closer than SHY_FLEE_AT, cowers at the pillar
+//    when he can run no farther, and bolts straight past the player when he
+//    comes within SHY_BOLT_AT of the cornered buddy (keeping on until the
+//    player is behind him, when the ordinary flee carries him on); creeps back
+//    at half speed when the player is farther than SHY_CALM_AT; watches him in
+//    between.
 .label SID_IMAGE = $A474
 buddyDecide: {
     lda #0
@@ -2654,6 +2659,19 @@ buddyDecide: {
     lda #0
     sta wantHop
     jsr buddyDistance
+    lda shyBolt                     // bolting out of a corner: keep going until the player is behind him
+    beq notBolting
+        lda distMag
+        cmp #SHY_FLEE_AT
+        bcs boltDone                // far enough away: the ordinary rules again
+        lda buddyFacing
+        cmp distRight
+        bne boltDone                // past him now: the ordinary flee carries on this way
+        jmp fleeOn
+        boltDone:
+            lda #0
+            sta shyBolt
+    notBolting:
     lda distMag
     cmp #SHY_FLEE_AT
     bcs notClose
@@ -2673,7 +2691,16 @@ buddyDecide: {
             lda buddyX
             cmp #(BUDDY_MIN_XLO + 1)
             bcs fleeOn
-        cower:                      // nowhere left to run: hide
+        cower:                      // nowhere left to run: hide, and bolt past him if he comes too close
+            lda distMag
+            cmp #SHY_BOLT_AT
+            bcs hide
+                lda distRight       // straight at him, and through
+                sta buddyFacing
+                lda #1
+                sta shyBolt
+                jmp fleeOn
+            hide:
             lda #1
             sta nextCrouch
             rts

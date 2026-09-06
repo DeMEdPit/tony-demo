@@ -312,7 +312,13 @@ full speed the moment Tony squeezes past him: Tony's floor runs eight
 pixels beyond the buddy's at each pillar, so Tony can get to the far side
 of him, and "away from the player" flips. Nothing was written for it; the
 flee rule produced it, the trace showed it before the owner did, and the
-test now asserts it (cornered, passed, bolted, in that order) so it stays. Open: the owner's
+test now asserts it (cornered, passed, bolted, in that order) so it stays.
+Then the owner asked for it a little more sensitive: he should bolt when
+Tony is almost on him, not only once Tony is past. Cornered and crouching,
+he now bolts straight at Tony and through him when Tony comes within 16
+pixels, and keeps going until Tony is behind him, where the ordinary flee
+carries him on the same way. Measured: cornered at frame 34, bolts at 55
+with Tony 6 pixels off, clear of the corner by 71. Open: the owner's
 play-through of the seven in READY 64, the colour mapping, then the freeze.
 
 ## E12 — Chain-reactive tokens · proposed

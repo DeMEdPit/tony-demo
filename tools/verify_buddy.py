@@ -252,34 +252,32 @@ def wander(prg, A):
 
 
 def shy(prg, A):
-    """The player comes at him from the right, then walks away to the far right and waits."""
+    """Run A: the player walks at him; he flees at the player's speed, cowers at the pillar, and bolts straight
+    past the player when he comes within SHY_BOLT_AT. Run B: the player walks away; he creeps back."""
+    BOLT_AT = 16
     p = stamp(prg, 5, 10)
-    plan = [(LEFT, 60), (RIGHT, 110), (None, 200)]
-    t = frames(p, A, ["playerX", "buddyX", "buddyCrouch"], plan)
+    a = frames(p, A, ["playerX", "buddyX", "buddyCrouch"], [(LEFT, 90), (None, 40)])
+    b = frames(p, A, ["playerX", "buddyX"], [(RIGHT, 60), (None, 200)])
     col = run(p, f"wait:{BOOT},peek:D02C")[0] & 15
     os.unlink(p)
-    px, bx, crouch = t["playerX"], t["buddyX"], t["buddyCrouch"]
-    dist = [abs(a - b) for a, b in zip(px, bx)]
-    fled = bx[0] - min(bx[:60])                            # he ran left as the player came
-    pinned = next((f for f in range(60) if bx[f] <= MIN_X), None)
-    closest_free = min(dist[f] for f in range(60) if bx[f] > MIN_X + 2)   # never caught while he could still run
-    cowered = any(crouch[f] for f in range(60))
-    crept = bx[-1] - bx[170]                               # he came back while the player was far
-    far_dist = min(dist[170:])
-    # the corner escape (found by the owner in play, kept on purpose): cornered at the pillar and crouching, he bolts
-    # the other way the moment the player squeezes past him, since "away from the player" has flipped sides
-    p2 = stamp(prg, 5, 10)
-    u = frames(p2, A, ["playerX", "buddyX", "buddyCrouch"], [(LEFT, 130)])
-    os.unlink(p2)
-    ux, ub, uc = u["playerX"], u["buddyX"], u["buddyCrouch"]
-    cornered = next((f for f in range(130) if ub[f] <= MIN_X and uc[f]), None)
-    passed = next((f for f in range(130) if ux[f] < ub[f]), None)
-    escaped = next((f for f in range(130) if passed is not None and f > passed and ub[f] >= 100 and not uc[f]), None)
-    escape_ok = cornered is not None and passed is not None and escaped is not None and cornered < passed < escaped
-    ok = fled >= 40 and pinned is not None and closest_free >= 44 and cowered and crept >= 30 and col == 10 and escape_ok
-    return report("SHY", ok, f"player approaches: buddy runs {fled} px, at the pillar by frame {pinned}, closest while free {closest_free} px, cowers {cowered}; "
-                  f"player leaves: buddy creeps back {crept} px (nearest he came {far_dist} px); corner escape: cornered at {cornered}, "
-                  f"player squeezes past at {passed}, buddy bolts the other way by {escaped}; colour {col}")
+    px, bx, crouch = a["playerX"], a["buddyX"], a["buddyCrouch"]
+    n = len(px)
+    dist = [abs(x - y) for x, y in zip(px, bx)]
+    pinned = next((f for f in range(n) if bx[f] <= MIN_X), None)
+    fled = bx[0] - min(bx)
+    closest_free = min(dist[:pinned]) if pinned else 0                 # never caught while he could still run
+    cornered = next((f for f in range(n) if bx[f] <= MIN_X and crouch[f]), None)
+    bolt = next((f for f in range(cornered, n) if bx[f] > MIN_X + 2), None) if cornered is not None else None
+    bolt_dist = (px[bolt] - bx[bolt]) if bolt is not None else None    # positive: the player is still on his right
+    escaped = next((f for f in range(bolt, n) if bx[f] >= 100 and not crouch[f]), None) if bolt is not None else None
+    bolt_ok = bolt is not None and 0 < bolt_dist <= BOLT_AT + 2 and escaped is not None
+    # B: he watches the player walk away, then creeps back once the player is far
+    qx, qb = b["playerX"], b["buddyX"]
+    crept = qb[-1] - qb[60]
+    ok = fled >= 40 and pinned is not None and closest_free >= 44 and cornered is not None and bolt_ok and crept >= 30 and col == 10
+    return report("SHY", ok, f"player approaches: buddy runs {fled} px, at the pillar by frame {pinned}, closest while free {closest_free} px, "
+                  f"cowers at {cornered}; bolts at frame {bolt} with the player {bolt_dist} px away (must be within {BOLT_AT}), "
+                  f"clear of the corner by {escaped}; player walks away: buddy creeps back {crept} px, colour {col}")
 
 
 def sleeper(prg, A):
