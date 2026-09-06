@@ -13,6 +13,8 @@ any emulator (verified in VICE as well).
 | file | bytes | what it is |
 |---|---|---|
 | `tony-buddy.prg` | 37,310 | the tall pillar chamber: no menu, no dashboard, loads straight in — your Tony plus the green mimic Tony (follows, faces you, hops when you jump, idles like the real one), two bats up high |
+| `tony-chamber.prg` | 37,678 | the Chamber: the tall pillar room with a brick ceiling, Tony, the green buddy and two bats, whose back wall is drawn from a 32-byte seed in the file (`tools/stamp_mural.py`; a contract writes the block hash there at render time) |
+| `tony-chamber-block-25990001.prg` | 37,678 | the same build with a different seed, to compare walls |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 

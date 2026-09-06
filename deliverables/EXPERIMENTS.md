@@ -28,7 +28,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E11 | Buddy behaviours as instruments | proposed | this file, §E11 |
 | E12 | Chain-reactive tokens (render-time / run-time) | proposed | this file, §E12 |
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
-| E14 | Engraved chambers & the HUD as an instrument panel | proposed | `assets/engraved-chamber-mock.png`, `assets/hud-instrument-mock.png` |
+| E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
 
 ---
 
@@ -184,7 +184,7 @@ fix-forward: bugs found later are fixed in new tokens. Gates before any
 mint: the automated suite passes and the owner has played it in READY 64.
 Decide up front whether shared parts (guard, launcher) can ever change.
 
-## E14 — Engraved chambers & the HUD as an instrument panel · proposed
+## E14 — The Chamber: a back wall drawn from a seed · in progress
 
 Chain state as *decoration* rather than a readout: carved into the room the
 way stone gets inscribed. Mock-ups built from the game's own tiles, its title
@@ -206,10 +206,27 @@ Also the HUD kept as a panel (`assets/hud-instrument-mock.png`): the
 six-digit score becomes the block number, hearts become tokens held, an
 item slot shows a relic, labels redrawn (`HOLDS`, `BLOCK`, `GAS`). Both feed
 from the same parameter block as E11/E12; render-time values from the
-contract make every render a dated impression. Engine work: an "engraving"
-routine in the room base that stamps glyphs and brick bits from ~24 bytes
-of state into slots the room declares; relabelling the HUD is a dashboard
-charset edit. Not started.
+contract make every render a dated impression.
+
+**Built (2026-09-06), after the owner cut it down to the one idea:** no HUD,
+the full 25 rows, a brick ceiling, the same floor, the two pillars, Tony,
+the green buddy, two bats — and the only thing the chain touches is the back
+wall. `tony-chamber.prg` (37,678 B, ROM-free, boots straight in) carries a
+32-byte **seed** right after an 8-byte marker `MURAL01\0` (file offset
+`0x041C9`, address `$49C8`, 64-aligned). At every room draw the game stamps
+15 × 10 slots of 2×2 dotted bricks, one seed bit per slot (MSB first, 150 of
+256 bits used), between the room decompression and its character
+translation, so the bricks go through the same char mapping and material
+lookup as the rest of the map. Verified on minimal64: the screen matches
+the seed bit for bit (30/30 slots checked), two seeds side by side in
+`assets/chamber-two-seeds-m64.png`. `tools/stamp_mural.py` writes a seed
+(a block hash as hex, or sha256 of a text) and prints the wall it draws; a
+contract does the same 32-byte write at render time. Generated sources:
+`tools/build_chamber_room.py`, `tools/make_chamber.py`
+(`level/chamber/data.asm`, `tony-chamber.asm`). **Open:** the owner's
+play-through in READY 64; the contract-side write (the room base is the
+buddy engine, not yet deployed); whether the wall should be denser or
+sparser (a rule other than "bit = brick" is a one-line change).
 
 ---
 
