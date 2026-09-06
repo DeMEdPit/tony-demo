@@ -174,8 +174,12 @@ all seven. The colour-from-base-fee idea (E12) is **parked**. The sixteen
 candidates are on `assets/buddy-palette-16.png` on the Chamber's black;
 readable on black: white, cyan, purple, green, yellow, orange, light red,
 light green, light blue, grey, light grey (Tony's own, so avoid); too dark:
-red, blue, brown, dark grey; black is invisible. Build order: the two bytes,
-then Dance, then the rest, each with a scripted test on minimal64.
+red, blue, brown, dark grey; black is invisible. **Colours chosen (owner,
+2026-09-06):** cyan (3), green (5), yellow (7), light blue (14), blue (6),
+light red (10), purple (4); blue is the dimmest of the seven on black and
+was picked with that in view. Which colour goes with which mechanic is
+still open. Build order: the two bytes, then Dance, then the rest, each
+with a scripted test on minimal64.
 
 ## E12 — Chain-reactive tokens · proposed
 
@@ -317,16 +321,25 @@ he does when he stands still, on repeat, and entirely on chain.
 **Built:** `tools/buddy_thumbnail.py` rebuilds the loop from the sprite
 bytes the PRG itself carries (the four idle frames, the left 24-pixel column
 of each 48×42 cell in `tony spoczynek 4klatki.png`) and emits one SVG per
-colour: a 48×64 canvas, black field, the buddy at (12,6), a brick course
-under his feet taken from the level charset in Tony's light grey, four
-`<path>` layers in run-length pixel rows, switched by SMIL `<animate
-opacity>` in discrete steps, A B A B C D at 0.3 s each (fifteen PAL frames,
-as in `animations.asm`), 1.8 s a loop. 7,707 bytes per colour;
-`assets/buddy-idle-{cyan,light-green,light-blue}.svg`,
+colour: a square 56×56 canvas, black field, four `<path>` layers in
+run-length pixel rows, switched by SMIL `<animate opacity>` in discrete
+steps, A B A B C D at 0.3 s each (fifteen PAL frames, as in
+`animations.asm`), 1.8 s a loop. Two layouts: **floor** (the Chamber's own
+brick course from the level charset, in Tony's light grey, flush on the
+bottom edge, the buddy standing on it: his lowest ink row is the row above
+the bricks' top line; 8,205 bytes) and **plain** (no bricks, the buddy
+centred; 6,060 bytes). The first cut had the buddy at a fixed sprite offset
+and he floated 11 px above the bricks, because the idle sprites carry ten
+empty rows under the feet; the owner spotted it and the layout now places
+the feet from the measured ink box. Files: `assets/buddy-idle-<colour>.svg`
+(floor) and `assets/buddy-idle-<colour>-plain.svg` for the seven colours,
+`assets/buddy-thumbnail-seven.png` (all seven, floor layout),
+`assets/buddy-thumbnail-layouts.png` (floor beside plain),
 `assets/buddy-idle-phases.png` (the six phases as a strip). Verified in
-Chromium by pausing the SVG clock at mid-phase times and comparing the
-rendered pixels against the sprite frames: A B A B C D, and A again at the
-start of the second and third loops.
+Chromium, both layouts, by pausing the SVG clock at mid-phase times and
+comparing the rendered pixels against the sprite frames: A B A B C D, A
+again at the start of the second and third loops, the feet row carrying the
+buddy's colour directly above the bricks' top line.
 
 **On chain, the plan:** the SVG needs no image file. The contract's
 `tokenURI` writes it from the sprite bytes (already public in the Tony blobs;
@@ -335,9 +348,8 @@ contract data) and the token's colour byte, and returns it as a `data:` URI
 in the metadata JSON, the standard fully on-chain pattern. A viewer that
 hands the SVG to an `<img>` animates it (the major browsers run SMIL there);
 one that rasterises to a cached still shows frame A, which is why A is drawn
-first. `data:` inside `data:` needs base64 of the SVG (about 10.3 KB per
-render); gas is paid only by the caller of a view, so the size costs nothing
-at mint.
+first. `data:` inside `data:` needs base64 of the SVG (about 11 KB per render);
+gas is paid only by the caller of a view, so the size costs nothing at mint.
 
 **Taught:** the game's idle sequence is not four frames in a row; it is
 A B A B C D. A fixed-per-token thumbnail (colour only) can be stored once
@@ -345,7 +357,8 @@ at deploy; if the thumbnail should ever carry the render-time wall as well,
 the same seed logic as `tools/stamp_mural.py` would have to be repeated in
 Solidity, which is a much larger contract than the buddy alone.
 
-**Open:** the seven colours (owner's pick from the palette sheet); Solidity
+**Open:** floor or plain (owner's call; floor recommended, it is the
+Chamber's floor and gives the colour something to stand against); Solidity
 generator and its gas; how each marketplace of interest treats SMIL in
 practice (measured, not assumed) before relying on the animation.
 
