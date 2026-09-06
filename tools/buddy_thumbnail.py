@@ -20,11 +20,16 @@ SMIL <animate opacity> in discrete steps. Frame A is drawn first so a viewer
 that shows a still image (a marketplace grid, a cached thumbnail) shows the
 pose the loop starts on.
 
-Usage:  tools/buddy_thumbnail.py [--layout floor|plain] [--size 56]
+Layouts bricks (a full-width course of the small running-bond bricks, no
+seam), arch (an arched doorway in the level's dotted stone, small bricks
+around it; 64 px) and arch-brick (the doorway cut out of the small-brick
+wall) came from the owner's review of the first two.
+
+Usage:  tools/buddy_thumbnail.py [--layout LAYOUT] [--size 56]
                                  [--out deliverables/assets] [colour ...]
         tools/buddy_thumbnail.py --strip PNG        six phases of the loop
         tools/buddy_thumbnail.py --sheet PNG SPEC... comparison sheet, SPEC =
-                                 colour[:layout], e.g. cyan:plain
+                                 colour[:layout[:size]], e.g. cyan:plain:40
 Colour names are C64 palette names (cyan, light-green, ...) or indices 0-15.
 """
 import argparse
@@ -44,6 +49,7 @@ CHARSET = "build/charpad/demo-level-charset.bin"   # ink = 1 bits (the game nega
 # the two 6-char brick courses the Chamber alternates along its floor (tools/build_chamber_room.py)
 COURSE_A = ([0x31, 0x32, 0x33, 0x34, 0x35, 0x36], [0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C])
 COURSE_B = ([0x25, 0x26, 0x27, 0x28, 0x29, 0x2A], [0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30])
+SMALL_BRICKS = (0xAD, 0xAE, 0xAF)       # the running-bond brick wall (room 0,3's left wall), repeats every 24 px
 PHASES = [2, 3, 2, 3, 0, 1]            # sprite frame per phase: A B A B C D  (frame = bank pair index)
 PHASE_SECONDS = 15 / 50.0              # fifteen PAL frames
 SPRITE_W = 24
@@ -96,19 +102,102 @@ def floor_rows(width, charset_path=CHARSET):
     return rows
 
 
+def charset(charset_path=CHARSET):
+    return open(charset_path, "rb").read()
+
+
+def brick_rows(width, height, cs=None, phase=0):
+    """The small running-bond bricks, tiled: `width` x `height` px."""
+    cs = cs or charset()
+    rows = []
+    for y in range(height):
+        row = []
+        for x in range(width):
+            k = x + phase
+            code = SMALL_BRICKS[(k // 8) % 3]
+            row.append((cs[code * 8 + (y % 8)] >> (7 - (k % 8))) & 1)
+        rows.append(row)
+    return rows
+
+
+def arch_rows(size, cs=None, style="stone"):
+    """A wall with an arched doorway cut out, drawn in the game's own textures.
+
+    style "stone": jambs and a ring of voussoirs in the big dotted stone of the
+    level's blocks (texture sampled from the brick course), small bricks in the
+    spandrels and above; "brick": the small-brick wall everywhere, the opening
+    simply cut out of it. The opening is 36 px wide with a semicircular top;
+    the floor is one row of small bricks along the bottom edge.
+    """
+    import math
+    cs = cs or charset()
+    course = floor_rows(48, CHARSET)                       # speckled stone interior as a texture source
+    def tex(x, y):
+        return course[1 + (y % 13)][1 + (x % 44)]
+    bricks = brick_rows(size, size, cs)
+    cx, spring, r_in, r_out, floor_y, n = size // 2, 32, 18, 28, size - 8, 7
+    jamb = cx - r_in
+    joints = [k * math.pi / n for k in range(1, n)]
+    rows = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            dx, dy = x + 0.5 - cx, y + 0.5 - spring
+            r = math.hypot(dx, dy)
+            if y >= floor_y:
+                v = bricks[y][x]
+            elif y < spring:
+                if r < r_in:
+                    v = 0
+                elif style == "brick":
+                    v = bricks[y][x]
+                elif r < r_out:
+                    ang = math.atan2(-dy, dx)
+                    on_joint = any(abs(ang - j) * r < 0.7 for j in joints)
+                    v = 0 if (on_joint or r >= r_out - 1) else tex(x, y)
+                else:
+                    v = bricks[y][x]
+            else:
+                if jamb <= x < size - jamb:
+                    v = 0
+                elif style == "brick":
+                    v = bricks[y][x]
+                else:
+                    v = 0 if ((y - spring) % 8 == 0) else tex(x, y)
+            row.append(v)
+        rows.append(row)
+    return rows
+
+
+LAYOUTS = ("floor", "plain", "bricks", "arch", "arch-brick")
+
+
 def compose(frames, layout, size):
-    """Where things go: (buddy_x, buddy_y, floor rows or None, floor_y)."""
+    """The scene: {"size", "layers": [(colour, rows, ox, oy)], "buddy": (bx, by)}."""
     top, feet = ink_box(frames)
+    layers = []
     bx = (size - SPRITE_W) // 2
     if layout == "floor":
         floor = floor_rows(size)
         floor_y = size - len(floor)
+        layers.append((FLOOR_COLOUR, floor, 0, floor_y))
         by = floor_y - 1 - feet                  # feet on the row above the bricks' top line
-        return bx, by, floor, floor_y
-    if layout == "plain":
+    elif layout == "plain":
         by = (size - (feet - top + 1)) // 2 - top
-        return bx, by, None, None
-    raise ValueError(layout)
+    elif layout == "bricks":
+        floor = brick_rows(size, 16)
+        floor_y = size - len(floor)
+        layers.append((FLOOR_COLOUR, floor, 0, floor_y))
+        by = floor_y - 1 - feet
+    elif layout in ("arch", "arch-brick"):
+        size = 64
+        bx = (size - SPRITE_W) // 2
+        wall = arch_rows(size, style="brick" if layout == "arch-brick" else "stone")
+        layers.append((FLOOR_COLOUR, wall, 0, 0))
+        by = (size - 8) - 1 - feet
+    else:
+        raise ValueError(layout)
+    return {"size": size, "layers": layers, "buddy": (bx, by)}
 
 
 def runs_path(rows, ox, oy):
@@ -128,14 +217,15 @@ def runs_path(rows, ox, oy):
 
 
 def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE):
-    bx, by, floor, floor_y = compose(frames, layout, size)
+    sc = compose(frames, layout, size)
+    size, (bx, by) = sc["size"], sc["buddy"]
     n = len(PHASES)
     keytimes = ";".join(f"{i / n:.4f}" for i in range(n)) + ";1"
     dur = f"{PHASE_SECONDS * n:g}s"
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" shape-rendering="crispEdges">',
              f'<rect width="{size}" height="{size}" fill="#000"/>']
-    if floor:
-        parts.append(f'<path fill="{FLOOR_COLOUR}" d="{runs_path(floor, 0, floor_y)}"/>')
+    for hexcol, rows, ox, oy in sc["layers"]:
+        parts.append(f'<path fill="{hexcol}" d="{runs_path(rows, ox, oy)}"/>')
     order = []                                   # frames in order of first appearance: A first
     for f in PHASES:
         if f not in order:
@@ -154,15 +244,16 @@ def raster(frames, colour_hex, layout, size, frame, scale):
     """One still of the composition (a given sprite frame) as a PIL image."""
     from PIL import Image
     rgb = tuple(int(colour_hex[i:i + 2], 16) for i in (1, 3, 5))
-    grey = tuple(int(FLOOR_COLOUR[i:i + 2], 16) for i in (1, 3, 5))
-    bx, by, floor, floor_y = compose(frames, layout, size)
+    sc = compose(frames, layout, size)
+    size, (bx, by) = sc["size"], sc["buddy"]
     im = Image.new("RGB", (size, size), "black")
     px = im.load()
-    if floor:
-        for y, row in enumerate(floor):
+    for hexcol, rows, ox, oy in sc["layers"]:
+        col = tuple(int(hexcol[i:i + 2], 16) for i in (1, 3, 5))
+        for y, row in enumerate(rows):
             for x, v in enumerate(row):
                 if v:
-                    px[x, floor_y + y] = grey
+                    px[ox + x, oy + y] = col
     for y, row in enumerate(frames[frame]):
         for x, v in enumerate(row):
             if v and 0 <= bx + x < size and 0 <= by + y < size:
@@ -182,15 +273,16 @@ def phase_strip(frames, colour_hex, layout, size, path, scale=4):
 def sheet(frames, specs, size, path, scale=3, columns=6):
     """Comparison sheet: one still (frame A) per spec, labelled."""
     from PIL import Image, ImageDraw
-    cell = size * scale
+    cell = 64 * scale                            # every thumbnail shown at the same tile size, as a marketplace would
     pad, text_h = 10, 14
     rows = (len(specs) + columns - 1) // columns
     im = Image.new("RGB", (columns * (cell + pad) + pad, rows * (cell + pad + text_h) + pad), "#202020")
     d = ImageDraw.Draw(im)
-    for i, (label, colour_hex, layout) in enumerate(specs):
+    for i, (label, colour_hex, layout, sz) in enumerate(specs):
         x = pad + (i % columns) * (cell + pad)
         y = pad + (i // columns) * (cell + pad + text_h)
-        im.paste(raster(frames, colour_hex, layout, size, PHASES[0], scale), (x, y))
+        tile = raster(frames, colour_hex, layout, sz, PHASES[0], 1).resize((cell, cell), Image.NEAREST)
+        im.paste(tile, (x, y))
         d.text((x, y + cell + 1), label, fill="white")
     im.save(path)
 
@@ -202,7 +294,7 @@ def colour(c):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("colours", nargs="*", default=["cyan"])
-    ap.add_argument("--layout", default="floor", choices=("floor", "plain"))
+    ap.add_argument("--layout", default="floor", choices=LAYOUTS)
     ap.add_argument("--size", type=int, default=DEFAULT_SIZE)
     ap.add_argument("--out", default="deliverables/assets")
     ap.add_argument("--strip", help="write a PNG strip of the six phases (first colour) instead of SVGs")
@@ -213,9 +305,10 @@ def main():
     if a.sheet:
         specs = []
         for spec in a.colours:
-            c, _, lay = spec.partition(":")
+            c, lay, sz = (spec.split(":") + ["", ""])[:3]
             name, hexval = colour(c)
-            specs.append((f"{name} ({PALETTE.index((name, hexval))}) {lay or a.layout}", hexval, lay or a.layout))
+            lay, sz = lay or a.layout, int(sz or a.size)
+            specs.append((f"{name} {lay} {sz}px", hexval, lay, sz))
         sheet(frames, specs, a.size, a.sheet)
         print(f"{a.sheet}: {os.path.getsize(a.sheet)} bytes")
         return
@@ -226,7 +319,7 @@ def main():
         return
     for c in a.colours:
         name, hexval = colour(c)
-        suffix = "" if a.layout == "floor" else f"-{a.layout}"
+        suffix = ("" if a.layout == "floor" else f"-{a.layout}") + (f"-{a.size}" if a.size != DEFAULT_SIZE and a.layout in ("floor", "plain", "bricks") else "")
         path = os.path.join(a.out, f"buddy-idle-{name}{suffix}.svg")
         open(path, "w").write(svg(frames, hexval, a.layout, a.size))
         print(f"{path}: {os.path.getsize(path)} bytes")

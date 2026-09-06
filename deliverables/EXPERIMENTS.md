@@ -357,10 +357,28 @@ at deploy; if the thumbnail should ever carry the render-time wall as well,
 the same seed logic as `tools/stamp_mural.py` would have to be repeated in
 Solidity, which is a much larger contract than the buddy alone.
 
-**Open:** floor or plain (owner's call; floor recommended, it is the
-Chamber's floor and gives the colour something to stand against); Solidity
-generator and its gas; how each marketplace of interest treats SMIL in
-practice (measured, not assumed) before relying on the animation.
+**Second round (owner's review):** the chunky course read as one big
+block with a seam, so three more layouts were built, all on
+`assets/buddy-thumbnail-options.png` at one tile size: **plain** at 48 and
+40 px (the buddy alone, larger in the tile; `buddy-idle-cyan-plain-40.svg`,
+6,014 bytes), **bricks** (a full-width course of the game's small
+running-bond bricks, characters `$AD $AE $AF`, room 0,3's left wall, no
+seam; `buddy-idle-cyan-bricks.svg`, 8,230 bytes), and an **arched
+doorway**. The game's tiles hold no arch: the nearest things are the
+rounded corners of the big cave blocks and the stone-framed grille in room
+2,5. So the doorway is drawn in the level's own textures: **arch** (a ring
+of seven voussoirs and jambs in the speckled stone of the blocks, small
+bricks around, a 36 px opening with a semicircular top, 64 px canvas;
+`buddy-idle-cyan-arch.svg`, 12,793 bytes) and **arch-brick** (the same
+opening cut straight out of the small-brick wall;
+`buddy-idle-cyan-arch-brick.svg`, 12,414 bytes). The arch SVG was verified
+in Chromium like the others (phase order, feet on the floor row).
+
+**Open:** which layout (owner's call); Solidity generator and its gas (the
+wall layouts carry a 12 KB path, which is fine for a view call but is the
+first thing to trim if the contract's bytecode budget matters); how each
+marketplace of interest treats SMIL in practice (measured, not assumed)
+before relying on the animation.
 
 ---
 
