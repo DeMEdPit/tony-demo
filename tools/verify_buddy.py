@@ -116,10 +116,12 @@ def report(name, ok, detail):
 # ----------------------------------------------------------------------------- the seven
 def follow(prg, A):
     p = stamp(prg, 0, 5)
-    v = run(p, f"wait:{BOOT},peek:{A['buddyX']:X},joy:{RIGHT}:120,peek:{A['buddyX']:X},peek:D02C,joy:{FIRE}:4,wait:6,peek:{A['buddyHop']:X}")
+    v = run(p, f"wait:{BOOT},peek:{A['buddyX']:X},joy:{RIGHT}:120,peek:{A['buddyX']:X},peek:D02C,joy:{FIRE}:4,wait:6,peek:{A['buddyHop']:X},"
+                f"wait:40,hold:2,wait:20,peek:{A['playerAnim']:X},peek:{A['buddyCrouch']:X},release:2,wait:10,peek:{A['buddyCrouch']:X}")
     os.unlink(p)
-    ok = v[1] != v[0] and (v[2] & 15) == 5 and v[3] != 0
-    return report("FOLLOW", ok, f"player walks 120 frames: buddy X {v[0]} -> {v[1]} (must follow), colour {v[2] & 15}, hop after the player's jump {v[3]}")
+    ok = v[1] != v[0] and (v[2] & 15) == 5 and v[3] != 0 and v[4] in (2, 3, 18, 19) and v[5] == 1 and v[6] == 0
+    return report("FOLLOW", ok, f"player walks 120 frames: buddy X {v[0]} -> {v[1]} (must follow), colour {v[2] & 15}, hop after the player's jump {v[3]}, "
+                  f"player ducks (anim {v[4]}): buddy crouch {v[5]}, after: {v[6]}")
 
 
 def dance(prg, A):
@@ -202,21 +204,26 @@ def echo(prg, A):
 
 def mirror(prg, A):
     p = stamp(prg, 3, 14)
-    plan = [(RIGHT, 80), (LEFT, 160), (None, 10), (FIRE, 4), (None, 40)]
-    t = frames(p, A, ["playerX", "playerY", "buddyX", "buddyHop", "buddyFacing"], plan)
+    DOWN = 2
+    plan = [(RIGHT, 80), (LEFT, 160), (None, 10), (FIRE, 4), (None, 40), (DOWN, 30), (None, 10)]
+    t = frames(p, A, ["playerX", "playerY", "playerAnim", "buddyX", "buddyHop", "buddyFacing", "buddyCrouch"], plan)
     col = run(p, f"wait:{BOOT},peek:D02C")[0] & 15
     os.unlink(p)
-    px, py, bx, hop, fac = t["playerX"], t["playerY"], t["buddyX"], t["buddyHop"], t["buddyFacing"]
+    px, py, pa, bx, hop, fac, crouch = t["playerX"], t["playerY"], t["playerAnim"], t["buddyX"], t["buddyHop"], t["buddyFacing"], t["buddyCrouch"]
     n = len(px)
+    DUCK = (2, 3, 18, 19)
+    crouch_bad = [f for f in range(1, n) if crouch[f] != (1 if pa[f] in DUCK else 0) and crouch[f] != (1 if pa[f - 1] in DUCK else 0)]
     want = [min(MAX_X, max(MIN_X, MIRROR_SUM - x)) for x in px]
     bad = [f for f in range(1, n) if bx[f] not in (want[f - 1], want[f])]
     # while the player walks right (and the reflection is not pinned), the mirror faces left
     opposite = all(fac[f] == 0 for f in range(5, 80) if want[f] != want[f - 1])
     jump = next((f for f in range(n) if py[f] < AIR), None)
     hops = [f for f in range(1, n) if hop[f - 1] == 0 and hop[f] != 0]
-    ok = not bad and opposite and jump is not None and any(abs(h - jump) <= 3 for h in hops) and col == 14
+    ducked = sum(1 for f in range(n) if pa[f] in DUCK)
+    ok = not bad and opposite and jump is not None and any(abs(h - jump) <= 3 for h in hops) and ducked >= 20 and not crouch_bad and col == 14
     return report("MIRROR", ok, f"{n} frames: buddy X = {MIRROR_SUM} - player X, clamped {MIN_X}..{MAX_X}, at every frame ({len(bad)} misses), "
-                  f"faces the other way {opposite}, player jumps at {jump}, buddy hops at {hops}, colour {col}")
+                  f"faces the other way {opposite}, player jumps at {jump}, buddy hops at {hops}, player ducks {ducked} frames, "
+                  f"buddy crouches with him ({len(crouch_bad)} misses), colour {col}")
 
 
 def wander(prg, A):

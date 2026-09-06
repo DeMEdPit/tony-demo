@@ -1910,6 +1910,7 @@ buddyUpdate: {
     bcs !+
         inc wantHop
     !:
+    jsr playerCrouch            // and crouch when he crouches
 
     act:
     lda nextCrouch                  // the pose flags, committed once per frame
@@ -2193,6 +2194,25 @@ buddyDistance: {
     rts
 }
 
+// Crouch when the player crouches (Follow and Mirror); the act part shows it
+// once he stands still.
+playerCrouch: {
+    lda physPlayerAnimation
+    cmp #ANIM_DUCK_LEFT
+    beq yes
+    cmp #ANIM_DUCK_RIGHT
+    beq yes
+    cmp #ANIM_DUCK_QUICK_LEFT
+    beq yes
+    cmp #ANIM_DUCK_QUICK_RIGHT
+    bne no
+    yes:
+        lda #1
+        sta nextCrouch
+    no:
+    rts
+}
+
 // Put him at `target` (Echo, Mirror): facing and the walking pose follow from
 // the move; the act part does not step, it only writes the sprite.
 buddyPlace: {
@@ -2469,6 +2489,7 @@ buddyDecide: {
     mirror:
     lda #0
     sta wantHop
+    jsr playerCrouch                // crouch when he crouches
     sec                             // target = MIRROR_SUM - playerX
     lda #<MIRROR_SUM
     sbc physPlayerX

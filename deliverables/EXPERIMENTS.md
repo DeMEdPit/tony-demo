@@ -287,7 +287,11 @@ measured on the emulator (26 frames, apex 23 pixels, the deltas −4 −4 −4
 now the buddy's arc in every mechanic that hops; the Echo replays Tony's
 height directly and was already exact. Tests re-run: all seven pass (the
 Dance test now allows a hop to answer a hit made during the previous
-jump, since a jump lasts 26 frames).
+jump, since a jump lasts 26 frames). Then: the Shadow did not crouch when
+Tony did; Follow and Mirror now crouch with him (the Mirror because a
+mirror that ignores a crouch would be wrong), once he stands still; the
+tests check the crouch appears with Tony's duck animation and goes when
+it goes.
 
 The base is now **feature complete**: one build, 40,248 bytes, serves all
 seven. Provisional colours for the shipped programs (the owner's mapping is

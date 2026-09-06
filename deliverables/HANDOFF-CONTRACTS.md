@@ -54,10 +54,10 @@ every render from the current block. The room itself stays black and grey.
 
   | id | name | behaviour byte | what he does | status |
   |---|---|---|---|---|
-  | 1 | The Shadow | 0 Follow | keeps his distance, faces you, hops when you jump | built |
+  | 1 | The Shadow | 0 Follow | keeps his distance, faces you, jumps and crouches when you do | built, tested |
   | 2 | The Dancer | 1 Dance | steps and turns with the bass line, bounces on the hits, read from the chip | built, tested |
   | 3 | The Echo | 2 Echo | replays you exactly, four seconds behind: every step, jump and duck | built, tested |
-  | 4 | The Mirror | 3 Mirror | stands at your reflection about the room's centre line, jumps with you | built, tested |
+  | 4 | The Mirror | 3 Mirror | stands at your reflection about the room's centre line, jumps and crouches with you | built, tested |
   | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, on the chip's dice | built, tested |
   | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, creeps back when you leave | built, tested |
   | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
@@ -155,7 +155,7 @@ rules of section 1):
 
 Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 40,248 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `be5ebaeb739297c262967dbaa5a9526eb225284c576902557465f7cf100f7ee3`.
+sha256 `21b377e319c5cf5bd1455c9b37f6ca0594f4f853c21e1e8dccde001797b72992`.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its
