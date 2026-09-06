@@ -29,6 +29,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E12 | Chain-reactive tokens (render-time / run-time) | proposed | this file, §E12 |
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
 | E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
+| E15 | Token thumbnail: the buddy's idle dance as an animated SVG | in progress | `assets/buddy-idle-*.svg`, `tools/buddy_thumbnail.py` |
 
 ---
 
@@ -157,6 +158,25 @@ purest: the SID player's own state (pattern step, voice notes) and the
 chip's readback registers are all inside the machine — a buddy that dances
 to the soundtrack needs no outside data at all.
 
+**Decided (owner, 2026-09-06): seven mechanics, one per token.** Follow
+(the E5 buddy: keeps his distance, faces you, hops when you jump), Dance
+(bounces on the hits of the tune, read from the SID's envelope readback, no
+timing table), Echo (replays your moves a second or two behind you), Mirror
+(moves opposite to you, reflected about the room's centre line), Wander
+(lives there and ignores you: rules plus dice, the dice from the SID noise
+generator with the render's hash setting the mood), Shy (runs when you
+approach, creeps back, hides behind a pillar), Sleeper (dozes crouched until
+you come close, follows for a while, dozes off again). Behaviour is fixed per
+token; the wall (E14) is the living part. The base look stays as it is now,
+black and grey, and **each token's buddy has a dedicated colour**: one
+behaviour byte and one colour byte join the seed block, so one build serves
+all seven. The colour-from-base-fee idea (E12) is **parked**. The sixteen
+candidates are on `assets/buddy-palette-16.png` on the Chamber's black;
+readable on black: white, cyan, purple, green, yellow, orange, light red,
+light green, light blue, grey, light grey (Tony's own, so avoid); too dark:
+red, blue, brown, dark grey; black is invisible. Build order: the two bytes,
+then Dance, then the rest, each with a scripted test on minimal64.
+
 ## E12 — Chain-reactive tokens · proposed
 
 The 6502 only ever reads a parameter block in RAM; two honest ways to fill
@@ -279,11 +299,55 @@ every re-fetch, while READY 64 and a direct call are always fresh; and a
 chain can only serve the last 256 block hashes, so a wall seen at block N
 cannot be recomputed on-chain an hour later — the renders are impressions,
 not a permanent series (if a permanent "birth wall" is ever wanted, the mint
-block's hash can be stored at mint and rendered alongside). Colour scheme is
-**parked** until the buddy's five mechanics (E11) are designed.
+block's hash can be stored at mint and rendered alongside). Colour: the
+room keeps its black-and-grey scheme; only the buddy is coloured, one
+dedicated colour per token (decided with the seven mechanics, E11).
 
 **Open:** the owner's play-through in READY 64; the room base (the buddy
 engine) is not yet deployed; the contract that performs the 40-byte write.
+
+---
+
+## E15 — Token thumbnail: the idle dance as an animated SVG · in progress
+
+**For:** the image a marketplace shows for each of the seven tokens. The
+owner's brief: the buddy alone, in his token colour, doing the little dance
+he does when he stands still, on repeat, and entirely on chain.
+
+**Built:** `tools/buddy_thumbnail.py` rebuilds the loop from the sprite
+bytes the PRG itself carries (the four idle frames, the left 24-pixel column
+of each 48×42 cell in `tony spoczynek 4klatki.png`) and emits one SVG per
+colour: a 48×64 canvas, black field, the buddy at (12,6), a brick course
+under his feet taken from the level charset in Tony's light grey, four
+`<path>` layers in run-length pixel rows, switched by SMIL `<animate
+opacity>` in discrete steps, A B A B C D at 0.3 s each (fifteen PAL frames,
+as in `animations.asm`), 1.8 s a loop. 7,707 bytes per colour;
+`assets/buddy-idle-{cyan,light-green,light-blue}.svg`,
+`assets/buddy-idle-phases.png` (the six phases as a strip). Verified in
+Chromium by pausing the SVG clock at mid-phase times and comparing the
+rendered pixels against the sprite frames: A B A B C D, and A again at the
+start of the second and third loops.
+
+**On chain, the plan:** the SVG needs no image file. The contract's
+`tokenURI` writes it from the sprite bytes (already public in the Tony blobs;
+a copy of the four frames as run-length rows is a few hundred bytes of
+contract data) and the token's colour byte, and returns it as a `data:` URI
+in the metadata JSON, the standard fully on-chain pattern. A viewer that
+hands the SVG to an `<img>` animates it (the major browsers run SMIL there);
+one that rasterises to a cached still shows frame A, which is why A is drawn
+first. `data:` inside `data:` needs base64 of the SVG (about 10.3 KB per
+render); gas is paid only by the caller of a view, so the size costs nothing
+at mint.
+
+**Taught:** the game's idle sequence is not four frames in a row; it is
+A B A B C D. A fixed-per-token thumbnail (colour only) can be stored once
+at deploy; if the thumbnail should ever carry the render-time wall as well,
+the same seed logic as `tools/stamp_mural.py` would have to be repeated in
+Solidity, which is a much larger contract than the buddy alone.
+
+**Open:** the seven colours (owner's pick from the palette sheet); Solidity
+generator and its gas; how each marketplace of interest treats SMIL in
+practice (measured, not assumed) before relying on the animation.
 
 ---
 
@@ -292,6 +356,8 @@ engine) is not yet deployed; the contract that performs the 40-byte write.
 - Exit bytes are the whole castle topology; no grid in the engine (E8).
 - Any sprite-to-sprite touch counts as a player hit (E4, E10).
 - Sprite colours are repainted in the top-of-frame IRQ (E5).
+- The idle animation plays its four frames as A B A B C D, fifteen PAL
+  frames per phase, a 1.8 s loop (E15).
 - The Movable segment is overwritten by the music copy at unpack; the
   dead menu at `$B462` can only run at boot (E6, E9).
 - Sealed exits have no behaviour; X wraps through zero (E9).

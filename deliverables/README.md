@@ -79,7 +79,10 @@ Boards recap (details in the docs): "The Colonnade + Buddy" sources are
 `tools/build_tall_room.py` + `tools/make_buddy.py` (green buddy AI, tall
 25-row room, physics fork); the Vault is `tools/build_custom_room.py` +
 `src/kickass/level/custom/`; the trainers come from `tools/make_trainers.py`
-+ `src/kickass/cheatmenu-romfree.asm`. `screenshots/` holds before/after and
++ `src/kickass/cheatmenu-romfree.asm`. The token thumbnail prototype (the buddy's idle
+dance as an animated SVG, one file per colour) is `tools/buddy_thumbnail.py`
+→ `assets/buddy-idle-*.svg`; `assets/buddy-palette-16.png` shows the buddy
+in all sixteen C64 colours on the Chamber's black. `screenshots/` holds before/after and
 on-target captures (`*-m64-*.png` are minimal64 framebuffer grabs;
 `buddy-m64-*.png` show the buddy build booting straight into the chamber).
 
