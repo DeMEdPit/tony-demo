@@ -69,6 +69,9 @@ field report on the first play-test and what it changed.
 
 ## Documents
 
+- **`BRIEFING.md`** — for an advisor: what we are making, how we think and
+  work, what is decided and open, the risks, and where an outside view
+  would help, written from the AI collaborator's perspective.
 - **`THE-GLITCH.md`** — the eighth token: what the Glitch does, the blackout
   room, how the idea arrived and why it was built the simple way, the
   decisions made on evidence, and what it means for the contract.
