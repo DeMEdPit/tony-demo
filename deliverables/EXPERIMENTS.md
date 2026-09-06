@@ -376,7 +376,7 @@ in Chromium like the others (phase order, feet on the floor row).
 
 **Decided (owner, 2026-09-06): the buddy alone, the middle size** (plain,
 48 px canvas; he fills half the tile). The seven files are
-`assets/buddy-idle-<colour>.svg`, 6,014 bytes each;
+`assets/buddy-idle-<colour>.svg`, 6,056 bytes each;
 `assets/buddy-thumbnail-seven.png` shows them together. The other layouts
 stay available in the tool (`--layout`, `--size`) and on the options
 sheet, but are no longer shipped as files.
