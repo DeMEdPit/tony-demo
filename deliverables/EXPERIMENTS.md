@@ -629,7 +629,19 @@ sprites grey (12), and the mural routine gives the block number's eight
 cells light-grey ink (colour RAM) so the digits read bright on the dark
 floor. Measured: background 11, Tony 12, digit ink 15; an ordinary room
 15 and 15. `screenshots/chamber-glitch-dark-m64.png` shows the two side
-by side.
+by side. Then the owner asked whether the digits should be black in the
+blackout, or the buddy's colour everywhere, and rainbow for the Glitch.
+Measured on the floor (`screenshots/chamber-digit-colours-m64.png`):
+black digits on the dark-grey stone are readable but murky, the light-grey
+ones clear; on the ordinary light-grey stone black digits are crisp,
+yellow and cyan poor, purple readable, so a buddy-coloured number would
+only work for the dark colours. Recommended and built: the seven keep
+black digits, and the Glitch's number wears his colour, frame by frame,
+light grey while he is blinked out (measured: the digits' ink cycles
+through all seven colours and 15, never 0). His thumbnail (E15) is the
+same idle dance with the fill cycling through the seven token colours,
+0.4 s each: `assets/buddy-idle-glitch.svg` (6,668 bytes), verified in
+Chromium colour by colour; `assets/buddy-idle-glitch-phases.png`.
 
 **Bats, exhaustively (2026-09-06):** on paper, all 8 paths × 8 rows × 64
 column pairs: the lowest bat bottom is 153 (Tony's jump top is 183), the

@@ -61,7 +61,7 @@ every render from the current block. The room itself stays black and grey.
   | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, jumps now and then, on the chip's dice | built, tested |
   | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, bolts past you when you are almost on him, creeps back when you leave | built, tested |
   | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
-  | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and teleports into the next, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats, dark grey stone, a grey Tony, the block number in light grey | built, tested |
+  | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and teleports into the next, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats, dark grey stone, a grey Tony, the block number in his colour | built, tested |
 
   One build serves all eight: the byte selects the mechanic at run time.
   The Glitch's blackout is gated on his mechanic byte, not on the seed, so
@@ -170,7 +170,7 @@ rules of section 1):
 
 Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 41,094 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `81468c5a3232246eaaf701c2c59dc39ebddad43cb20eda61eb977c87cb15e262`.
+sha256 `4fba88704eb02e7ed14d7638fbbaeb5c87c99f85431a7c8d51a0c74def5651de`.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its
@@ -269,6 +269,11 @@ which makes the test trivial. Shape of the file:
   token. Colour hex values (the Colodore palette the emulator uses): cyan
   `#75cec8`, green `#56ac4d`, yellow `#edf171`, light blue `#706deb`, blue
   `#2e2c9b`, light red `#c46c71`, purple `#8e3c97`.
+- The Glitch's image is the same file with one more `<animate>` per
+  path, `attributeName="fill"`, cycling the seven token colours in
+  discrete steps of 0.4 s (`values` = blue, cyan, yellow, light blue,
+  green, light red, purple; `dur="2.8s"`); reference
+  `deliverables/assets/buddy-idle-glitch.svg`, 6,668 bytes.
 - Base64 of the SVG is about 8.1 KB per render.
 - Viewers that hand the SVG to an `<img>` animate it (the major browsers
   run SMIL there); viewers that rasterise to a cached still show frame A.

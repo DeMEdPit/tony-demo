@@ -218,7 +218,12 @@ def runs_path(rows, ox, oy):
     return "".join(out)
 
 
-def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE):
+GLITCH_CYCLE = ["#2e2c9b", "#75cec8", "#edf171", "#706deb", "#56ac4d", "#c46c71", "#8e3c97"]   # the seven token colours
+GLITCH_STEP = 0.4                          # seconds per colour: 2.8 s round the seven, against the 1.8 s idle loop
+
+
+def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE, glitch=False):
+    """One SVG. With glitch=True the fill cycles through the seven token colours (the Glitch's thumbnail)."""
     sc = compose(frames, layout, size)
     size, (bx, by) = sc["size"], sc["buddy"]
     n = len(PHASES)
@@ -234,9 +239,13 @@ def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE):
             order.append(f)
     for f in order:
         values = ";".join("1" if p == f else "0" for p in PHASES) + ";" + ("1" if PHASES[0] == f else "0")
-        parts.append(f'<path fill="{colour_hex}" d="{runs_path(frames[f], bx, by)}">')
+        fill = GLITCH_CYCLE[0] if glitch else colour_hex
+        parts.append(f'<path fill="{fill}" d="{runs_path(frames[f], bx, by)}">')
         parts.append(f'<animate attributeName="opacity" values="{values}" keyTimes="{keytimes}" '
                      f'calcMode="discrete" dur="{dur}" repeatCount="indefinite"/>')
+        if glitch:
+            parts.append(f'<animate attributeName="fill" values="{";".join(GLITCH_CYCLE)}" '
+                         f'calcMode="discrete" dur="{GLITCH_STEP * len(GLITCH_CYCLE):g}s" repeatCount="indefinite"/>')
         parts.append('</path>')
     parts.append('</svg>')
     return "\n".join(parts) + "\n"
@@ -301,6 +310,7 @@ def main():
     ap.add_argument("--out", default="deliverables/assets")
     ap.add_argument("--strip", help="write a PNG strip of the six phases (first colour) instead of SVGs")
     ap.add_argument("--sheet", help="write a comparison PNG of the given colour[:layout] specs instead of SVGs")
+    ap.add_argument("--glitch", action="store_true", help="the Glitch's thumbnail: the fill cycles through the seven token colours")
     ap.add_argument("--sprites", default=SPRITE_DIR)
     a = ap.parse_args()
     frames = load_frames(a.sprites)
@@ -318,6 +328,11 @@ def main():
         name, hexval = colour(a.colours[0])
         phase_strip(frames, hexval, a.layout, a.size, a.strip)
         print(f"{a.strip}: {os.path.getsize(a.strip)} bytes")
+        return
+    if a.glitch:
+        path = os.path.join(a.out, "buddy-idle-glitch.svg")
+        open(path, "w").write(svg(frames, GLITCH_CYCLE[0], a.layout, a.size, glitch=True))
+        print(f"{path}: {os.path.getsize(path)} bytes")
         return
     for c in a.colours:
         name, hexval = colour(c)

@@ -325,6 +325,7 @@ def glitch(prg, A):
     # the room: screen memory of the mural area (rows 2-21, cols 5-34), the candle block, the digits, the bats
     scr = run(p, f"wait:{BOOT},peek:D015," + "".join(f"peek:{0xC000 + r * 40 + c:X}," for r in range(2, 22) for c in range(5, 35)) + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)))
     tint = run(p, f"wait:{BOOT},peek:D021,peek:D027,peek:D028," + "".join(f"peek:{0xD800 + 23 * 40 + c:X}," for c in range(27, 35)))
+    inks = [v & 15 for v in run(p, f"wait:{BOOT}," + f"peek:{0xD800 + 23 * 40 + 27:X},wait:5," * 200)]   # the digits' ink over 20 s
     os.unlink(p)
     # the digits are compared with an ordinary room's (the screen holds translated character codes)
     p0 = stamp(prg, 0, 5)
@@ -333,7 +334,8 @@ def glitch(prg, A):
     ref, ref_tint = ref[:8], ref[8:]
     # the blackout's colours: room dark grey (11), Tony grey (12), the digit cells' ink light grey (15); an ordinary room light grey
     room, tony, tony2, ink = tint[0] & 15, tint[1] & 15, tint[2] & 15, [c & 15 for c in tint[3:]]
-    tinted = room == 11 and tony == 12 and tony2 == 12 and all(i == 15 for i in ink) and (ref_tint[0] & 15) == 15 and (ref_tint[1] & 15) == 15
+    tinted = (room == 11 and tony == 12 and tony2 == 12 and all(i == ink[0] for i in ink) and 0 not in inks
+              and len(set(inks)) >= 5 and (ref_tint[0] & 15) == 15 and (ref_tint[1] & 15) == 15)
     en, wall, digits = scr[0], scr[1:1 + 20 * 30], scr[1 + 20 * 30:]
     bx, mode = t["buddyX"], t["glitchMode"]
     worn = sorted(set(mode))
@@ -351,8 +353,8 @@ def glitch(prg, A):
     return report("GLITCH", ok, f"{n / 50:.0f} s: wore mechanics {worn} with {changes} changes ({teleported_on_change} of them teleporting), "
                   f"{len(jumps)} teleports in all; colours seen {palette} with {blinks} blink frames; X {min(bx)}..{max(bx)}; "
                   f"room: wall cells lit {sum(1 for w in wall if w)} of 600, block number carved as in an ordinary room {carved}, "
-                  f"bat sprites enabled {bool(en & 8)},{bool(en & 16)}; colours: room {room}, Tony {tony}, digit ink {ink[0]} "
-                  f"(an ordinary room: {ref_tint[0] & 15}, {ref_tint[1] & 15})")
+                  f"bat sprites enabled {bool(en & 8)},{bool(en & 16)}; colours: room {room}, Tony {tony}, the digits' ink "
+                  f"cycles through {sorted(set(inks))} (an ordinary room: {ref_tint[0] & 15}, {ref_tint[1] & 15})")
 
 
 TESTS = {"follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper, "glitch": glitch}

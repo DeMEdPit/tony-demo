@@ -26,7 +26,7 @@ any emulator (verified in VICE as well).
 | `tony-chamber-the-wanderer.prg` | 41,094 | the same build with the token's behaviour and a provisional colour stamped: The Wanderer (Wander, green): strolls, pauses, sits and jumps now and then on the chip's dice, turns at the pillars, ignores Tony. `tools/verify_buddy.py` is the scripted test of all seven |
 | `tony-chamber-the-shy-one.prg` | 41,094 | the same build with the token's behaviour and a provisional colour stamped: The Shy One (Shy, light red): runs when Tony comes close, cowers at the pillar, bolts straight past Tony when he is almost on him, creeps back when he leaves. `tools/verify_buddy.py` is the scripted test of all seven |
 | `tony-chamber-the-sleeper.prg` | 41,094 | the same build with the token's behaviour and a provisional colour stamped: The Sleeper (Sleeper, purple): dozes crouched until Tony comes close, follows a while, dozes off. `tools/verify_buddy.py` is the scripted test of all seven |
-| `tony-chamber-the-glitch.prg` | 41,094 | the same build with behaviour 7: The Glitch, the eighth mechanic, wears one of the seven at a time and teleports into the next every few seconds, cycles the seven colours, blinks and jitters in bursts; his room is the blackout, no wall, no candle, no bats, the stone dark grey and Tony grey, only the block number in the floor, in light grey |
+| `tony-chamber-the-glitch.prg` | 41,094 | the same build with behaviour 7: The Glitch, the eighth mechanic, wears one of the seven at a time and teleports into the next every few seconds, cycles the seven colours, blinks and jitters in bursts; his room is the blackout, no wall, no candle, no bats, the stone dark grey and Tony grey, only the block number in the floor, wearing his colour |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 
@@ -93,7 +93,7 @@ Boards recap (details in the docs): "The Colonnade + Buddy" sources are
 `src/kickass/level/custom/`; the trainers come from `tools/make_trainers.py`
 + `src/kickass/cheatmenu-romfree.asm`. The token thumbnail (the buddy's idle dance
 as an animated SVG, one file per colour, the buddy alone at 48 px) is
-`tools/buddy_thumbnail.py` → `assets/buddy-idle-*.svg`;
+`tools/buddy_thumbnail.py` → `assets/buddy-idle-*.svg` (the Glitch's, `--glitch`, cycles the seven colours);
 `assets/buddy-thumbnail-seven.png` shows the seven chosen colours,
 `assets/buddy-thumbnail-options.png` the layouts that were considered, and
 `assets/buddy-palette-16.png` all sixteen C64 colours on the Chamber's black. `screenshots/` holds before/after and
