@@ -1,0 +1,105 @@
+{
+ "base": {
+  "file": "tony-chamber.prg",
+  "size": 46876,
+  "sha256": "d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef",
+  "keccak256": "cedeb14bf1a39b763c696ab3d7c8fe1b43ffd24edc881efb394783fbb0c72361",
+  "marker_offset": 20161,
+  "block_offset": 20169,
+  "behaviour": 0,
+  "colour": 5,
+  "block_number": "25850267",
+  "commit": "2219927e8dc5fc0d89cde2e5740af9734e5b4fc4",
+  "working_tree_clean": false
+ },
+ "stamped": [
+  {
+   "file": "tony-chamber-the-dancer.prg",
+   "size": 46876,
+   "sha256": "5637b84854b5a8bd628d067b683e6a54e90b65811c850bce66fe2a5fce000647",
+   "keccak256": "c96b659285643852e65134a974ba5894fce3edada2975ac6979ff9730d655714",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 1,
+   "colour": 3,
+   "block_number": "25850267"
+  },
+  {
+   "file": "tony-chamber-the-echo.prg",
+   "size": 46876,
+   "sha256": "8c7ad5acdb4c7d9e34488d6693b37b2885afae2cf2be7fe20ff31d466e39933d",
+   "keccak256": "c0c4a9fb5f19bd5752df073d36ca7ceb558b1b491817b9178583649aae36e1dd",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 2,
+   "colour": 7,
+   "block_number": "25850267"
+  },
+  {
+   "file": "tony-chamber-the-glitch.prg",
+   "size": 46876,
+   "sha256": "907afe48ccf37b985a0e38b618b7c57c71052b65ba2bb1526368ca1958db6967",
+   "keccak256": "70b81d64433fba2bd91aa34cde780077ac88524728633a5329a7c919035e0138",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 7,
+   "colour": 1,
+   "block_number": "25850267"
+  },
+  {
+   "file": "tony-chamber-the-mirror.prg",
+   "size": 46876,
+   "sha256": "4bf477453a97df9486e45455b6d445b62e11e3088001aeb782bbc4a9469c3525",
+   "keccak256": "8f10f3b641353f22a27e27ccb91fe9d7115bac8f2641bb38cc0c10f2f5207825",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 3,
+   "colour": 14,
+   "block_number": "25850267"
+  },
+  {
+   "file": "tony-chamber-the-shadow.prg",
+   "size": 46876,
+   "sha256": "0449a9f99f9a3da36a2201342e76010a679bbc061c2e87a7efba9fda2cf34c28",
+   "keccak256": "4a4dafa65378107fb7940549a6c7111619f160d9adbf14b4f2c1b6260626842e",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 0,
+   "colour": 6,
+   "block_number": "25850267"
+  },
+  {
+   "file": "tony-chamber-the-shy-one.prg",
+   "size": 46876,
+   "sha256": "60e95d799e86fff2b0d77a01846aa86c78b590696bf3e593ea3502c69b7b595f",
+   "keccak256": "2107ddea81bd555b445f68b2d4e01a6f912dab931d32bd5ed612c1dba6e91904",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 5,
+   "colour": 10,
+   "block_number": "25850267"
+  },
+  {
+   "file": "tony-chamber-the-sleeper.prg",
+   "size": 46876,
+   "sha256": "ac6abd1922dd377d7eabd4b8f38dd31a8a78d6a59a91af0392ba714c7bf493a2",
+   "keccak256": "ae3dbacb4a11b24a577bccb6f47d249f1d90d2706d2b73eb27c7520dcb6147ad",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 6,
+   "colour": 4,
+   "block_number": "25850267"
+  },
+  {
+   "file": "tony-chamber-the-wanderer.prg",
+   "size": 46876,
+   "sha256": "cadbcda0ae4103cfe7f8a9a363381e26719d474a205a61d83a32a5d576b791e1",
+   "keccak256": "a2fbe0856a25fdbcc9cdaf8416f939c8772019ca4bc2e3e403a3a2c120494b83",
+   "marker_offset": 20161,
+   "block_offset": 20169,
+   "behaviour": 4,
+   "colour": 5,
+   "block_number": "25850267"
+  }
+ ]
+}

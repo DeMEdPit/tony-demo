@@ -42,7 +42,7 @@ VARS = {"buddyX": -9, "buddyY": -7, "buddyFacing": -6, "buddyMoving": -5, "buddy
 AFTER = {"wantHop": 0, "envPrev": 1, "stepCount": 2, "slideCount": 3, "buddyMode": 12, "buddyPoseMoving": 13,
          "buddyCrouch": 14, "distMag": 15, "distRight": 16, "echoHead": 17, "echoFill": 18, "wanderTimer": 21,
          "wanderState": 22, "sleepAwake": 24, "sleepFar": 25, "wanderRng": 32, "buddyJumpPose": 34,
-         "glitchMode": 37, "glitchBurst": 40}   # offsets past the arc
+         "glitchMode": 37, "glitchBurst": 40, "wanderRngHi": 44}   # offsets past the arc
 VARS.update({k: HOP_LEN + v for k, v in AFTER.items()})
 
 
@@ -381,7 +381,49 @@ def glitch(prg, A):
                   f"{sorted(set(inks))} throughout (an ordinary room: {ref_tint[0] & 15}, {ref_tint[1] & 15})")
 
 
-TESTS = {"follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper, "glitch": glitch}
+def dice(prg, A):
+    """The dice are a pure function of the seed and the frame count: the 16-bit register read from the machine
+    matches the Python model (dice_seed, dice_step in stamp_mural.py) at one frame and, stepped once per frame
+    from there, at a later one; nothing from the chip, the raster or the player is stirred in."""
+    sys.path.insert(0, "tools")
+    from stamp_mural import dice_seed, dice_step
+    data = open(prg, "rb").read()
+    i = data.find(b"MURAL02\x00")
+    seed = data[i + 8:i + 40]
+    p = stamp(prg, 4, 5)                                             # the Wanderer rolls once a frame
+    lo, hi = A["wanderRng"], A["wanderRngHi"]
+    v = run(p, f"wait:{BOOT},peek:{lo:X},peek:{hi:X},wait:100,peek:{lo:X},peek:{hi:X},"
+               f"hold:8,wait:100,release:8,peek:{lo:X},peek:{hi:X}")     # the player walking must not change the dice
+    os.unlink(p)
+    seen = [v[0] | (v[1] << 8), v[2] | (v[3] << 8), v[4] | (v[5] << 8)]
+    state, k0 = dice_seed(seed), None
+    for k in range(0, BOOT + 200):
+        if state == seen[0]:
+            k0 = k
+            break
+        state = dice_step(state)
+    # the harness's frame and the engine's roll are not phase-locked, so a hundred waits are a hundred rolls give or
+    # take a couple: the machine's state must lie on the model's trajectory at the expected distance, within 3 frames
+    def along(state, want, lo, hi):
+        traj = []
+        for k in range(hi + 1):
+            traj.append(state)
+            state = dice_step(state)
+        hits = [k for k in range(lo, hi + 1) if traj[k] == want]
+        return (hits[0], traj[hits[0]]) if hits else (None, None)
+    ok, k1, k2 = k0 is not None, None, None
+    if ok:
+        k1, s1 = along(state, seen[1], 97, 103)
+        ok = k1 is not None
+    if ok:
+        k2, s2 = along(s1, seen[2], 97, 103)
+        ok = k2 is not None
+    return report("DICE", ok, f"seed bytes 28^15, 3^20 -> ${dice_seed(seed):04X}; at boot+{BOOT} the machine holds ${seen[0]:04X} = the model after {k0} frames; "
+                              f"100 waits on ${seen[1]:04X} = {k1} rolls further, 100 more with the player walking ${seen[2]:04X} = {k2} rolls further: "
+                              f"{'on the model' if ok else 'OFF THE MODEL'}")
+
+
+TESTS = {"dice": dice, "follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper, "glitch": glitch}
 
 if __name__ == "__main__":
     args = sys.argv[1:]

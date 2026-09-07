@@ -210,6 +210,26 @@ src = sub(src, """    doPlay:
 }""")
 src = sub(src, '.print "Music size = " + music.size\n', '.print "Music size = " + music.size\n.print "Intro tune (the Glitch) = $" + toHexString(intro.location) + ", size " + intro.size + ", init $" + toHexString(intro.init) + " play $" + toHexString(intro.play)\n')
 src = sub(src, '#import "level/buddy/data.asm"', '#import "level/chamber/data.asm"')
+src = sub(src, """buddyInit: {
+    lda #120
+    sta buddyX
+""", """buddyInit: {
+    lda muralSeed + 28          // the dice, seeded from the block: bytes the contract leaves to the hash
+    eor muralSeed + 15
+    sta wanderRng
+    lda muralSeed + 3
+    eor muralSeed + 20
+    sta wanderRngHi
+    ora wanderRng
+    bne !+
+        lda #$5A                // a register at zero would stay at zero
+        sta wanderRng
+        lda #$A5
+        sta wanderRngHi
+    !:
+    lda #120
+    sta buddyX
+""")
 src = sub(src, "    jsr _draw_playfield\n", "    jsr _draw_playfield\n    jsr muralStamp   // the back wall, from the seed\n")
 
 MURAL = """// ---------------------------------------------------------------------
@@ -883,7 +903,7 @@ sleepHalf:    .byte 0        // +41
 target:       .word 0        // +42  scratch: where Echo and Mirror put him
 nextCrouch:   .byte 0        // +44  the pose flags the mechanics ask for, committed by the act part
 nextPoseMoving: .byte 0      // +45
-wanderRng:    .byte 0        // +46  the Wanderer's dice: a shift register stirred by oscillator 3
+wanderRng:    .byte 0        // +46  the dice, low byte: a 16-bit shift register seeded from the block (see rollDice)
 nextJumpPose: .byte 0        // +47  show the jump although the act part is not hopping (Echo)
 buddyJumpPose: .byte 0       // +48
 shyBolt:      .byte 0        // +49  the Shy One is bolting out of a corner, past the player
@@ -894,6 +914,27 @@ glitchBurst:  .byte 0        // +54  frames left of a burst of flicker and jitte
 glitchStep:   .byte 0        // +55  where he is in the colour cycle
 glitchFrame:  .byte 0        // +56
 glitchWarp:   .byte 0        // +57  frames left of a teleport: out, elsewhere, in
+wanderRngHi:  .byte 0        // +58  the dice's high byte (wanderRng is the low byte, the byte the mechanics read)
+
+// The dice: a 16-bit Galois shift register (x^16 + x^14 + x^13 + x^11 + 1, period
+// 65,535), seeded from the block in buddyInit and stepped eight times a frame by
+// whoever rolls (the Wanderer's plan, the Glitch's every frame), so a render's
+// dice are a pure function of its seed and the frame count: nothing from the
+// chip, the raster or the player is stirred in. Returns A = the low byte.
+rollDice:
+    ldx #8
+rollStep:
+    lsr wanderRngHi
+    ror wanderRng
+    bcc rollNext
+        lda wanderRngHi
+        eor #$B4
+        sta wanderRngHi
+    rollNext:
+    dex
+    bne rollStep
+    lda wanderRng
+    rts
 
 // |player - buddy| and which side he is on (the Follow code has its own copy inline)
 buddyDistance: {{
@@ -1030,13 +1071,7 @@ sleeperDecide: {{
 // grey and Tony grey, and the block number's cells keep light-grey ink.
 // Returns A = the mechanic worn.
 glitchTick: {{
-    lda wanderRng
-    asl
-    bcc !+
-        eor #$1D
-    !:
-    eor $D41B
-    sta wanderRng
+    jsr rollDice                // the dice, from the seed
     lda glitchTimer
     ora glitchTimer + 1
     bne holding
@@ -1206,10 +1241,10 @@ glitchTick: {{
 //    contradicts him the other way as well: crouches while he is in the air,
 //    bounces while he is crouched (a funhouse mirror, the owner's idea).
 // WANDER lives there: a plan at a time (stroll, pause, sit, a jump on the
-//    spot), the choice and its length rolled from a shift register stirred
-//    every frame by the chip's oscillator 3 ($D41B), the pauses lengthened by
-//    the render's mood (two seed bits); one stroll in eight starts with a
-//    running jump. He turns at the pillars and takes no notice of the player.
+//    spot), the choice and its length rolled from a shift register seeded
+//    from the block (rollDice: eight bits a frame, nothing else stirred in),
+//    the pauses lengthened by the render's mood (two seed bits); one stroll
+//    in eight starts with a running jump. He turns at the pillars and takes no notice of the player.
 // SHY runs when the player is closer than SHY_FLEE_AT, cowers at the pillar
 //    when he can run no farther, and bolts straight past the player when he
 //    comes within SHY_BOLT_AT of the cornered buddy (keeping on until the
@@ -1473,13 +1508,7 @@ buddyDecide: {{
     wander:
     lda #0
     sta wantHop
-    lda wanderRng                   // the dice: a shift register stirred by oscillator 3 every frame
-    asl
-    bcc !+
-        eor #$1D
-    !:
-    eor $D41B
-    sta wanderRng
+    jsr rollDice                    // the dice: from the seed, eight bits a frame
     lda wanderTimer
     beq newPlan
         dec wanderTimer

@@ -785,8 +785,9 @@ the Dance mechanic rereads the intro player's voice 2 and skips the
 cooldown reset when behaviour is 7. The load image now ends at $BF1A, 229
 bytes under the screen at $C000 (the ceiling for growth). **Base:**
 `tony-chamber.prg`, 46,876 bytes, sha256
-`044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf`, the
-block at file offset 0x04EC9, unchanged. Measured on it: all eight tests
+`044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf`
+(superseded by the dice change, E18), the block at file offset 0x04EC9,
+unchanged. Measured on it: all eight tests
 pass (the Glitch's build plays the intro tune and not the level tune, the
 Dancer's the level tune and not the intro tune); the Glitch's Dance phase
 over 90 s: airborne 59%, 0.97 hops/s; the Dancer unchanged (42 steps, 33%
@@ -795,6 +796,46 @@ the right tune for each. The second-base files and variant are retired.
 For the contracts: `tools/chamber_vectors.py` writes 32 test vectors
 (`deliverables/contract/chamber-vectors.json`) and `HANDOFF-CONTRACTS.md`
 gained section 4a (the tune) and 8c (what is fixed and what is theirs).
+
+---
+
+## E18 — The dice off the chip · done (2026-09-07)
+
+**Ask (the contracts session, via the owner):** the Wanderer's and the
+Glitch's shift register was XORed with oscillator 3 (`$D41B`) every frame;
+voice 3 plays the tune, so that byte is a musical waveform sampled once a
+frame: the dice were correlated with the music and could not be recomputed
+from the seed. Seed the register from the block instead and stir nothing
+else in.
+
+**Done, and one step further:** the register is 16 bits, not 8. An 8-bit
+register alone has a period of 255 frames, and the Glitch tests it every
+frame for a burst (three chances in 256), so his bursts would have come at
+the same three phases of every five-second cycle — a visible beat. The
+16-bit Galois register (x^16 + x^14 + x^13 + x^11 + 1, mask $B400) has a
+period of 65,535 frames, 22 minutes, and is stepped eight times a frame so
+consecutive frames' bytes are not shifted copies of each other. Seeded in
+`buddyInit` from `seed[28] ^ seed[15]` (low) and `seed[3] ^ seed[20]`
+(high), $A55A if that is zero; bytes the contract leaves to the hash.
+Both stir sites replaced by `jsr rollDice`; `$D41B` is no longer read
+anywhere (the Dancer's `$D41C` stays). Model: `dice_seed`, `dice_step` in
+`tools/stamp_mural.py`. **Measured:** the new `dice` test reads the
+register off the machine at boot + 150, finds it on the model's trajectory
+(92 rolls from the seed), and again 100 waits later (100 rolls) and 100
+more with the player walking (101 rolls: the harness frame and the engine
+roll are not phase-locked, hence the ±3 tolerance); all eight mechanic
+tests and the bats pass on the build. Base: 46,876 bytes (unchanged: the
+code fits before the level data's alignment), sha256 `d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef`, keccak256
+`cedeb14bf1a39b763c696ab3d7c8fe1b43ffd24edc881efb394783fbb0c72361`, block at file offset 0x04EC9.
+
+**Handoff corrected on the contracts session's review:** the digit loop
+(`OFF + 39 - i`, not `+ 47`), the carved number (`block.number - 1`, the
+block whose hash is the seed), `modes = 0`, stored-only attributes with
+the moving facts in the description, the blob arithmetic (two blobs hold
+49,150, headroom 2,274), the supply ladder in place of "nine per class",
+and the music sentence ("relocated to $8000, identical by an eight-minute
+register replay"). Not done: the rename of The Shy One to "The Shy", which
+contradicts the owner's own list and waits for the owner.
 
 ---
 

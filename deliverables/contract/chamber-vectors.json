@@ -1,7 +1,7 @@
 {
  "base_prg": "tony-chamber.prg",
  "base_size": 46876,
- "base_sha256": "044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf",
+ "base_sha256": "d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef",
  "marker": "MURAL02\\0",
  "marker_file_offset": 20161,
  "block_file_offset": 20169,

@@ -18,8 +18,10 @@ and the reasons; this document is the operational summary.
   graphics Rafał Dudek, music Sami Juntunen, all MIT (the four LICENSE files
   in this repository travel with every PRG). Runtime: minimal64 by nopsta,
   GPL-2.0 (github.com/nopsta/minimal64).
-- **The music is never modified.** The Chamber reads the tune's state; it
-  does not change a byte of it.
+- **The music is the demo's own, unchanged in every note.** The level tune
+  is the file the game ships; the intro tune was relocated to $8000 and is
+  identical by an eight-minute register replay (section 4a). The Chamber
+  reads the tune's state; it does not alter what either tune plays.
 - **Keyless and immutable per token; fix-forward.** Once the base program
   is on chain it never changes. Anything found later is fixed in new tokens.
 - **Gates before any mint.** The automated suite in this repository passes
@@ -58,7 +60,7 @@ every render from the current block. The room itself stays black and grey.
   | 2 | The Dancer | 1 Dance | steps and turns with the bass line, bounces on the hits, read from the chip | built, tested |
   | 3 | The Echo | 2 Echo | replays you exactly, four seconds behind: every step, jump and duck | built, tested |
   | 4 | The Mirror | 3 Mirror | your reflection about the room's centre line, facing the way your reflection would; crouches while you jump, bounces while you crouch | built, tested |
-  | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, jumps now and then, on the chip's dice | built, tested |
+  | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, jumps now and then, on dice seeded from the block | built, tested |
   | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, bolts past you when you are almost on him, creeps back when you leave | built, tested |
   | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
   | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and teleports into the next, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats, dark grey stone, a grey Tony, the block number in black | built, tested |
@@ -127,10 +129,11 @@ One render in sixteen is a quiet night with no bats; one in four has a
 single bat. They stay well above Tony's reach: they are scenery, never a
 danger.
 
-**The number in the floor is the block number.** Eight digits carved into
-the floor's right end say which block the render was made at. So a render
-is a photograph of the chain at one moment: the wall is what that block's
-hash looked like, the floor says which block. A chain can only read the
+**The number in the floor is the block whose hash drew the wall.** Eight
+digits carved into the floor's right end name it: `block.number - 1`, the
+newest block whose hash a view can read, the same one the seed comes from.
+So a render is a photograph of the chain at one moment: the wall is what
+that block's hash looked like, the floor says which block. A chain can only read the
 last 256 block hashes, so a wall seen at block N cannot be recomputed on
 chain an hour later. The renders are impressions, not a series. (If the
 owner wants a permanent "birth wall", the mint block's hash can be stored
@@ -171,9 +174,15 @@ rules of section 1):
 Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 46,876 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program,
 ending at `$BF1A`), sha256
-`044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf`.
+`d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef`.
 One base for all eight tokens: it carries both of the demo's tunes, the
 level tune for the seven and the intro tune for The Glitch (section 4a).
+
+**Record of the base (freeze pending the owner's word):** size 46876 bytes;
+sha256 `d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef`; keccak256 `cedeb14bf1a39b763c696ab3d7c8fe1b43ffd24edc881efb394783fbb0c72361`; marker at file offset `0x04EC1`, the 42 bytes
+at `0x04EC9`; commit: the one named at the freeze. `tools/freeze_record.py`
+prints these for the working tree, and `deliverables/contract/base-record.json`
+holds the last run, with the eight stamped files' digests.
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its
@@ -185,7 +194,7 @@ The **parameter block** is 50 bytes, 64-byte aligned in memory:
 |---|---|---|---|
 | 0 | 8 | marker `4D 55 52 41 4C 30 32 00` (`"MURAL02\0"`) | no (use it as a guard: require the bytes at the offset) |
 | 8 | 32 | seed | yes: `blockhash(block.number - 1)`, the newest hash a view can read |
-| 40 | 8 | block digits, one byte each, values 0–9, most significant first | yes: the low eight decimal digits of `block.number`, zero-padded |
+| 40 | 8 | block digits, one byte each, values 0–9, most significant first | yes: the low eight decimal digits of `block.number - 1` (the block whose hash is the seed), zero-padded |
 | 48 | 1 | behaviour, 0–7 | yes: the token's mechanic (7 = the Glitch) |
 | 49 | 1 | colour, 0–15 | yes: the token's colour |
 
@@ -212,6 +221,19 @@ about one bounce a second; the Dancer token, on the level tune, airborne
 verified. **The intro tune is The Glitch's alone**: the Dancer keeps the
 level tune (he dances better to it: 42 steps against 7 in the same time).
 
+**The dice (2026-09-07, at the contracts session's request):** the
+Wanderer's and the Glitch's dice used to be stirred every frame by the
+chip's oscillator 3, a musical waveform. They are now a 16-bit shift
+register seeded at boot from the block (`seed[28] ^ seed[15]` low,
+`seed[3] ^ seed[20]` high, a zero start replaced by $A55A) and stepped
+eight bits a frame by the mechanic that rolls, with nothing from the chip,
+the raster or the player stirred in: a render's dice are a pure function of
+its seed and the frame count. `dice_seed` and `dice_step` in
+`tools/stamp_mural.py` are the model; the `dice` test in
+`tools/verify_buddy.py` reads the register off the machine and finds it on
+the model's trajectory, before and after the player walks. Bytes 3, 15, 20
+and 28 of the seed are therefore best left to the hash, not forced.
+
 How the seed is used (so a test can predict a wall; the Python model is
 `tools/stamp_mural.py --show`): three bit streams run through the 32 bytes
 (from byte 0, byte 19 and byte 25, each wrapping at 32); `seed[31] & 7` picks
@@ -228,8 +250,9 @@ render it alongside (owner's decision, not made).
 ## 5. What `tokenURI(id)` must do
 
 1. `prg = base2()` — the frozen program, from the collection's own data
-   blobs (the Tony token's three-blob pattern; 38,200 bytes fits in two
-   SSTORE2-style chunks).
+   blobs (the Tony token's three-blob pattern). The base is 46,876 bytes;
+   two SSTORE2-style blobs hold 49,150, so it fits in two with 2,274 bytes
+   of headroom. Anything further means a third blob.
 2. Guard: `require(prg[MARKER..MARKER+8] == "MURAL02\0")`.
 3. Write the 42 bytes at `MARKER + 8`: seed, digits, `behaviour[id]`,
    `colour[id]` (section 4). Sketch, over a `bytes memory prg`:
@@ -237,25 +260,26 @@ render it alongside (owner's decision, not made).
     ```solidity
     bytes32 h = blockhash(block.number - 1);
     for (uint256 i; i < 32; ++i) prg[OFF + i] = h[i];
-    uint256 n = block.number;
-    for (uint256 i; i < 8; ++i) { prg[OFF + 47 - i] = bytes1(uint8(n % 10)); n /= 10; }
+    uint256 n = block.number - 1;                       // the block whose hash is h: the floor names it
+    for (uint256 i; i < 8; ++i) { prg[OFF + 39 - i] = bytes1(uint8(n % 10)); n /= 10; }   // digits at seed + 32..39
     prg[OFF + 40] = bytes1(behaviour[id]);
     prg[OFF + 41] = bytes1(colour[id]);
     ```
 
     (`OFF` = the seed's file offset, `0x04EC9` in the current build; write it
     as a constant only at the freeze.)
-4. `animation_url = READY64_LAUNCHER.dataURI(prg, modes)`. **The `modes`
-   value is not known here**: read the deployed Launcher's ABI and source and
-   use the same joystick-game setting the Tony token uses (joystick in port
-   2, autostart). Confirm on READY 64 before relying on it.
+4. `animation_url = READY64_LAUNCHER.dataURI(prg, 0)`. `modes = 0`: checked
+   by the contracts session against the deployed Launcher's templates, the
+   argument is accepted and unused.
 5. `image` = the idle-dance SVG for `colour[id]` as a `data:image/svg+xml;base64` URI (section 6).
-6. JSON: `name` (owner's names, not decided), `description` (owner's text,
-   must carry the credits and the nopsta statement of section 1),
-   `attributes`: Mechanic (name), Colour (name), Base hash (keccak256 of
-   base 2 at the freeze), Block (the render's block number), Wall (density
-   name, from `seed[31] & 7` and the table above), Candle (yes/no from
-   `seed[30] & 3`). All of it `data:application/json;base64`.
+6. JSON: `name` (owner's names), `description` (owner's text, must carry
+   the credits and the nopsta statement of section 1, and it is where the
+   render's block number, wall and candle go, since they change every
+   render), `attributes`: the stored traits only, Character, Wall class,
+   Bats class, Candle class, Colour, Base hash (keccak256 of the base at
+   the freeze). Nothing that moves goes in `attributes`: marketplaces index
+   them and a moving trait cannot be corrected once cached. All of it
+   `data:application/json;base64`.
 
 Everything is a view; gas is the reader's. Marketplaces cache metadata and
 re-fetch on their own schedule, so "every render" means every re-fetch;
@@ -393,10 +417,13 @@ token id mixed in if the synthesis's per-token arrangement is kept), the
 the 42 bytes into a copy of it at render time, the proof plan (section 7:
 write a vector's bytes, render through the launcher, compare with the
 vector's wall rows), and the testnet deployment order (section 8). The
-owner still holds: the freeze, the colour table, the description text
-(section 3a has the draft) and the token-id-to-class table (the natural one
-is nine per class in the order of section 3, ids 1–63, and id 64 The
-Glitch; not yet confirmed).
+owner still holds: the freeze, the colour table and the description text
+(section 3a has the draft). The supply is a ladder, set in the contracts
+session: The Shadow, The Wanderer and The Sleeper 12 each; The Echo, The
+Mirror and The Shy One 8 each; The Dancer 3; The Glitch 1 (64). The rooms
+are three stored traits per token (wall class, bats class, candle class)
+with their own counts. The 64-row table lives in the contracts repository,
+not here.
 
 ## 9. Where things are in this repository
 

@@ -17,7 +17,7 @@ after listening to both builds.
 
 There is one base program for all 64 tokens, `tony-chamber.prg`, 46,876
 bytes, sha256
-`044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf`. It
+`d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef`. It
 carries the level tune at $A000 (as every Chamber build did) and the intro
 tune at $8000–$9695, a region the engine never writes at run time
 (measured over 3,000 frames of play: zero bytes changed in $6600–$9FFF).

@@ -77,6 +77,24 @@ def bats(seed):
     return presence, a, b
 
 
+def dice_seed(seed):
+    """The buddy's dice at boot (mirrors buddyInit): a 16-bit register from seed bytes the contract leaves to the hash."""
+    lo, hi = seed[28] ^ seed[15], seed[3] ^ seed[20]
+    if lo == 0 and hi == 0:
+        lo, hi = 0x5A, 0xA5
+    return lo | (hi << 8)
+
+
+def dice_step(state):
+    """One frame of rollDice: eight steps of the Galois register x^16 + x^14 + x^13 + x^11 + 1 (mask $B400)."""
+    for _ in range(8):
+        bit = state & 1
+        state >>= 1
+        if bit:
+            state ^= 0xB400
+    return state
+
+
 def show(seed, digits):
     mode, wall, candle = predict(seed)
     names = ["quarter (A&B)", "half (A)", "three-quarter (A|B, rare)", "eighth (A&B&C)"]

@@ -48,7 +48,7 @@ later refinement was a small change on top.
 
 - **Wears the seven.** Every 150 to 405 frames (three to eight seconds) he
   rolls a new character on the same dice the Wanderer uses, a shift
-  register stirred every frame by the sound chip's third oscillator. The
+  register seeded from the block and stepped eight bits a frame. The
   characters that keep state start afresh at each change. An Echo turn
   replays whatever his memory holds, which may be you from minutes ago.
 - **Teleports.** Every change of character is a teleport: he blinks out for

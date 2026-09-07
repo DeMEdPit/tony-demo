@@ -81,10 +81,10 @@ One build serves all eight; a mechanic byte selects the character.
 | 2 | The Dancer | side-steps and turns with the bass line, bounces on the hits, ignores you | the tune, read from the sound chip |
 | 3 | The Echo | replays you exactly, four seconds later: position, height, pose, every jump and duck | you, recorded |
 | 4 | The Mirror | your reflection about the room's centre line, facing the way a reflection would; crouches while you jump, bounces while you crouch | you, inverted |
-| 5 | The Wanderer | strolls, pauses, sits, jumps now and then; turns at the pillars; ignores you | the chip's dice and the seed's mood |
+| 5 | The Wanderer | strolls, pauses, sits, jumps now and then; turns at the pillars; ignores you | dice seeded from the block, and the seed's mood |
 | 6 | The Shy One | runs at your speed when you come close, cowers at the pillar, bolts past you if you press in, creeps back when you leave | you |
 | 7 | The Sleeper | dozes crouched, wakes when you approach, follows six seconds, dozes off | you |
-| 8 | The Glitch | wears one of the seven at a time and teleports into the next; cycles the colours; blinks and jitters in bursts | the chip's dice |
+| 8 | The Glitch | wears one of the seven at a time and teleports into the next; cycles the colours; blinks and jitters in bursts | the same dice |
 
 Each has a dedicated colour, chosen by the owner from the machine's
 palette: Shadow blue, Dancer cyan, Echo yellow, Mirror light blue,
@@ -95,10 +95,12 @@ game's own crouch.
 Two of them are instruments as much as characters. The Dancer reads the
 tune from inside the machine: the beat from the notes the player sends to
 the sound chip, the accents from the chip's own envelope readback
-register. The Wanderer's dice are a shift register stirred by the chip's
-third oscillator every frame, so nobody can say where he will be. Both
-quietly demonstrated that the on-chain emulator implements those parts of
-the chip faithfully.
+register. The Wanderer's dice were at first stirred by the chip's third
+oscillator every frame; at the contracts side's request they are now a
+shift register seeded from the block, so a render's dice follow from its
+seed and nothing else. The Dancer's reading of the chip quietly
+demonstrated that the on-chain emulator implements that part of it
+faithfully.
 
 ### The Glitch and the blackout
 
