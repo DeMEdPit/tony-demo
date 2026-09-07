@@ -26,6 +26,11 @@ BLACK = rm.PAL[0]
 NAMES = {"light-red": 10, "yellow": 7, "green": 5, "cyan": 3, "light-blue": 14, "blue": 6, "purple": 4}
 NAME_OF = {v: k for k, v in NAMES.items()}
 GREY_RAMP = [1, 15, 12, 11, 0]                     # white, light grey, medium grey, dark grey, black
+GREY_SOFT = [15, 12, 11, 0]                        # the same floor starting on light grey
+GREY_DUSK = [12, 11, 0]                            # medium grey down to black
+GREY_DARK = [11, 0]                                # dark grey down to black: the room with the lights out
+GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11}
+SWEEPS = {"sweep": (0.15, 0.05, 0.45), "comet": (0.22, 0.05, 1.0)}   # seconds per square, rise, decay
 def luma(c): r, g, b = rm.rgb(c); return 0.299 * r + 0.587 * g + 0.114 * b
 LUMINANCE = sorted(rm.STRIP, key=lambda c: -luma(c))
 EXE = "/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell"
@@ -77,6 +82,9 @@ def floor(token, depth, glitch, mode, seq):
     elif mode == "spectrum": fills = [rm.PAL[c] for c in rm.STRIP + [0]]
     elif mode == "luminance": fills = [rm.PAL[c] for c in LUMINANCE + [0]]
     elif mode == "grey": fills = [rm.PAL[c] for c in GREY_RAMP]
+    elif mode == "grey-soft": fills = [rm.PAL[c] for c in GREY_SOFT]
+    elif mode == "grey-dusk": fills = [rm.PAL[c] for c in GREY_DUSK]
+    elif mode == "grey-dark": fills = [rm.PAL[c] for c in GREY_DARK]
     elif mode == "follow":
         ramps = [pad_ramp(own_ramp(c)) for c in seq]
         fills = [[rm.PAL[r[i]] for r in ramps] for i in range(4)]
@@ -84,7 +92,7 @@ def floor(token, depth, glitch, mode, seq):
     rows, h, scale = floor_geometry(len(fills), depth)
     return rows, h, scale, fills
 
-def figure_paths(frames, fill, bx, by, glitch, seq):
+def figure_paths(frames, fill, bx, by, glitch, seq, body="cascade"):
     n = len(bt.PHASES)
     keytimes = ";".join(f"{i / n:.4f}" for i in range(n)) + ";1"
     dur = f"{LOOP:g}s"
@@ -96,10 +104,16 @@ def figure_paths(frames, fill, bx, by, glitch, seq):
         values = ";".join("1" if p == f else "0" for p in bt.PHASES) + ";" + ("1" if bt.PHASES[0] == f else "0")
         parts.append(f'<path fill="{fill}" d="{bt.runs_path(frames[f], bx, by)}">')
         parts.append(f'<animate attributeName="opacity" values="{values}" keyTimes="{keytimes}" calcMode="discrete" dur="{dur}" repeatCount="indefinite"/>')
-        if glitch:
+        if glitch and body == "cascade":
             kt = ";".join(f"{k / 7:.4f}" for k in range(8))
             cols = ";".join(rm.PAL[c] for c in seq) + ";" + rm.PAL[seq[0]]
             parts.append(f'<animate attributeName="fill" values="{cols}" keyTimes="{kt}" calcMode="discrete" dur="{CASCADE}" repeatCount="indefinite"/>')
+        elif glitch and body == "static":
+            # a burst of static once per breath: a third of a second of quick flips between the greys, then white again
+            burst = [(1.20, 15), (1.24, 1), (1.27, 12), (1.30, 1), (1.36, 15), (1.39, 1), (1.45, 12), (1.47, 1), (1.52, 15), (1.54, 1)]
+            kt = "0;" + ";".join(f"{t / (2 * LOOP):.4f}" for t, _ in burst) + ";1"
+            cols = rm.PAL[1] + ";" + ";".join(rm.PAL[c] for _, c in burst) + ";" + rm.PAL[1]
+            parts.append(f'<animate attributeName="fill" values="{cols}" keyTimes="{kt}" calcMode="discrete" dur="{BREATH}" repeatCount="indefinite"/>')
         parts.append('</path>')
     body = "\n".join(parts)
     if glitch:
@@ -109,7 +123,7 @@ def figure_paths(frames, fill, bx, by, glitch, seq):
                 f'calcMode="discrete" dur="{bt.BLINK_PERIOD:g}s" repeatCount="indefinite"/>\n' + body + '\n</g>')
     return body
 
-def tag(token, glitch, gap, dim, seq):
+def tag(token, glitch, gap, dim, seq, tagmode="cascade"):
     """Seven 2x2 squares straight across the top left, at gap pixels apart (may be a half pixel), the
     resting ones at opacity dim. Drawn anti-aliased so a half-pixel gap never snaps unevenly."""
     colour = rm.TOKENS.get(token, (None, None))[0]
@@ -119,7 +133,13 @@ def tag(token, glitch, gap, dim, seq):
     for i, c in enumerate(rm.STRIP):
         x = f"{2 + i * (2 + gap):g}"
         if glitch or c == colour:
-            if glitch:
+            if glitch and tagmode in SWEEPS:
+                # a wave of light runs straight across the row once per breath: square i peaks at s0 + i * step
+                step, rise, decay = SWEEPS[tagmode]; P = 2 * LOOP; peak = 0.3 + i * step
+                kt = f"0;{(peak - rise) / P:.4f};{peak / P:.4f};{(peak + decay) / P:.4f};1"
+                glow = f'<animate attributeName="opacity" values="0;0;0.9;0;0" keyTimes="{kt}" dur="{BREATH}" repeatCount="indefinite"/>'
+                bright = f'<animate attributeName="opacity" values="{dim:g};{dim:g};1;{dim:g};{dim:g}" keyTimes="{kt}" dur="{BREATH}" repeatCount="indefinite"/>'
+            elif glitch:
                 step = seq.index(c)
                 on = lambda k, a, b: a if k == step else b
                 glow = f'<animate attributeName="opacity" values="{";".join(on(k, "0.9", "0") for k in range(7))};{on(0, "0.9", "0")}" keyTimes="{kt}" dur="{CASCADE}" repeatCount="indefinite"/>'
@@ -134,18 +154,18 @@ def tag(token, glitch, gap, dim, seq):
     parts.append('</g>')
     return "\n".join(parts)
 
-def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-red"):
+def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-red", body="cascade", tagmode="cascade"):
     glitch = (token == "the-glitch")
     k = rm.STRIP.index(NAMES[start]); seq = rm.STRIP[k:] + rm.STRIP[:k]
     rows, h, scale, fills = floor(token, depth, glitch, mode, seq)
-    fill = rm.PAL[seq[0]] if glitch else rm.PAL[rm.TOKENS[token][0]]
+    fill = (rm.PAL[seq[0]] if body == "cascade" else rm.PAL[GREYS.get(body, 1)]) if glitch else rm.PAL[rm.TOKENS[token][0]]
     fh = bt.ink_box(frames)[1] + 1; fw = len(frames[0][0])
     bx, by = (SIZE - fw) // 2, SIZE - h - fh
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {SIZE} {SIZE}" shape-rendering="crispEdges">',
              '<defs><filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.1"/></filter></defs>',
              f'<rect width="{SIZE}" height="{SIZE}" fill="#000"/>',
-             floor_paths(rows, SIZE - h, scale, fills), tag(token, glitch, gap, dim, seq),
-             figure_paths(frames, fill, bx, by, glitch, seq), '</svg>']
+             floor_paths(rows, SIZE - h, scale, fills), tag(token, glitch, gap, dim, seq, tagmode),
+             figure_paths(frames, fill, bx, by, glitch, seq, body), '</svg>']
     return "\n".join(parts) + "\n"
 
 def shoot(browser, source, px, t=1.0):
@@ -196,6 +216,25 @@ def strip(docs, path, crops=((1.0, "peak"),), crop_h=60):
         b.close()
     im.save(path); print(path)
 
+def gif(files, prefix, seconds, fps, px=240):
+    """Animated GIFs of the files, seeking one page through the SVG clock."""
+    import io
+    from playwright.sync_api import sync_playwright
+    from PIL import Image
+    with sync_playwright() as p:
+        b = p.chromium.launch(executable_path=EXE if os.path.exists(EXE) else None)
+        for label, v, f in files:
+            pg = b.new_page(viewport={"width": px, "height": px}); pg.goto("file://" + os.path.abspath(f)); pg.wait_for_timeout(150)
+            pg.evaluate("() => { const s=document.querySelector('svg'); s.setAttribute('width', innerWidth); s.setAttribute('height', innerHeight); s.pauseAnimations(); }")
+            fr = []
+            for i in range(int(seconds * fps)):
+                pg.evaluate("t => document.querySelector('svg').setCurrentTime(t)", i / fps); pg.wait_for_timeout(20)
+                fr.append(Image.open(io.BytesIO(pg.screenshot())).convert("RGB"))
+            pg.close()
+            out = f"{prefix}-{label}-{v}.gif"
+            fr[0].save(out, save_all=True, append_images=fr[1:], duration=int(1000 / fps), loop=0); print(out)
+        b.close()
+
 GLITCH_SHEET = [("own", "light-red"), ("spectrum", "light-red"), ("luminance", "light-red"), ("grey", "light-red"),
                 ("own", "yellow"), ("spectrum", "yellow"), ("luminance", "yellow"), ("grey", "yellow"),
                 ("own", "cyan"), ("spectrum", "cyan"), ("own", "purple"), ("spectrum", "purple")]
@@ -207,7 +246,11 @@ def main():
     ap.add_argument("--tag-gap", type=float, default=1.0, help="space between the tag squares in pixels (0.5 = a half pixel)")
     ap.add_argument("--tag-dim", type=float, default=0.6, help="opacity of the resting tag squares; the live one rises to 1")
     ap.add_argument("--glitch-start", default="light-red", choices=sorted(NAMES), help="the colour the Glitch's cascade starts on")
-    ap.add_argument("--glitch-floor", default="own", choices=["own", "spectrum", "luminance", "follow", "grey"])
+    ap.add_argument("--glitch-floor", default="own", choices=["own", "spectrum", "luminance", "follow", "grey", "grey-soft", "grey-dusk", "grey-dark"])
+    ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
+    ap.add_argument("--glitch-tag", default="cascade", choices=["cascade", "sweep", "comet"], help="his tag: one square per loop, or a wave across the row once per breath")
+    ap.add_argument("--fps", type=float, default=10); ap.add_argument("--seconds", type=float, default=2 * 2 * LOOP)
+    ap.add_argument("--still", type=float, default=1.0, help="the moment (seconds) the sheets are taken at")
     ap.add_argument("--out", default="deliverables/assets/mock")
     ap.add_argument("--render"); ap.add_argument("--gif")
     ap.add_argument("--lineup", help="grid sheet of all the tokens given, 240 px and 48 px")
@@ -219,11 +262,15 @@ def main():
     frames = bt.load_frames(); files = []
     variant = a.floor + (f"-gap{a.tag_gap:g}" if a.tag_gap != 1 else "") + (f"-dim{a.tag_dim:g}" if a.tag_dim != 0.6 else "")
     for t in a.tokens:
-        v = variant + ((f"-{a.glitch_floor}-{a.glitch_start}" if (a.glitch_floor, a.glitch_start) != ("own", "light-red") else "") if t == "the-glitch" else "")
+        v = variant
+        if t == "the-glitch":
+            v += f"-{a.glitch_floor}-{a.glitch_start}" if (a.glitch_floor, a.glitch_start) != ("own", "light-red") else ""
+            v += f"-{a.glitch_body}" if a.glitch_body != "cascade" else ""
+            v += f"-{a.glitch_tag}" if a.glitch_tag != "cascade" else ""
         p = os.path.join(a.out, f"{t}-retro-{v}.svg")
-        open(p, "w").write(svg(frames, t, a.floor, a.tag_gap, a.tag_dim, a.glitch_floor, a.glitch_start)); files.append((t, v, p))
+        open(p, "w").write(svg(frames, t, a.floor, a.tag_gap, a.tag_dim, a.glitch_floor, a.glitch_start, a.glitch_body, a.glitch_tag)); files.append((t, v, p))
         print(f"{p}: {os.path.getsize(p)} bytes")
-    if a.lineup: lineup(files, a.lineup)
+    if a.lineup: lineup(files, a.lineup, t=a.still)
     if a.tag_strip:
         strip([(f"{a.tokens[0]} · gap {g:g} px", svg(frames, a.tokens[0], a.floor, g, a.tag_dim)) for g in (1, 0.75, 0.5, 0.25)], a.tag_strip)
     if a.dim_strip:
@@ -235,10 +282,11 @@ def main():
             p = os.path.join(a.out, f"the-glitch-retro-{variant}-{mode}-{start}.svg")
             open(p, "w").write(svg(frames, "the-glitch", a.floor, a.tag_gap, a.tag_dim, mode, start)); gs.append(("the-glitch", f"{mode} floor, starts {start}", p))
         lineup(gs, a.glitch_sheet)
-    if a.render or a.gif:
+    if a.render:
         import buddy_badge_mock as bm
         bm.LOOP = LOOP
-        bm.render(files, a.render, a.gif)
+        bm.render(files, a.render, None)
+    if a.gif: gif(files, a.gif, a.seconds, a.fps)
 
 if __name__ == "__main__":
     main()
