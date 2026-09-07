@@ -132,11 +132,18 @@ def draw(frames, token, variant, size=48):
     if variant.startswith("tag"):       # the buddy centred on a finer-dithered floor; the seven colours as a small tag top left
         floor_h = 8                      # eight rows of floor: his hat then clears the tag by a row even when he rises
         floor_ramp = ramp[ramp.index(colour):]                     # the floor starts on his own colour and falls to black
+        if "deep" in variant: floor_h = 11                         # eleven rows: the most the grid allows under the tag and the hat
+        if "lit" in variant:                                       # a lighter row at the top edge, the light catching the ground
+            lighter = ramp[max(0, ramp.index(colour) - 1)]
+            floor_ramp = ([lighter] if lighter != colour else []) + floor_ramp
+        if "grey" in variant:                                      # a darker middle: the colour falls through dark grey before black
+            floor_ramp = [c for c in floor_ramp if c != 0] + [11, 0]
         band = dither_column_fine(size, floor_h, floor_ramp)
         for y in range(floor_h):
             for x in range(size): px[x, size - floor_h + y] = rgb(band[y][x])
         put_figure((size - fw) // 2, size - floor_h - fh, colour)
         sq, gap = (3, 1) if variant == "tag-column" else (2, 1)     # the corner tags are two-pixel squares, clear of the hat
+        if "big" in variant: sq = 3                                    # three-pixel squares: a bolder tag, still clear of the hat
         def square(x0, y0, c, w=sq, h=sq):
             for y in range(h):
                 for x in range(w):
@@ -148,7 +155,7 @@ def draw(frames, token, variant, size=48):
             for k in range(-1, h + 1):
                 for (xx, yy) in ((-1, k), (w, k)):
                     if 0 <= x0 + xx < size and 0 <= y0 + yy < size: px[x0 + xx, y0 + yy] = rgb(1)
-        if variant == "tag-row":             # seven squares in a row: 27 px, a little over half the width
+        if variant.startswith("tag-row"):    # seven squares in a row, two pixels each
             for i, c in enumerate(STRIP): square(2 + i * (sq + gap), 2, c)
         elif variant == "tag-row-thin":      # seven flat rectangles, two pixels tall
             for i, c in enumerate(STRIP): square(2 + i * (sq + gap), 2, c, h=2)
