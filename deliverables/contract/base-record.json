@@ -9,7 +9,7 @@
   "behaviour": 0,
   "colour": 5,
   "block_number": "25850267",
-  "commit": "c7979dd84279bce84da8b4d9666e6a9882d8e6a8",
+  "commit": "d7f68e9e2868de57284b5a1a6f1bdf9f88ee066e",
   "working_tree_clean": true
  },
  "stamped": [
@@ -69,7 +69,7 @@
    "block_number": "25850267"
   },
   {
-   "file": "tony-chamber-the-shy-one.prg",
+   "file": "tony-chamber-the-shy.prg",
    "size": 46876,
    "sha256": "60e95d799e86fff2b0d77a01846aa86c78b590696bf3e593ea3502c69b7b595f",
    "keccak256": "2107ddea81bd555b445f68b2d4e01a6f912dab931d32bd5ed612c1dba6e91904",
