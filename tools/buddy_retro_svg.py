@@ -37,7 +37,8 @@ SWEEPS = {"sweep": (0.15, 0.05, 0.45), "comet": (0.22, 0.05, 1.0)}   # seconds p
 def luma(c): r, g, b = rm.rgb(c); return 0.299 * r + 0.587 * g + 0.114 * b
 LUMINANCE = sorted(rm.STRIP, key=lambda c: -luma(c))
 ROSTER = [6, 3, 7, 14, 5, 10, 4]                   # token 1..7: Shadow, Dancer, Echo, Mirror, Wanderer, Shy, Sleeper
-ORDERS = {"hue": rm.STRIP, "roster": ROSTER, "luminance": LUMINANCE}
+COMPLEMENTS = [6, 7, 4, 5, 10, 3, 14]              # opposite pairs side by side, green in the middle, ends on light blue
+ORDERS = {"hue": rm.STRIP, "roster": ROSTER, "luminance": LUMINANCE, "complements": COMPLEMENTS}
 
 def order_of(spec):
     """A named order, or seven colour names separated by commas."""
