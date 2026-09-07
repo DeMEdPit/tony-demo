@@ -1,0 +1,77 @@
+the-shadow (13958 bytes)
+  ok   body at rest is blue ((46, 44, 155))
+  ok   floor's top row is blue
+  ok   seven squares in the complements order, resting at 0.3
+  ok   at 1.8 s his own square (no. 1) is at full colour and the others rest (a faint halo allowed)
+  ok   dance frame visible at 0.0 s
+  ok   dance frame visible at 0.3 s
+  ok   dance frame visible at 1.2 s
+  ok   dance frame visible at 1.5 s
+the-dancer (17729 bytes)
+  ok   body at rest is cyan ((117, 206, 200))
+  ok   floor's top row is cyan
+  ok   seven squares in the complements order, resting at 0.3
+  ok   at 1.8 s his own square (no. 6) is at full colour and the others rest (a faint halo allowed)
+  ok   dance frame visible at 0.0 s
+  ok   dance frame visible at 0.3 s
+  ok   dance frame visible at 1.2 s
+  ok   dance frame visible at 1.5 s
+the-echo (17728 bytes)
+  ok   body at rest is yellow ((237, 241, 113))
+  ok   floor's top row is yellow
+  ok   seven squares in the complements order, resting at 0.3
+  ok   at 1.8 s his own square (no. 2) is at full colour and the others rest (a faint halo allowed)
+  ok   dance frame visible at 0.0 s
+  ok   dance frame visible at 0.3 s
+  ok   dance frame visible at 1.2 s
+  ok   dance frame visible at 1.5 s
+the-mirror (17684 bytes)
+  ok   body at rest is light-blue ((112, 109, 235))
+  ok   floor's top row is light-blue
+  ok   seven squares in the complements order, resting at 0.3
+  ok   at 1.8 s his own square (no. 7) is at full colour and the others rest (a faint halo allowed)
+  ok   dance frame visible at 0.0 s
+  ok   dance frame visible at 0.3 s
+  ok   dance frame visible at 1.2 s
+  ok   dance frame visible at 1.5 s
+the-wanderer (13960 bytes)
+  ok   body at rest is green ((86, 172, 77))
+  ok   floor's top row is green
+  ok   seven squares in the complements order, resting at 0.3
+  ok   at 1.8 s his own square (no. 4) is at full colour and the others rest (a faint halo allowed)
+  ok   dance frame visible at 0.0 s
+  ok   dance frame visible at 0.3 s
+  ok   dance frame visible at 1.2 s
+  ok   dance frame visible at 1.5 s
+the-shy (17727 bytes)
+  ok   body at rest is light-red ((196, 108, 113))
+  ok   floor's top row is light-red
+  ok   seven squares in the complements order, resting at 0.3
+  ok   at 1.8 s his own square (no. 5) is at full colour and the others rest (a faint halo allowed)
+  ok   dance frame visible at 0.0 s
+  ok   dance frame visible at 0.3 s
+  ok   dance frame visible at 1.2 s
+  ok   dance frame visible at 1.5 s
+the-sleeper (13958 bytes)
+  ok   body at rest is purple ((142, 60, 151))
+  ok   floor's top row is purple
+  ok   seven squares in the complements order, resting at 0.3
+  ok   at 1.8 s his own square (no. 3) is at full colour and the others rest (a faint halo allowed)
+  ok   dance frame visible at 0.0 s
+  ok   dance frame visible at 0.3 s
+  ok   dance frame visible at 1.2 s
+  ok   dance frame visible at 1.5 s
+the-glitch (25000 bytes)
+  ok   body at rest is dark grey ((74, 74, 74))
+  ok   floor's top row is light grey
+  ok   seven squares in the complements order, resting at 0.3
+  ok   spark at 1.28 s is cyan ((117, 206, 200))
+  ok   spark at 1.46 s is light-red ((196, 108, 113))
+  ok   spark at 4.88 s is blue ((46, 44, 155))
+  ok   spark at 8.48 s is light-blue ((112, 109, 235))
+  ok   spark at 8.66 s is purple ((142, 60, 151))
+  ok   blink: gone at 2.40 s
+  ok   blink: back at 2.48 s
+  ok   sweep: at 0.78 s the brightest square is no. 4 (green, the middle)
+  ok   sweep: at 1.25 s the brightest square is no. 7 (light blue, the last)
+ALL OK

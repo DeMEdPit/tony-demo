@@ -1,5 +1,11 @@
 # The token thumbnails: the retro layout (design log)
 
+**Frozen 2026-09-07 at commit `9880f03e5330605b1246acba63fc9671f5935d88`.** The eight
+files in `deliverables/assets/tokens/` do not change after this commit, as the base
+does not after `21b95e3`; a change would be a new named commit, declared by the owner.
+Record: `deliverables/contract/tokens-record.json` (sizes, sha256, keccak256);
+checker output at the freeze: `deliverables/contract/tokens-verify.txt`.
+
 **Status: adopted 2026-09-07.** The eight token files in `deliverables/assets/tokens/`
 are this design, written by `tools/buddy_retro_svg.py --final` and verified by
 `tools/verify_tokens.py`. `deliverables/assets/tokens-sheet.png` shows all eight;

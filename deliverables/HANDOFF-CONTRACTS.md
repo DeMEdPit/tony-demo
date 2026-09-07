@@ -311,6 +311,13 @@ READY 64 and a direct call are always fresh.
 
 ## 6. The image: the SVG, exactly (redesigned 2026-09-07)
 
+**FROZEN 2026-09-07 at commit `9880f03e5330605b1246acba63fc9671f5935d88`**, the
+way the base is frozen at `21b95e3`: the eight files do not change after this
+commit; a change would be a new named commit, declared by the owner.
+`deliverables/contract/tokens-record.json` holds each file's size, sha256 and
+keccak256 and the commit; `deliverables/contract/tokens-verify.txt` is the
+checker's full output at the freeze (68 checks, all passing).
+
 The image was redesigned and adopted on 2026-09-07; the earlier "buddy alone"
 files (`deliverables/assets/buddy-idle-<colour>.svg`, 6,056 bytes) are
 superseded. Reference implementation: `tools/buddy_retro_svg.py --final`;
@@ -451,6 +458,10 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 Fixed on this side, and frozen by the owner's word on 2026-09-07:
 
+- **The images**: the eight SVGs, frozen at commit `9880f03` (section 6);
+  `deliverables/contract/tokens-record.json` has their hashes and
+  `deliverables/contract/tokens-verify.txt` the checker's output.
+
 - **The base**: one PRG, 46,877 bytes, sha256 above, byte-for-byte
   reproducible from the repository; both tunes inside; the eight mechanics,
   the seeded wall, candle and bats, the dim room without a candle, the
@@ -468,7 +479,8 @@ Fixed on this side, and frozen by the owner's word on 2026-09-07:
 - **The images**: `deliverables/assets/tokens/the-<name>.svg`, eight files,
   redesigned 2026-09-07 (the retro layout: the seven colours as a tag, the
   buddy, a dithered floor; the Glitch dark with static, sparks, a blink and a
-  sweep), to be stored as they are (section 6).
+  sweep), frozen at commit `9880f03`, to be stored as they are (section 6);
+  hashes in `deliverables/contract/tokens-record.json`.
 - **The names and provisional colours**: section 3; the colours are the
   owner's to confirm before the metadata is written.
 

@@ -30,7 +30,7 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
 | E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
 | E15 | Token thumbnail: the buddy's idle dance as an animated SVG | superseded by E21 | `assets/buddy-idle-*.svg`, `tools/buddy_thumbnail.py` |
-| E21 | Token thumbnails: the retro layout (tag, buddy, dithered floor; the dark Glitch) | done, adopted 2026-09-07 | `assets/tokens/the-<name>.svg`, `tools/buddy_retro_svg.py`, `THUMBNAILS.md` |
+| E21 | Token thumbnails: the retro layout (tag, buddy, dithered floor; the dark Glitch) | done, frozen 2026-09-07 at `9880f03` | `assets/tokens/the-<name>.svg`, `tools/buddy_retro_svg.py`, `THUMBNAILS.md` |
 | E16 | The Glitch: the eighth mechanic, in the blackout room | built | `tony-chamber-the-glitch.prg`, `tools/verify_buddy.py glitch` |
 
 ---
@@ -971,7 +971,9 @@ files to `assets/tokens/`; all eight verified in Chromium by seeking the SVG clo
 (body, floor, tag order and level, the peak, the dance frames, sparks, blink,
 sweep). Sizes 13,958 to 17,729 bytes, the Glitch 25,000. `THUMBNAILS.md` is the
 design log; `HANDOFF-CONTRACTS.md` section 6 describes the files for the
-contract. The PRG, the vectors and the freeze are untouched.
+contract. **Frozen at commit `9880f03`** (2026-09-07), with the record in
+`contract/tokens-record.json` and the checker's output in `contract/tokens-verify.txt`.
+The PRG, the vectors and the base's freeze are untouched.
 
 ## Road to seven tokens · plan (2026-09-06)
 
