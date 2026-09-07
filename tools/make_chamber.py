@@ -66,8 +66,11 @@ MUSIC = "src/music/TonyLevelA000_V2.sid"
 VARIANT = "tony-chamber"
 #          --dance-cool    keep the engine's pause after a landing in the Dance mechanic
 #                          (default: none, he may bounce again the moment he lands)
+#          --glitch-ink N  the colour of the block number's cells in the Glitch's blackout
+#                          (default 15 light grey; 0 is black on the dark grey stone)
 DANCE_VOICE = 1
 DANCE_COOL = False
+GLITCH_INK = 15
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -75,6 +78,7 @@ while _args:
     elif _flag == "--variant": VARIANT = _args.pop(0)
     elif _flag == "--dance-voice": DANCE_VOICE = int(_args.pop(0)); assert DANCE_VOICE in (1, 2, 3)
     elif _flag == "--dance-cool": DANCE_COOL = True
+    elif _flag == "--glitch-ink": GLITCH_INK = int(_args.pop(0)); assert 0 <= GLITCH_INK <= 15
     else: raise SystemExit("unknown option " + _flag)
 _sid = open(MUSIC, "rb").read()
 assert _sid[:4] == b"PSID" and _sid[124:126] == b"\x00\xa0", "the tune must be a PSID assembled for $A000"
@@ -386,7 +390,7 @@ muralStamp: {
     cmp #7
     bne digitsInked
         ldx #0
-        lda #15
+        lda #{GLITCH_INK}
         inkLoop:
             sta c64lib.COLOR_RAM + 23*40 + 27, x
             inx
@@ -544,6 +548,7 @@ muralRowB:  .lohifill 10, SCREEN_MEM_0 + (3 + 2*i)*40 + 5
 muralRowB1: .lohifill 10, SCREEN_MEM_0 + (3 + 2*i)*40 + 6
 
 nextColorScheme: {"""
+MURAL = MURAL.replace("lda #{GLITCH_INK}", f"lda #{GLITCH_INK}")   # the Glitch's digit ink, an option
 src = sub(src, "nextColorScheme: {", MURAL)
 
 # --- the buddy's dark backdrop on sprite 7 (the player's own mechanism: sprite 2)

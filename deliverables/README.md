@@ -30,6 +30,7 @@ any emulator (verified in VICE as well).
 | `tony-chamber-intro.prg` | 41,368 | the same engine carrying the demo's other tune: the intro tune (heard only in the full game's intro scroller) relocated from $E000 to $A000 with `tools/sidreloc.py` and proved note-for-note identical by replay (`tools/verify_reloc.py`, 8 minutes). Built with the Dancer stepping to voice 2 and keeping his landing pause (E17); default block: Follow, green |
 | `tony-chamber-intro-the-glitch.prg` | 41,368 | the intro-tune build stamped as The Glitch (behaviour 7): to hear him with his own tune |
 | `tony-chamber-intro-the-dancer.prg` | 41,368 | the intro-tune build stamped as The Dancer (behaviour 1, cyan): the Dance mechanic alone under the faster tune, about one bounce a second |
+| `tony-chamber-intro-the-glitch-black-number.prg` | 41,368 | the intro-tune Glitch built with `--glitch-ink 0`: the block number in black on the dark grey stone instead of light grey (a look-see; `screenshots/chamber-glitch-number-grey-vs-black-m64.png`) |
 | `tony-trainer-romfree.prg` | 56,520 | the full game with the five-toggle "official trainer" boot menu rendered in the game's own font (no character ROM needed) |
 | `tony-trained-nomenu.prg` | 55,770 | the full game, no menu, infinite lives baked in at build time |
 
@@ -105,7 +106,7 @@ as an animated SVG, one file per colour, the buddy alone at 48 px) is
 `tools/buddy_thumbnail.py` → `assets/tokens/the-<name>.svg`, the eight by token name (`--tokens`; the Glitch's cycles the seven colours), and `assets/buddy-idle-<colour>.svg` by colour;
 `assets/buddy-thumbnail-seven.png` shows the seven chosen colours,
 `assets/buddy-thumbnail-options.png` the layouts that were considered, and
-`assets/buddy-palette-16.png` all sixteen C64 colours on the Chamber's black. `tools/sidreloc.py` moves a PSID tune to another page-aligned address by tag-tracking its player, and `tools/verify_reloc.py` proves the move by replaying both on minimal64 and comparing every SID register write (`src/music/RELOCATION.md`). `screenshots/` holds before/after and
+`assets/buddy-palette-16.png` all sixteen C64 colours on the Chamber's black. `tools/sidreloc.py` moves a PSID tune to another page-aligned address by tag-tracking its player, and `tools/verify_reloc.py` proves the move by replaying both on minimal64 and comparing every SID register write (`src/music/RELOCATION.md`). The harness's `audio:FILE` renders the emulator's SID output to a WAV; `audio/` holds forty seconds of each Glitch build. `HANDOFF-GLITCH-TUNE.md` is the note for the contracts agent on the second tune. `screenshots/` holds before/after and
 on-target captures (`*-m64-*.png` are minimal64 framebuffer grabs;
 `buddy-m64-*.png` show the buddy build booting straight into the chamber).
 

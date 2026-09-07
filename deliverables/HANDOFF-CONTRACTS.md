@@ -192,15 +192,15 @@ marker is at file offset `0x04EC1` and the 42 bytes start at file offset
 digits are bytes 0–9, not ASCII. Bytes never written keep the file's
 defaults (block 25850267, Follow, green).
 
-**A second tune, not decided (E17):** the demo's other tune (the intro
-scroller's) has been relocated into the Chamber's music slot and proved
-identical by replay; `tony-chamber-intro.prg` (41,368 bytes, sha256
+**A second tune for The Glitch, being tried (E17):** the demo's other tune
+(the intro scroller's) has been relocated into the Chamber's music slot and
+proved identical by replay; `tony-chamber-intro.prg` (41,368 bytes, sha256
 `3f82853171d63ca637b44b3e32d330f3c700c57ddd0d0fa202ec0c1106fae0b6`, the
-block at the same file offset 0x04EC9) is the same engine carrying it. If
-the owner gives The Glitch that tune, either the Glitch token points at
-this second base (a second hash) or both tunes go into one base with
-behaviour 7 starting the second (not built; there is room). Until that
-decision, the one-base table above stands.
+block at the same file offset 0x04EC9) is the same engine carrying it. The
+owner likes the sound; the shipping shape (a second base, or both tunes in
+one base) is not chosen. `HANDOFF-GLITCH-TUNE.md` has the two bases side by
+side, the two shapes and a recommendation. Until that decision, the
+one-base table above stands.
 
 How the seed is used (so a test can predict a wall; the Python model is
 `tools/stamp_mural.py --show`): three bit streams run through the 32 bytes

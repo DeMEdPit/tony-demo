@@ -734,14 +734,35 @@ unstamped), `tony-chamber-intro-the-glitch.prg` (behaviour 7, colour 1),
 `tony-chamber-intro-the-dancer.prg` (behaviour 1, cyan; to hear the Dancer
 alone with the intro tune). All three are the voice-2, landing-pause build.
 
+**Heard (2026-09-07):** the owner played the build and likes the sound.
+Before that, the doubt "it still sounds like the regular track" was settled
+by measurement, not argument: the Glitch build's register stream on the
+emulator uses 23 instrument settings and 80 notes, all of the intro tune's
+(the old build: all of the level tune's), and the harness gained
+`audio:FILE`, which renders the emulator's own SID output to a WAV; forty
+seconds of each Glitch build are in `deliverables/audio/` (22 kHz). The
+two tunes share a composer and 17 instrument settings, so the family
+resemblance is real; the tell is the pace.
+
+**The block number in black (2026-09-07, a look-see):** the owner asked to
+see the blackout's number in black instead of light grey. The digit cells'
+ink is now a generator option, `--glitch-ink N` (default 15; the default
+build is unchanged). `tony-chamber-intro-the-glitch-black-number.prg`
+(41,368 bytes, sha256 `2c338808…`) is the intro-tune Glitch with ink 0;
+`screenshots/chamber-glitch-number-grey-vs-black-m64.png` shows the two
+side by side (pixel-checked: strokes light grey 178,178,178 against the
+dark grey stone 74,74,74 above, black 0,0,0 below). The committed intro
+variant keeps light grey until the owner chooses.
+
 **Open (owner's decisions):** (1) whether a relocation counts as modifying
-the music — no note changes, 289 address bytes do; (2) whether the Glitch
-takes the intro tune at all; (3) the shipping shape: a second base for the
-Glitch (this variant, a second hash) or both tunes resident in one base
-(the 14,847 bytes free at run time below $A000 hold the second tune;
-behaviour 7 would start it; one hash, the handoff's assumption) — not
-built; (4) the Dance knobs: the plain pogo (no knobs) or the one-a-second
-bounce (voice 2 + landing pause).
+the music — no note changes, 289 address bytes do; (2) the shipping shape:
+a second base for the Glitch (this variant, a second hash) or both tunes
+resident in one base (the 14,847 bytes free at run time below $A000 hold
+the second tune; behaviour 7 would start it; one hash, the handoff's
+assumption) — not built; `HANDOFF-GLITCH-TUNE.md` puts both to the
+contracts agent; (3) the Dance knobs: the plain pogo (no knobs) or the
+one-a-second bounce (voice 2 + landing pause); (4) the number's ink in the
+blackout, light grey or black.
 
 ---
 
