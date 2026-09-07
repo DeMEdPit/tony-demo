@@ -222,10 +222,23 @@ GLITCH_CYCLE = ["#2e2c9b", "#75cec8", "#edf171", "#706deb", "#56ac4d", "#c46c71"
 TOKENS = [("the-shadow", "blue"), ("the-dancer", "cyan"), ("the-echo", "yellow"), ("the-mirror", "light-blue"),
           ("the-wanderer", "green"), ("the-shy", "light-red"), ("the-sleeper", "purple"), ("the-glitch", None)]
 GLITCH_STEP = 0.4                          # seconds per colour: 2.8 s round the seven, against the 1.8 s idle loop
+BLINK_PERIOD = 2.6                         # seconds between blinks (drifts against both the 1.8 s loop and the 2.8 s colours)
+BLINK = [(2.39, 0), (2.47, 1), (2.51, 0), (2.59, 1)]   # (time, opacity) within a period: out, a flicker back, out, back
 
 
-def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE, glitch=False):
-    """One SVG. With glitch=True the fill cycles through the seven token colours (the Glitch's thumbnail)."""
+def blink_at(t):
+    """Opacity of the figure at time t (seconds) when the blink is on: 1 except two short drops near the period's end."""
+    t %= BLINK_PERIOD
+    v = 1
+    for at, val in BLINK:
+        if t >= at:
+            v = val
+    return v
+
+
+def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE, glitch=False, blink=False):
+    """One SVG. With glitch=True the fill cycles through the seven token colours (the Glitch's thumbnail);
+    with blink=True the figure drops out twice, briefly, every BLINK_PERIOD seconds (his bursts)."""
     sc = compose(frames, layout, size)
     size, (bx, by) = sc["size"], sc["buddy"]
     n = len(PHASES)
@@ -239,6 +252,13 @@ def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE, glitch=False):
     for f in PHASES:
         if f not in order:
             order.append(f)
+    if blink:
+        times = [0.0] + [at / BLINK_PERIOD for at, _ in BLINK] + [1.0]
+        vals = [1] + [val for _, val in BLINK] + [1]
+        parts.append('<g>')
+        parts.append(f'<animate attributeName="opacity" values="{";".join(str(v) for v in vals)}" '
+                     f'keyTimes="{";".join(f"{t:.4f}" for t in times)}" calcMode="discrete" '
+                     f'dur="{BLINK_PERIOD:g}s" repeatCount="indefinite"/>')
     for f in order:
         values = ";".join("1" if p == f else "0" for p in PHASES) + ";" + ("1" if PHASES[0] == f else "0")
         fill = GLITCH_CYCLE[0] if glitch else colour_hex
@@ -249,8 +269,27 @@ def svg(frames, colour_hex, layout="floor", size=DEFAULT_SIZE, glitch=False):
             parts.append(f'<animate attributeName="fill" values="{";".join(GLITCH_CYCLE)}" '
                          f'calcMode="discrete" dur="{GLITCH_STEP * len(GLITCH_CYCLE):g}s" repeatCount="indefinite"/>')
         parts.append('</path>')
+    if blink:
+        parts.append('</g>')
     parts.append('</svg>')
     return "\n".join(parts) + "\n"
+
+
+def gif(frames, colour_hex, layout, size, path, glitch=False, blink=False, seconds=7.8, fps=25, scale=4):
+    """A GIF preview of the animated SVG's timeline (phases, the Glitch's colours, the blink), rendered from the same data."""
+    from PIL import Image
+    ims = []
+    n = int(seconds * fps)
+    for i in range(n):
+        t = i / fps
+        frame = PHASES[int(t / PHASE_SECONDS) % len(PHASES)]
+        col = GLITCH_CYCLE[int(t / GLITCH_STEP) % len(GLITCH_CYCLE)] if glitch else colour_hex
+        if blink and blink_at(t) == 0:
+            im = raster(frames, "#000000", layout, size, frame, scale)      # the figure gone: ink in the ground's colour
+        else:
+            im = raster(frames, col, layout, size, frame, scale)
+        ims.append(im.convert("P", palette=Image.ADAPTIVE, colors=32))
+    ims[0].save(path, save_all=True, append_images=ims[1:], duration=int(1000 / fps), loop=0, optimize=False)
 
 
 def raster(frames, colour_hex, layout, size, frame, scale):
@@ -313,6 +352,8 @@ def main():
     ap.add_argument("--strip", help="write a PNG strip of the six phases (first colour) instead of SVGs")
     ap.add_argument("--sheet", help="write a comparison PNG of the given colour[:layout] specs instead of SVGs")
     ap.add_argument("--glitch", action="store_true", help="the Glitch's thumbnail: the fill cycles through the seven token colours")
+    ap.add_argument("--blink", action="store_true", help="with --glitch: the figure blinks out twice, briefly, every 2.6 s")
+    ap.add_argument("--gif", help="with --glitch: also write a GIF preview of the timeline to this path")
     ap.add_argument("--tokens", action="store_true", help="write the eight token thumbnails by name into OUT/tokens/")
     ap.add_argument("--sprites", default=SPRITE_DIR)
     a = ap.parse_args()
@@ -342,8 +383,11 @@ def main():
             print(f"{path}: {os.path.getsize(path)} bytes")
         return
     if a.glitch:
-        path = os.path.join(a.out, "buddy-idle-glitch.svg")
-        open(path, "w").write(svg(frames, GLITCH_CYCLE[0], a.layout, a.size, glitch=True))
+        path = os.path.join(a.out, "buddy-idle-glitch-blink.svg" if a.blink else "buddy-idle-glitch.svg")
+        open(path, "w").write(svg(frames, GLITCH_CYCLE[0], a.layout, a.size, glitch=True, blink=a.blink))
+        if a.gif:
+            gif(frames, GLITCH_CYCLE[0], a.layout, a.size, a.gif, glitch=True, blink=a.blink)
+            print(f"{a.gif}: GIF preview")
         print(f"{path}: {os.path.getsize(path)} bytes")
         return
     for c in a.colours:
