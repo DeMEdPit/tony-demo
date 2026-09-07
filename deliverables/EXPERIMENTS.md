@@ -856,6 +856,61 @@ vectors carry it now.
 
 ---
 
+## E19 — Pre-freeze audit · done (2026-09-07)
+
+The owner asked whether everything had been checked before the freeze.
+Beyond the test suite (nine mechanic tests including the dice, and the bats
+over sixteen seeds, all passing on the deliverable base), these were run on
+`deliverables/prg/minimal64/tony-chamber.prg` (46,876 bytes, sha256
+`d45a129a…`):
+
+- **Reproducible from the committed tree.** A clean `git archive` of HEAD,
+  the generators, `./gradlew build`: the generated source is identical to the
+  committed one and the PRG's sha256 is the deliverable's. One nit found and
+  fixed in the rebuild instructions: on a fresh clone Gradle must run once
+  before `tools/build_chamber_room.py`, which needs the charset Gradle
+  extracts.
+- **Wall, candle and digits against the model** for the default seed, the
+  all-zero and all-ones seeds and eight random seeds: 0 brick mismatches in
+  1,500 slots, every candle drawn where predicted, the digits the same chars
+  for the same block. (The all-ones seed is the whole wall bricked, as the
+  model says.)
+- **Out-of-range block bytes** (the contract never writes them, but the
+  program must not die): behaviour 8 and 255, colour 16 and 255, digits 10
+  and 255, all 42 bytes 0 and all 255. Alive in every case; digits above 9
+  draw as blanks; the Glitch ignores his colour byte.
+- **Soak**: every mechanic for 12,000 frames (four minutes) with the player
+  walking, jumping and ducking: alive throughout, the buddy inside
+  64..280 and on or above the floor, the Glitch wearing all seven, the dice
+  moving for the Wanderer and the Glitch and still for the six that do not
+  roll. The Echo alone reaches X 286: he replays the player exactly, and
+  286 is where the player himself stands at the right pillar. By design.
+- **No ROM ever banked in after boot**: `$01` sampled through four minutes
+  of the Glitch and of the Shadow is `$35` throughout (RAM with I/O), so no
+  KERNAL or BASIC code can run. The static ROM-reference scan's 97 findings
+  are all data misread as code (74 in the Movable data, 23 in the level
+  data and tables of the code region) or the game's own IRQ vectors in RAM.
+- **Both tunes intact after four minutes of play**: the Glitch's player is
+  playing instruments all of which belong to the intro tune; the Shadow's
+  all belong to the level tune (the one pair outside the three-minute
+  reference is one of eight the level tune first uses after its third
+  minute).
+- **The players' entry points read no registers** they are not given: both
+  `init` routines are a store and a return; `initSound` leaves Y holding the
+  behaviour, harmlessly.
+- **The marker is unique** in the file (one `MURAL02`, no `MURAL01`); all
+  fourteen deliverables equal the base outside their 42 bytes; the vectors
+  and the record carry the base's hash.
+- **The new code read line by line** in the generated source: the dice
+  register, its seeding and zero guard, the tune routing at init and per
+  frame, the Dance mechanic's two rereads and its cooldown rule.
+
+Not measured: the raster budget of the busiest frame (the Glitch in a burst
+while the intro tune plays) beyond the fact that every per-frame test ran
+without a dropped frame. Nothing found that needs a change to the base.
+
+---
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the

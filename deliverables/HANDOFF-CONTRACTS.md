@@ -447,7 +447,8 @@ not here.
 | `deliverables/EXPERIMENTS.md` | the ledger: every decision, measurement and open item |
 | `deliverables/ONCHAIN-CASTLES.md` | the other line: patches over the Tony token's bytes (not this collection) |
 
-Rebuild: `python3 tools/build_chamber_room.py && python3 tools/make_chamber.py && ./gradlew build -x downloadDeps`
+Rebuild: `./gradlew build -x downloadDeps` once (on a fresh clone it extracts the charset the room builder needs), then
+`python3 tools/build_chamber_room.py && python3 tools/make_chamber.py && ./gradlew build -x downloadDeps`
 (the exomizer step fails at the end; ignore it, the PRG is at
 `src/kickass/tony-chamber.prg`). Then `python3 tools/verify_buddy.py src/kickass/tony-chamber.prg`.
 
