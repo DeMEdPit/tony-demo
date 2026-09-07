@@ -15,7 +15,7 @@ build and reads the machine back frame by frame with the harness's peek.
                             line, clamped to the pillars, hops with him
   4 Wander   (The Wanderer) strolls, pauses and sits on the chip's dice, turns at
                             the pillars, never leaves the room
-  5 Shy      (The Shy One)  runs from a close player, cowers at the pillar, creeps
+  5 Shy      (The Shy)  runs from a close player, cowers at the pillar, creeps
                             back when he is far
   6 Sleeper  (The Sleeper)  dozes crouched, wakes on an approach, follows a while,
                             dozes off again

@@ -82,13 +82,13 @@ One build serves all eight; a mechanic byte selects the character.
 | 3 | The Echo | replays you exactly, four seconds later: position, height, pose, every jump and duck | you, recorded |
 | 4 | The Mirror | your reflection about the room's centre line, facing the way a reflection would; crouches while you jump, bounces while you crouch | you, inverted |
 | 5 | The Wanderer | strolls, pauses, sits, jumps now and then; turns at the pillars; ignores you | dice seeded from the block, and the seed's mood |
-| 6 | The Shy One | runs at your speed when you come close, cowers at the pillar, bolts past you if you press in, creeps back when you leave | you |
+| 6 | The Shy | runs at your speed when you come close, cowers at the pillar, bolts past you if you press in, creeps back when you leave | you |
 | 7 | The Sleeper | dozes crouched, wakes when you approach, follows six seconds, dozes off | you |
 | 8 | The Glitch | wears one of the seven at a time and teleports into the next; cycles the colours; blinks and jitters in bursts | the same dice |
 
 Each has a dedicated colour, chosen by the owner from the machine's
 palette: Shadow blue, Dancer cyan, Echo yellow, Mirror light blue,
-Wanderer green, Shy One light red, Sleeper purple; the Glitch cycles the
+Wanderer green, Shy light red, Sleeper purple; the Glitch cycles the
 seven. Every one jumps with Tony's measured arc and crouches with the
 game's own crouch.
 
@@ -152,13 +152,13 @@ reads 32 bytes. Nothing in the engine changes with this decision.
   signature, the joystick is driven, and the machine is read back every
   frame: the Echo's position must equal Tony's 200 frames earlier at every
   frame; the Dancer's path must be identical whether Tony stands or walks;
-  the Shy One must never be caught while he can still run. There are
+  the Shy must never be caught while he can still run. There are
   scripted tests for all eight characters and for the bats over sixteen
   seeds. A program is shipped only when they pass.
 - **Play-testing by the owner closes the loop.** Play found what tests did
   not think to ask: the Echo collapsing five quick jumps into two, the
   buddy jumping half as high as Tony, the crouch that was really Tony
-  halfway up, the Wanderer never jumping, the Shy One's corner escape
+  halfway up, the Wanderer never jumping, the Shy's corner escape
   (found in play, kept on purpose, now asserted). Each became a test.
 - **Keyless, immutable, fix-forward.** Once the base is on chain it never
   changes. Anything found later is fixed in new tokens. So the gates before

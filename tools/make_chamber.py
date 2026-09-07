@@ -906,7 +906,7 @@ nextPoseMoving: .byte 0      // +45
 wanderRng:    .byte 0        // +46  the dice, low byte: a 16-bit shift register seeded from the block (see rollDice)
 nextJumpPose: .byte 0        // +47  show the jump although the act part is not hopping (Echo)
 buddyJumpPose: .byte 0       // +48
-shyBolt:      .byte 0        // +49  the Shy One is bolting out of a corner, past the player
+shyBolt:      .byte 0        // +49  the Shy is bolting out of a corner, past the player
 buddyColourNow: .byte 0      // +50  the colour the sprites wear this frame
 glitchMode:   .byte 0        // +51  the Glitch: the mechanic he wears now
 glitchTimer:  .word 0        // +52  frames until he changes it

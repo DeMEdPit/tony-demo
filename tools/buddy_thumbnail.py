@@ -220,7 +220,7 @@ def runs_path(rows, ox, oy):
 
 GLITCH_CYCLE = ["#2e2c9b", "#75cec8", "#edf171", "#706deb", "#56ac4d", "#c46c71", "#8e3c97"]   # the seven token colours
 TOKENS = [("the-shadow", "blue"), ("the-dancer", "cyan"), ("the-echo", "yellow"), ("the-mirror", "light-blue"),
-          ("the-wanderer", "green"), ("the-shy-one", "light-red"), ("the-sleeper", "purple"), ("the-glitch", None)]
+          ("the-wanderer", "green"), ("the-shy", "light-red"), ("the-sleeper", "purple"), ("the-glitch", None)]
 GLITCH_STEP = 0.4                          # seconds per colour: 2.8 s round the seven, against the 1.8 s idle loop
 
 

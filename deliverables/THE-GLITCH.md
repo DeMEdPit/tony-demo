@@ -10,7 +10,7 @@ Ethereum; the numbers are from those runs.
 The Chamber is one room of Tony: Born for Adventure with two Tonys in it:
 Tony, whom you play, and a buddy who behaves according to his token. Seven
 tokens give the buddy seven characters: the Shadow, the Dancer, the Echo,
-the Mirror, the Wanderer, the Shy One, the Sleeper. The Glitch is the
+the Mirror, the Wanderer, the Shy, the Sleeper. The Glitch is the
 eighth. He is the same buddy, in the same slot, but nothing about him holds
 still: he wears one of the seven characters at a time and teleports into
 the next every few seconds, he cycles through the seven tokens' colours,
@@ -128,7 +128,7 @@ floor still ticks with the chain.
 - The Mirror became contrary in every axis: he crouches while you jump,
   bounces while you crouch, and faces the way your reflection would at
   every frame, so a turn in place while crouched flips him too.
-- The Shy One bolts straight past you when you are almost on him in the
+- The Shy bolts straight past you when you are almost on him in the
   corner, rather than only once you have squeezed past.
 - The Wanderer jumps now and then, on the same dice as everything else he
   does.

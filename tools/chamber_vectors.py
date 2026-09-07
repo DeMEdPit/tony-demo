@@ -16,7 +16,7 @@ import argparse, hashlib, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from stamp_mural import predict, bats, BEHAVIOURS, PATH_NAMES, PATH_TRAVEL, MODETAB
 
-NAMES = ["The Shadow", "The Dancer", "The Echo", "The Mirror", "The Wanderer", "The Shy One", "The Sleeper", "The Glitch"]
+NAMES = ["The Shadow", "The Dancer", "The Echo", "The Mirror", "The Wanderer", "The Shy", "The Sleeper", "The Glitch"]
 COLOURS = [6, 3, 7, 14, 5, 10, 4, 1]      # provisional token colours by behaviour (the Glitch's byte is ignored: he cycles)
 DENSITY = ["quarter", "half", "three-quarter", "eighth"]
 

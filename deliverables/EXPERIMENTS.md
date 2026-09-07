@@ -183,7 +183,7 @@ still open. Build order: the two bytes, then Dance, then the rest, each
 with a scripted test on minimal64.
 
 **Names (owner, 2026-09-06):** The Shadow (Follow), The Dancer (Dance),
-The Echo, The Mirror, The Wanderer, The Shy One, The Sleeper; the mechanic
+The Echo, The Mirror, The Wanderer, The Shy, The Sleeper; the mechanic
 stays an attribute.
 
 **Built (2026-09-06): the two bytes, and Dance.** The Chamber's parameter
@@ -280,7 +280,7 @@ minimal64 (`tools/verify_dance.py` is retired into it):
 **From the owner's play-through (2026-09-06):** the crouch was frame 3 of
 the duck sequence, which is Tony halfway back up (the four frames are
 standing, bending, down, rising); it is frame 2 now, the one fully down,
-for the Echo, the Wanderer's sit, the Shy One's cower and the Sleeper's
+for the Echo, the Wanderer's sit, the Shy's cower and the Sleeper's
 doze. And the buddy's hop was the first Follow build's 14-frame, 12-pixel
 arc; the owner noticed he never jumped as high as Tony. Tony's jump was
 measured on the emulator (26 frames, apex 23 pixels, the deltas −4 −4 −4
@@ -307,7 +307,7 @@ the Shadow; the C64's blue, which reads as a dark purple on a black
 screen), Dancer cyan, Echo yellow, Mirror light blue, Wanderer green, Shy
 One light red, Sleeper purple.
 
-**The Shy One's corner escape (found by the owner in play, kept on
+**The Shy's corner escape (found by the owner in play, kept on
 purpose).** Cornered at a pillar and crouching, he bolts the other way at
 full speed the moment Tony squeezes past him: Tony's floor runs eight
 pixels beyond the buddy's at each pillar, so Tony can get to the far side
@@ -834,8 +834,9 @@ block whose hash is the seed), `modes = 0`, stored-only attributes with
 the moving facts in the description, the blob arithmetic (two blobs hold
 49,150, headroom 2,274), the supply ladder in place of "nine per class",
 and the music sentence ("relocated to $8000, identical by an eight-minute
-register replay"). Not done: the rename of The Shy One to "The Shy", which
-contradicts the owner's own list and waits for the owner.
+register replay"). The rename: the owner chose **The Shy** (2026-09-07), to keep the one-word
+convention of the other seven; files, code, documents, the SVG and the
+vectors carry it now.
 
 ---
 

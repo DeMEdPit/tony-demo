@@ -61,7 +61,7 @@ every render from the current block. The room itself stays black and grey.
   | 3 | The Echo | 2 Echo | replays you exactly, four seconds behind: every step, jump and duck | built, tested |
   | 4 | The Mirror | 3 Mirror | your reflection about the room's centre line, facing the way your reflection would; crouches while you jump, bounces while you crouch | built, tested |
   | 5 | The Wanderer | 4 Wander | lives there and ignores you: strolls, pauses, sits, jumps now and then, on dice seeded from the block | built, tested |
-  | 6 | The Shy One | 5 Shy | runs when you come close, cowers at the pillar, bolts past you when you are almost on him, creeps back when you leave | built, tested |
+  | 6 | The Shy | 5 Shy | runs when you come close, cowers at the pillar, bolts past you when you are almost on him, creeps back when you leave | built, tested |
   | 7 | The Sleeper | 6 Sleeper | dozes crouched until you come close, follows a while, dozes off | built, tested |
   | 8 | The Glitch | 7 Glitch | wears one of the seven at a time and teleports into the next, cycles the colours, blinks and jitters; his room is the blackout: no wall, no candle, no bats, dark grey stone, a grey Tony, the block number in black | built, tested |
 
@@ -73,7 +73,7 @@ every render from the current block. The room itself stays black and grey.
   complete and waits only on the owner's play-through and the colour
   mapping before the freeze. Provisional colours in the shipped files:
   Shadow blue (6), Dancer cyan (3), Echo yellow (7), Mirror light blue
-  (14), Wanderer green (5), Shy One light red (10), Sleeper purple (4).
+  (14), Wanderer green (5), Shy light red (10), Sleeper purple (4).
 - **Colours (colour byte, a C64 colour index):** the owner's seven: cyan 3,
   green 5, yellow 7, light blue 14, blue 6, light red 10, purple 4. Which
   colour goes with which mechanic is **not decided yet**.
@@ -420,7 +420,7 @@ vector's wall rows), and the testnet deployment order (section 8). The
 owner still holds: the freeze, the colour table and the description text
 (section 3a has the draft). The supply is a ladder, set in the contracts
 session: The Shadow, The Wanderer and The Sleeper 12 each; The Echo, The
-Mirror and The Shy One 8 each; The Dancer 3; The Glitch 1 (64). The rooms
+Mirror and The Shy 8 each; The Dancer 3; The Glitch 1 (64). The rooms
 are three stored traits per token (wall class, bats class, candle class)
 with their own counts. The 64-row table lives in the contracts repository,
 not here.
