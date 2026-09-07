@@ -26,6 +26,8 @@ CASCADE = f"{7 * LOOP:g}s"                         # 12.6 s
 SIZE = 48
 BLACK = rm.PAL[0]
 NAMES = {"light-red": 10, "yellow": 7, "green": 5, "cyan": 3, "light-blue": 14, "blue": 6, "purple": 4}
+PALETTE = {"black": 0, "white": 1, "red": 2, "cyan": 3, "purple": 4, "green": 5, "blue": 6, "yellow": 7, "orange": 8, "brown": 9,
+           "light-red": 10, "dark-grey": 11, "grey": 12, "light-green": 13, "light-blue": 14, "light-grey": 15}
 NAME_OF = {v: k for k, v in NAMES.items()}
 GREY_RAMP = [1, 15, 12, 11, 0]                     # white, light grey, medium grey, dark grey, black
 GREY_SOFT = [15, 12, 11, 0]                        # the same floor starting on light grey
@@ -86,9 +88,10 @@ def floor_paths(rows, y0, scale, fills):
     body = "\n".join(parts)
     return body if scale == 1 else f'<g transform="scale({1 / scale:g})">\n{body}\n</g>'
 
-def floor(token, depth, glitch, mode, seq):
-    """The floor band for a token: (rows, height, scale, fills)."""
-    if not glitch:
+def floor(token, depth, glitch, mode, seq, ramp_override=None):
+    """The floor band for a token: (rows, height, scale, fills); ramp_override is a list of palette indices (mock-ups)."""
+    if ramp_override: fills = [rm.PAL[c] for c in ramp_override]
+    elif not glitch:
         colour, ramp = rm.TOKENS[token]
         fr = ramp[ramp.index(colour):]
         if "lit" in depth:
@@ -180,10 +183,10 @@ def tag(token, glitch, gap, dim, seq, tagmode="cascade", order=None):
     parts.append('</g>')
     return "\n".join(parts)
 
-def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-red", body="cascade", tagmode="cascade", order="hue"):
+def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-red", body="cascade", tagmode="cascade", order="hue", ramp=None):
     glitch = (token == "the-glitch")
     k = rm.STRIP.index(NAMES[start]); seq = rm.STRIP[k:] + rm.STRIP[:k]
-    rows, h, scale, fills = floor(token, depth, glitch, mode, seq)
+    rows, h, scale, fills = floor(token, depth, glitch, mode, seq, ramp)
     fill = (rm.PAL[seq[0]] if body == "cascade" else rm.PAL[GREYS.get(body, 1)]) if glitch else rm.PAL[rm.TOKENS[token][0]]
     fh = bt.ink_box(frames)[1] + 1; fw = len(frames[0][0])
     bx, by = (SIZE - fw) // 2, SIZE - h - fh
@@ -306,6 +309,8 @@ def main():
     ap.add_argument("--fps", type=float, default=10); ap.add_argument("--seconds", type=float, default=2 * 2 * LOOP)
     ap.add_argument("--still", type=float, default=1.0, help="the moment (seconds) the sheets are taken at")
     ap.add_argument("--burst-gif", action="store_true", help="GIF frames every 20 ms through the static bursts, every 100 ms elsewhere, two breaths")
+    ap.add_argument("--ramps", nargs="*", help="mock-up: label=colour,colour,... floor ramps for the first token, rendered side by side by --ramp-sheet")
+    ap.add_argument("--ramp-sheet")
     ap.add_argument("--final", action="store_true", help="write the eight token files (FINAL options) to deliverables/assets/tokens/; --lineup and --gif then apply to them")
     ap.add_argument("--out", default="deliverables/assets/mock")
     ap.add_argument("--render"); ap.add_argument("--gif")
@@ -340,6 +345,13 @@ def main():
     if a.dim_strip:
         strip([(f"{a.tokens[0]} · resting squares at {d:g}", svg(frames, a.tokens[0], a.floor, a.tag_gap, d, order=a.tag_order)) for d in a.dims],
               a.dim_strip, crops=((1.8, "peak"), (0.0, "resting")))
+    if a.ramps:
+        rfiles = []
+        for k, spec in enumerate(a.ramps):
+            label, names = spec.split("=", 1); ramp = [PALETTE[n.strip()] for n in names.split(",")]
+            p = os.path.join(a.out, f"{a.tokens[0]}-retro-ramp{k + 1}.svg")
+            open(p, "w").write(svg(frames, a.tokens[0], a.floor, a.tag_gap, a.tag_dim, order=a.tag_order, ramp=ramp)); rfiles.append((a.tokens[0], label, p, 1.8))
+        if a.ramp_sheet: lineup(rfiles, a.ramp_sheet, columns=3)
     if a.order_strip:
         names = {"hue": "round the colour wheel (now)", "roster": "token order, Shadow to Sleeper", "luminance": "brightest first"}
         docs = []
