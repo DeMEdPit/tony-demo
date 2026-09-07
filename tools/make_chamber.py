@@ -67,10 +67,10 @@ VARIANT = "tony-chamber"
 #          --dance-cool    keep the engine's pause after a landing in the Dance mechanic
 #                          (default: none, he may bounce again the moment he lands)
 #          --glitch-ink N  the colour of the block number's cells in the Glitch's blackout
-#                          (default 15 light grey; 0 is black on the dark grey stone)
+#                          (default 0, black on the dark grey stone, the owner's choice; 15 was light grey)
 DANCE_VOICE = 1
 DANCE_COOL = False
-GLITCH_INK = 15
+GLITCH_INK = 0
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -386,7 +386,7 @@ muralStamp: {
         inx
         cpx #8
     bne digitLoop
-    lda muralBehaviour          // the blackout: the block number's cells keep light-grey ink on the dark stone
+    lda muralBehaviour          // the blackout: the block number's cells take the blackout's ink (black) on the dark stone
     cmp #7
     bne digitsInked
         ldx #0

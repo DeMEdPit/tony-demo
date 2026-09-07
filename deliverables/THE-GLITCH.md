@@ -78,12 +78,15 @@ densities run from sparse to heavy and never to zero, so a bare wall is
 exclusively his, while a full wall remains the rare ordinary room. And the
 colours: the stone went from light grey to dark grey and Tony from light
 grey to grey, one step lighter than the stone so he still reads against the
-pillars. The block number is carved as dark strokes into the stone, and
-dark strokes on dark grey would nearly vanish, so its eight cells keep light
-grey ink, which flips them to bright numerals on dark stone. Rendered side
-by side, black digits on the dark floor were readable but murky; the light
-ones are clear. The number briefly wore the Glitch's colour, cycling with
-him, and the owner chose to leave it alone: light grey throughout.
+pillars. The block number is carved as dark strokes into the stone. Its
+eight cells were first given light grey ink, which flipped them to bright
+numerals on dark stone, and for a while that was the choice: rendered side
+by side, black digits on the dark floor read as murky, the light ones as
+clear. The number briefly wore the Glitch's colour, cycling with him, and
+was set back to light grey. Then, with his own tune in the room and the two
+renderings side by side again at full size, the owner chose the black after
+all: the number is black now, a carving in the dark stone, the quietest
+thing in the room.
 
 A related question was answered the same way for the other seven. Should
 their block numbers take the buddy's colour? Rendered on the light grey

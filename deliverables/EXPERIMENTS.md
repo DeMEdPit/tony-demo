@@ -640,7 +640,8 @@ black digits, and the Glitch's number wears his colour, frame by frame,
 light grey while he is blinked out (measured: the digits' ink cycles
 through all seven colours and 15, never 0). The owner then chose to leave
 the number alone even for him: it is light grey throughout the blackout
-again, as before (measured: ink 15 for 20 s). His thumbnail (E15) is the
+again, as before (measured: ink 15 for 20 s). (Superseded on 2026-09-07:
+black, see E17.) His thumbnail (E15) is the
 same idle dance with the fill cycling through the seven token colours,
 0.4 s each: `assets/buddy-idle-glitch.svg` (6,668 bytes), verified in
 Chromium colour by colour; `assets/buddy-idle-glitch-phases.png`. The
@@ -751,8 +752,18 @@ build is unchanged). `tony-chamber-intro-the-glitch-black-number.prg`
 (41,368 bytes, sha256 `2c338808…`) is the intro-tune Glitch with ink 0;
 `screenshots/chamber-glitch-number-grey-vs-black-m64.png` shows the two
 side by side (pixel-checked: strokes light grey 178,178,178 against the
-dark grey stone 74,74,74 above, black 0,0,0 below). The committed intro
-variant keeps light grey until the owner chooses.
+dark grey stone 74,74,74 above, black 0,0,0 below). The owner then chose the
+black. **Decision (2026-09-07):** `--glitch-ink` defaults to 0; both bases
+rebuilt with the one byte changed (standard base 41,094 bytes, sha256
+`f9f7225f507c954f50c43f557643039d6f7bd59b2520ecc4dde82c845ad1e262`; intro
+base 41,368 bytes, sha256
+`170789a970c7b30a6b4283c3fdf5fa092a703eb907cab39db7d6cb74237c24b9`; the
+block at file offset 0x04EC9 in both, unchanged); all sixteen deliverable
+PRGs re-stamped with their own blocks carried over byte for byte; the
+look-see file dropped (it was the Glitch build itself). All eight mechanic
+tests pass on the standard base, the bats over sixteen seeds pass, the
+Glitch test passes on the intro base (the test now reads the blackout's
+ink from the build).
 
 **Open (owner's decisions):** (1) whether a relocation counts as modifying
 the music — no note changes, 289 address bytes do; (2) the shipping shape:
@@ -761,8 +772,7 @@ resident in one base (the 14,847 bytes free at run time below $A000 hold
 the second tune; behaviour 7 would start it; one hash, the handoff's
 assumption) — not built; `HANDOFF-GLITCH-TUNE.md` puts both to the
 contracts agent; (3) the Dance knobs: the plain pogo (no knobs) or the
-one-a-second bounce (voice 2 + landing pause); (4) the number's ink in the
-blackout, light grey or black.
+one-a-second bounce (voice 2 + landing pause). The number's ink is decided: black.
 
 ---
 

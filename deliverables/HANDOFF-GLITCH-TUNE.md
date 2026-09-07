@@ -35,13 +35,13 @@ are unchanged; the Glitch test passes on the new base.
 |---|---|---|
 | file | `deliverables/prg/minimal64/tony-chamber.prg` | `deliverables/prg/minimal64/tony-chamber-intro.prg` |
 | size | 41,094 bytes | 41,368 bytes |
-| sha256 | `81468c5a3232246eaaf701c2c59dc39ebddad43cb20eda61eb977c87cb15e262` | `3f82853171d63ca637b44b3e32d330f3c700c57ddd0d0fa202ec0c1106fae0b6` |
+| sha256 | `f9f7225f507c954f50c43f557643039d6f7bd59b2520ecc4dde82c845ad1e262` | `170789a970c7b30a6b4283c3fdf5fa092a703eb907cab39db7d6cb74237c24b9` |
 | tune | level tune | intro tune, relocated |
 | marker `"MURAL02\0"` at file offset | `0x04EC1` | `0x04EC1` |
 | the 42 bytes the contract writes | file offset `0x04EC9` | file offset `0x04EC9` |
 | rebuild | `python3 tools/make_chamber.py` | `python3 tools/make_chamber.py --music src/music/TonyIntroA000_reloc.sid --variant tony-chamber-intro --dance-voice 2 --dance-cool` |
 
-Both come out of `./gradlew build -x downloadDeps` (ignore the exomizer
+Both carry the blackout's block number in black (the owner's choice of 2026-09-07; the same byte in both bases, so the hashes above are the current ones). Both come out of `./gradlew build -x downloadDeps` (ignore the exomizer
 failure at the end) at `src/kickass/<name>.prg`, byte for byte. The block
 is at the same offset in both because it lives in the code segment, before
 the music data; still find it by its marker, never by a fixed offset, until

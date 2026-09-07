@@ -336,9 +336,13 @@ def glitch(prg, A):
     ref = run(p0, f"wait:{BOOT}," + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)) + "peek:D021,peek:D027")
     os.unlink(p0)
     ref, ref_tint = ref[:8], ref[8:]
-    # the blackout's colours: room dark grey (11), Tony grey (12), the digit cells' ink light grey (15); an ordinary room light grey
+    # the blackout's colours: room dark grey (11), Tony grey (12), the digit cells' ink as the build sets it
+    # (LDX #0 / LDA #ink / STA colour,X / INX / CPX #8 / BNE in the mural routine; black since the owner chose it,
+    # light grey before); an ordinary room light grey
+    m = re.search(rb"\xA2\x00\xA9(.)\x9D..\xE8\xE0\x08\xD0", open(prg, "rb").read(), re.S)
+    INK = m.group(1)[0] if m else 15
     room, tony, tony2, ink = tint[0] & 15, tint[1] & 15, tint[2] & 15, [c & 15 for c in tint[3:]]
-    tinted = (room == 11 and tony == 12 and tony2 == 12 and all(i == 15 for i in ink) and set(inks) == {15}
+    tinted = (room == 11 and tony == 12 and tony2 == 12 and all(i == INK for i in ink) and set(inks) == {INK}
               and (ref_tint[0] & 15) == 15 and (ref_tint[1] & 15) == 15)
     en, wall, digits = scr[0], scr[1:1 + 20 * 30], scr[1 + 20 * 30:]
     bx, mode = t["buddyX"], t["glitchMode"]

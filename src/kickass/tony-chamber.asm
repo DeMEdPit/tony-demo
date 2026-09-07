@@ -3189,11 +3189,11 @@ muralStamp: {
         inx
         cpx #8
     bne digitLoop
-    lda muralBehaviour          // the blackout: the block number's cells keep light-grey ink on the dark stone
+    lda muralBehaviour          // the blackout: the block number's cells take the blackout's ink (black) on the dark stone
     cmp #7
     bne digitsInked
         ldx #0
-        lda #15
+        lda #0
         inkLoop:
             sta c64lib.COLOR_RAM + 23*40 + 27, x
             inx

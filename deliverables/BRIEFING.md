@@ -105,7 +105,7 @@ the chip faithfully.
 The eighth token's room is unlike any other's and gated on his mechanic
 byte, so no seed can produce it elsewhere: no bricks at all (a density the
 seed never rolls), no candle, no bats, the stone in dark grey and Tony in
-grey, only the block number left in the floor, in light grey so it reads.
+grey, only the block number left in the floor, in black, a carving in the dark stone.
 His own document, `THE-GLITCH.md`, has the full story.
 
 ### The image
