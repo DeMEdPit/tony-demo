@@ -293,7 +293,8 @@ def main():
     ap.add_argument("--render"); ap.add_argument("--gif")
     ap.add_argument("--lineup", help="grid sheet of all the tokens given, 240 px and 48 px")
     ap.add_argument("--tag-strip", help="sheet of the first token at tag gaps 1, 0.75, 0.5 and 0.25")
-    ap.add_argument("--dim-strip", help="sheet of the first token at tag dims 0.6, 0.45 and 0.3, resting and at the peak")
+    ap.add_argument("--dim-strip", help="sheet of the first token at the tag dims given by --dims, resting and at the peak")
+    ap.add_argument("--dims", nargs="*", type=float, default=[0.6, 0.45, 0.3])
     ap.add_argument("--glitch-sheet", help="grid sheet of the Glitch's floor and start-colour options")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -314,7 +315,7 @@ def main():
     if a.tag_strip:
         strip([(f"{a.tokens[0]} · gap {g:g} px", svg(frames, a.tokens[0], a.floor, g, a.tag_dim)) for g in (1, 0.75, 0.5, 0.25)], a.tag_strip)
     if a.dim_strip:
-        strip([(f"{a.tokens[0]} · resting squares at {d:g}", svg(frames, a.tokens[0], a.floor, a.tag_gap, d)) for d in (0.6, 0.45, 0.3)],
+        strip([(f"{a.tokens[0]} · resting squares at {d:g}", svg(frames, a.tokens[0], a.floor, a.tag_gap, d, order=a.tag_order)) for d in a.dims],
               a.dim_strip, crops=((1.8, "peak"), (0.0, "resting")))
     if a.order_strip:
         names = {"hue": "round the colour wheel (now)", "roster": "token order, Shadow to Sleeper", "luminance": "brightest first"}
