@@ -88,12 +88,39 @@ def draw(frames, token, variant, size=48):
         put_strip(size - strip_h)
         put_column(0, size, 0, size - strip_h - 1, [0, ramp[-2] if ramp[-2] != colour else 11])
         put_figure((size - fw) // 2, size - strip_h - 1 - fh, colour)
+    if variant.startswith("swatch"):    # seven colour squares down the left; the gradient is the floor he stands on
+        floor_h = 8
+        floor_ramp = [c for c in ramp if c != 1] or ramp          # the floor starts on his colour, not on white
+        if "halo" in variant:
+            cx, cy = 8 + (size - 8) // 2, (size - floor_h) // 2 + 2
+            halo = glow_mask(size, size - floor_h, cx, cy, 20)
+            dark = ramp[-2] if ramp[-2] != colour else 11
+            for y, row in enumerate(halo):
+                for x, v in enumerate(row):
+                    if v and x >= 8: px[x, y] = rgb(dark)
+        if "across" in variant:                                    # the floor's gradient runs left to right
+            band = dither_column(floor_h, size, floor_ramp)         # built as a column, then turned on its side
+            for y in range(floor_h):
+                for x in range(size): px[x, size - floor_h + y] = rgb(band[x][y])
+        else:                                                      # the floor's gradient runs down: his colour at his feet, black at the edge
+            band = dither_column(size, floor_h, floor_ramp)
+            for y in range(floor_h):
+                for x in range(size): px[x, size - floor_h + y] = rgb(band[y][x])
+        for i, c in enumerate(STRIP):                              # the swatches: 4x4, a pixel apart
+            y0 = 2 + i * 5
+            for y in range(4):
+                for x in range(4): px[1 + x, y0 + y] = rgb(c)
+            if "marked" in variant and c == colour:                # the token's own square framed in white
+                for k in range(-1, 5):
+                    for (xx, yy) in ((k, -1), (k, 4), (-1, k), (4, k)):
+                        if 0 <= 1 + xx < size and 0 <= y0 + yy < size: px[1 + xx, y0 + yy] = rgb(1)
+        put_figure(8 + (size - 8 - fw) // 2, size - floor_h - fh, colour)
     return im
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tokens", nargs="*", default=["the-echo", "the-dancer", "the-shadow"])
-    ap.add_argument("--variants", nargs="*", default=["left-bottom", "left-top", "thin", "halo", "gradient-back"])
+    ap.add_argument("--variants", nargs="*", default=["swatch-down", "swatch-across", "swatch-down-halo", "swatch-down-marked"])
     ap.add_argument("--out", default="deliverables/screenshots/mock-retro-sheet.png")
     a = ap.parse_args()
     frames = bt.load_frames()
