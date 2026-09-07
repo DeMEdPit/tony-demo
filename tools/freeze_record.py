@@ -24,6 +24,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--prg", default="deliverables/prg/minimal64/tony-chamber.prg")
     ap.add_argument("--json")
+    ap.add_argument("--frozen", help="record the freeze: the date, e.g. 2026-09-07 (the commit is the working tree's)")
     a = ap.parse_args()
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
@@ -33,11 +34,14 @@ def main():
     base = digests(a.prg)
     base["commit"] = commit
     base["working_tree_clean"] = not dirty
+    if a.frozen:
+        base["frozen"] = {"date": a.frozen, "commit": commit, "note": "the base does not change after this; anything found later is fix-forward in new tokens"}
     print("base %s: %d bytes" % (base["file"], base["size"]))
     print("  sha256    %s" % base["sha256"])
     print("  keccak256 %s" % base["keccak256"])
     print("  marker at file offset 0x%05X, the 42 bytes at 0x%05X" % (base["marker_offset"], base["block_offset"]))
     print("  commit %s%s" % (commit, "" if not dirty else "  (WORKING TREE NOT CLEAN)"))
+    if a.frozen: print("  FROZEN %s at this commit" % a.frozen)
     stamped = []
     for f in sorted(glob.glob(os.path.join(os.path.dirname(a.prg), "tony-chamber-the-*.prg"))):
         s = digests(f); stamped.append(s)

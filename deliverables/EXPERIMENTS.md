@@ -905,9 +905,18 @@ over sixteen seeds, all passing on the deliverable base), these were run on
   register, its seeding and zero guard, the tune routing at init and per
   frame, the Dance mechanic's two rereads and its cooldown rule.
 
-Not measured: the raster budget of the busiest frame (the Glitch in a burst
-while the intro tune plays) beyond the fact that every per-frame test ran
-without a dropped frame. Nothing found that needs a change to the base.
+Not measured directly: the raster budget of the busiest frame (the Glitch
+in a burst while the intro tune plays); by the tracer the intro tune's
+player costs about 320 instructions a frame against the level tune's 303,
+and no per-frame test ever dropped a frame. Nothing found that needs a
+change to the base.
+
+**FROZEN (2026-09-07, the owner's word):** the base is the file in commit
+`c0b350a` (46,876 bytes, sha256 `d45a129a…`, keccak256 `cedeb14b…`, the
+42 bytes at file offset 0x04EC9). It does not change from here; anything
+found later is fix-forward in new tokens. The sources, tools and history
+stay in the repository, so a later base can be built and frozen the same
+way, with a new hash.
 
 ---
 

@@ -178,15 +178,17 @@ ending at `$BF1A`), sha256
 One base for all eight tokens: it carries both of the demo's tunes, the
 level tune for the seven and the intro tune for The Glitch (section 4a).
 
-**Record of the base (freeze pending the owner's word):** size 46876 bytes;
+**FROZEN 2026-09-07.** The base is the file in commit `c0b350a` on the
+branch (the tree the E19 audit ran on; the freeze is declared in the commit
+after it, and `deliverables/contract/base-record.json` names that one).
+From here the program does not change; anything found later is fix-forward
+in new tokens. **Record of the base:** size 46,876 bytes;
 sha256 `d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef`; keccak256 `cedeb14bf1a39b763c696ab3d7c8fe1b43ffd24edc881efb394783fbb0c72361`; marker at file offset `0x04EC1`, the 42 bytes
-at `0x04EC9`; commit: the one named at the freeze. `tools/freeze_record.py`
+at `0x04EC9`. `tools/freeze_record.py`
 prints these for the working tree, and `deliverables/contract/base-record.json`
 holds the last run, with the eight stamped files' digests.
-Byte-for-byte reproducible from the repository (section 9). **Feature
-complete, not frozen**: the freeze follows the owner's play-through and any
-change it asks for; a rebuild moves the block. Find the block by its
-marker, never by a fixed offset, until the freeze.
+Byte-for-byte reproducible from the repository (section 9). The offsets
+above are now constants; the marker is still the guard.
 
 The **parameter block** is 50 bytes, 64-byte aligned in memory:
 
@@ -266,8 +268,8 @@ render it alongside (owner's decision, not made).
     prg[OFF + 41] = bytes1(colour[id]);
     ```
 
-    (`OFF` = the seed's file offset, `0x04EC9` in the current build; write it
-    as a constant only at the freeze.)
+    (`OFF` = the seed's file offset, `0x04EC9`, a constant since the freeze;
+    keep the marker guard.)
 4. `animation_url = READY64_LAUNCHER.dataURI(prg, 0)`. `modes = 0`: checked
    by the contracts session against the deployed Launcher's templates, the
    argument is accepted and unused.
@@ -348,7 +350,8 @@ which makes the test trivial. Shape of the file:
 ## 8. Deployment order (owner's keys)
 
 1. Freeze base 2 in this repository: final build, keccak256 recorded,
-   offsets recorded, this document updated with the constants.
+   offsets recorded, this document updated with the constants. (Done,
+   2026-09-07.)
 2. Deploy the base blobs; read them back and check the hash.
 3. Deploy the token contract with the seven (behaviour, colour) pairs, the
    SVG constants, the Launcher address and `modes`.
@@ -381,8 +384,8 @@ repository, and read access to the fork (`DeMEdPit/tony-demo`, branch
 The PRG files are committed (they are force-added, since `*.prg` is
 ignored by default). If a file bundle is preferred instead, it is:
 
-1. `deliverables/prg/minimal64/tony-chamber.prg`, the base (take it again
-   at the freeze; the hash and offsets in this document are updated then).
+1. `deliverables/prg/minimal64/tony-chamber.prg`, the base, frozen; the
+   hash and offsets in this document are its.
 2. `deliverables/assets/buddy-idle-*.svg`, the seven image files; the four
    `d` path strings inside them are the constants the contract needs.
 3. The seven (behaviour, colour) pairs and names (section 3), the
@@ -395,13 +398,13 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 ## 8c. Ready for contract writing and a testnet: what is fixed, what is yours
 
-Fixed on this side (2026-09-07), pending only the owner's word "frozen":
+Fixed on this side, and frozen by the owner's word on 2026-09-07:
 
 - **The base**: one PRG, 46,876 bytes, sha256 above, byte-for-byte
   reproducible from the repository; both tunes inside; the eight mechanics,
   the seeded wall, candle and bats, the blackout with a black number.
-  Commit `bff7ba8` on the branch is the build (tags cannot be pushed from
-  this session; the local tag `chamber-base-candidate-1` points there).
+  Commit `c0b350a` on the branch holds the frozen file (tags cannot be
+  pushed from this session, so the commit is the reference).
 - **The block**: 42 bytes at `marker + 8` (file offset `0x04EC9` in this
   build; find the marker), seed, digits, behaviour, colour. Behaviour 7 is
   the only value that changes the room and the tune.
@@ -420,8 +423,8 @@ token id mixed in if the synthesis's per-token arrangement is kept), the
 the 42 bytes into a copy of it at render time, the proof plan (section 7:
 write a vector's bytes, render through the launcher, compare with the
 vector's wall rows), and the testnet deployment order (section 8). The
-owner still holds: the freeze, the colour table and the description text
-(section 3a has the draft). The supply is a ladder, set in the contracts
+owner still holds the colour table and the description text (section 3a
+has the draft); the freeze is done. The supply is a ladder, set in the contracts
 session: The Shadow, The Wanderer and The Sleeper 12 each; The Echo, The
 Mirror and The Shy 8 each; The Dancer 3; The Glitch 1 (64). The rooms
 are three stored traits per token (wall class, bats class, candle class)
@@ -457,6 +460,6 @@ Rebuild: `./gradlew build -x downloadDeps` once (on a fresh clone it extracts th
 - Do not patch the Tony token's PRG to make the Chamber; it is a different
   program. Do not modify the music. Do not change the base after the freeze.
 - Do not bake an RPC URL or any fetch into the token; everything is `data:`.
-- Do not write a fixed block offset before the freeze; use the marker.
+- The block offset is fixed now (`0x04EC9`); keep the marker as the guard.
 - Do not push to, fork publicly, or open pull requests against the upstream
   `maciejmalecki/tony-demo`; the owner's fork is the workspace.
