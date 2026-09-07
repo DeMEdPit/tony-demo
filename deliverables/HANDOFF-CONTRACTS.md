@@ -290,7 +290,7 @@ READY 64 and a direct call are always fresh.
 Reference implementation: `tools/buddy_thumbnail.py` (default layout); the
 eight expected outputs, by token name, are
 `deliverables/assets/tokens/the-<name>.svg` (the seven in their colours,
-6,056 bytes each; the Glitch's 6,668), also available by colour as
+6,056 bytes each; the Glitch's 6,842), also available by colour as
 `deliverables/assets/buddy-idle-<colour>.svg`. The contract's output should match them byte for byte,
 which makes the test trivial. Shape of the file:
 
@@ -315,11 +315,14 @@ which makes the test trivial. Shape of the file:
   token. Colour hex values (the Colodore palette the emulator uses): cyan
   `#75cec8`, green `#56ac4d`, yellow `#edf171`, light blue `#706deb`, blue
   `#2e2c9b`, light red `#c46c71`, purple `#8e3c97`.
-- The Glitch's image is the same file with one more `<animate>` per
-  path, `attributeName="fill"`, cycling the seven token colours in
-  discrete steps of 0.4 s (`values` = blue, cyan, yellow, light blue,
-  green, light red, purple; `dur="2.8s"`); reference
-  `deliverables/assets/buddy-idle-glitch.svg`, 6,668 bytes.
+- The Glitch's image is the same file with two additions: one more
+  `<animate>` per path, `attributeName="fill"`, cycling the seven token
+  colours in discrete steps of 0.4 s (`values` = blue, cyan, yellow, light
+  blue, green, light red, purple; `dur="2.8s"`), and the four paths wrapped
+  in a `<g>` whose opacity blinks, `values="1;0;1;0;1;1"` at
+  `keyTimes="0;0.9192;0.9500;0.9654;0.9962;1"`, `dur="2.6s"`, discrete:
+  he drops out twice, briefly, every 2.6 s. Reference
+  `deliverables/assets/tokens/the-glitch.svg`, 6,842 bytes.
 - Base64 of the SVG is about 8.1 KB per render.
 - Viewers that hand the SVG to an `<img>` animate it (the major browsers
   run SMIL there); viewers that rasterise to a cached still show frame A.

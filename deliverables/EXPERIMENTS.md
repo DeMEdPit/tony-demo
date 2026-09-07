@@ -575,18 +575,19 @@ animation.
 
 ---
 
-**A blink for the Glitch's thumbnail (2026-09-07, a look-see):** the
-owner asked to see one. `tools/buddy_thumbnail.py --glitch --blink` wraps
-the figure in a group whose opacity drops twice, briefly, every 2.6 s (out
-0.08 s, back 0.04 s, out 0.08 s), a period that drifts against both the
-1.8 s idle loop and the 2.8 s colour cycle so the drops land on different
-poses and colours each time. `assets/buddy-idle-glitch-blink.svg` (6,842
-bytes); `--gif` writes a preview of the timeline from the same data
-(`assets/buddy-idle-glitch-blink.gif`, and `buddy-idle-glitch.gif` for the
-current one). Verified in Chromium by seeking the SVG's clock: the figure is
-gone at 2.43 s and 2.55 s, back at 2.49 s and 2.62 s, gone again at 4.99 s,
-the colours cycling throughout. The token's thumbnail (`assets/tokens/the-glitch.svg`)
-is unchanged until the owner chooses.
+**The Glitch's thumbnail blinks (2026-09-07, the owner's choice):** the
+owner asked to see a blink and kept it. The generator wraps his figure in a
+group whose opacity drops twice, briefly, every 2.6 s (out 0.08 s, back
+0.04 s, out 0.08 s), a period that drifts against both the 1.8 s idle loop
+and the 2.8 s colour cycle so the drops land on different poses and colours
+each time. It is the default for `--glitch` and for the Glitch in
+`--tokens` (`--no-blink` for the plain cycle): `assets/tokens/the-glitch.svg`
+and `assets/buddy-idle-glitch.svg`, 6,842 bytes (was 6,668); `--gif` writes
+a preview of the timeline from the same data (`assets/buddy-idle-glitch.gif`).
+Verified in Chromium by seeking the SVG's clock: the figure is gone at
+2.43 s and 2.55 s, back at 2.49 s and 2.62 s, gone again at 4.99 s, the
+colours cycling throughout. The seven other thumbnails are byte-identical
+to before.
 
 ---
 

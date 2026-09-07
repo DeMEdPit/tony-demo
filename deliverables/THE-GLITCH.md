@@ -98,12 +98,15 @@ that the buddy is the only colour in it. The seven keep black digits.
 
 Each token's image is the buddy alone, doing the little dance the game
 plays when a character stands still, as an animated SVG built from the
-game's own sprite bytes. The Glitch's is the same file with one addition:
+game's own sprite bytes. The Glitch's is the same file with two additions:
 the fill cycles through the seven token colours, one every 0.4 seconds, a
 full rainbow in 2.8 seconds against the 1.8 second dance, so the two drift
-against each other rather than repeating in step. Verified in a browser
-colour by colour. All eight thumbnails now exist by token name, in the
-repository under `deliverables/assets/tokens/`.
+against each other rather than repeating in step; and every 2.6 seconds he
+blinks out twice, briefly, the way he does in his room, on a period that
+drifts against both the dance and the colours so no two blinks catch him
+the same. Verified in a browser colour by colour and blink by blink. All
+eight thumbnails exist by token name, in the repository under
+`deliverables/assets/tokens/`.
 
 ## What it means for the contract
 

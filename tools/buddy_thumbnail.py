@@ -352,7 +352,7 @@ def main():
     ap.add_argument("--strip", help="write a PNG strip of the six phases (first colour) instead of SVGs")
     ap.add_argument("--sheet", help="write a comparison PNG of the given colour[:layout] specs instead of SVGs")
     ap.add_argument("--glitch", action="store_true", help="the Glitch's thumbnail: the fill cycles through the seven token colours")
-    ap.add_argument("--blink", action="store_true", help="with --glitch: the figure blinks out twice, briefly, every 2.6 s")
+    ap.add_argument("--no-blink", dest="blink", action="store_false", help="with --glitch: leave out the blink (the Glitch's thumbnail blinks by default)")
     ap.add_argument("--gif", help="with --glitch: also write a GIF preview of the timeline to this path")
     ap.add_argument("--tokens", action="store_true", help="write the eight token thumbnails by name into OUT/tokens/")
     ap.add_argument("--sprites", default=SPRITE_DIR)
@@ -378,12 +378,12 @@ def main():
         os.makedirs(d, exist_ok=True)
         for name, col in TOKENS:
             path = os.path.join(d, f"{name}.svg")
-            open(path, "w").write(svg(frames, GLITCH_CYCLE[0], a.layout, a.size, glitch=True) if col is None
+            open(path, "w").write(svg(frames, GLITCH_CYCLE[0], a.layout, a.size, glitch=True, blink=True) if col is None
                                   else svg(frames, NAMES[col], a.layout, a.size))
             print(f"{path}: {os.path.getsize(path)} bytes")
         return
     if a.glitch:
-        path = os.path.join(a.out, "buddy-idle-glitch-blink.svg" if a.blink else "buddy-idle-glitch.svg")
+        path = os.path.join(a.out, "buddy-idle-glitch.svg" if a.blink else "buddy-idle-glitch-no-blink.svg")
         open(path, "w").write(svg(frames, GLITCH_CYCLE[0], a.layout, a.size, glitch=True, blink=a.blink))
         if a.gif:
             gif(frames, GLITCH_CYCLE[0], a.layout, a.size, a.gif, glitch=True, blink=a.blink)
