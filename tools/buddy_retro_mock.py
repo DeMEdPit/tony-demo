@@ -62,7 +62,8 @@ def draw(frames, token, variant, size=48):
     colour, ramp = TOKENS[token]
     im = Image.new("RGB", (size, size), rgb(0)); px = im.load()
     frame = frames[bt.PHASES[0]]
-    fh, fw = len(frame), len(frame[0])
+    fw = len(frame[0])
+    fh = bt.ink_box(frames)[1] + 1                 # the figure's real height (32): the frame data carries ten blank rows below the feet
     strip_h = 7
     def put_strip(y0):
         for i, c in enumerate(STRIP):
@@ -128,9 +129,9 @@ def draw(frames, token, variant, size=48):
                     for (xx, yy) in ((k, -1), (k, 4), (-1, k), (4, k)):
                         if 0 <= 1 + xx < size and 0 <= y0 + yy < size: px[1 + xx, y0 + yy] = rgb(1)
         put_figure(8 + (size - 8 - fw) // 2, size - floor_h - fh, colour)
-    if variant.startswith("tag"):       # the buddy centred on a deeper, finer-dithered floor; the seven colours as a small tag top left
-        floor_h = 10
-        floor_ramp = [c for c in ramp if c != 1] or ramp
+    if variant.startswith("tag"):       # the buddy centred on a finer-dithered floor; the seven colours as a small tag top left
+        floor_h = 8                      # eight rows of floor: his hat then clears the tag by a row even when he rises
+        floor_ramp = ramp[ramp.index(colour):]                     # the floor starts on his own colour and falls to black
         band = dither_column_fine(size, floor_h, floor_ramp)
         for y in range(floor_h):
             for x in range(size): px[x, size - floor_h + y] = rgb(band[y][x])
@@ -189,5 +190,20 @@ def main():
                 sheet.paste(big, (x, y0 + th + (240 - 48 * scale))); x += 48 * scale + 8
     sheet.save(a.out); print(a.out, sheet.size)
 
+def lineup(variant, out, tokens=("the-shadow", "the-dancer", "the-echo", "the-mirror", "the-wanderer", "the-shy", "the-sleeper")):
+    """All the regulars in one variant, at 5x and 1x, side by side."""
+    frames = bt.load_frames()
+    pad, th = 12, 18
+    sheet = Image.new("RGB", (pad + len(tokens) * (240 + pad), pad + th + 240 + pad + 48 + pad), (24, 24, 24)); d = ImageDraw.Draw(sheet)
+    for i, t in enumerate(tokens):
+        im = draw(frames, t, variant); x = pad + i * (240 + pad)
+        d.text((x, pad), t, fill=(230, 230, 230))
+        sheet.paste(im.resize((240, 240), Image.NEAREST), (x, pad + th))
+        sheet.paste(im, (x, pad + th + 240 + pad))
+    sheet.save(out); print(out, sheet.size)
+
 if __name__ == "__main__":
-    main()
+    if "--lineup" in sys.argv:
+        i = sys.argv.index("--lineup"); lineup(sys.argv[i + 1], sys.argv[i + 2])
+    else:
+        main()
