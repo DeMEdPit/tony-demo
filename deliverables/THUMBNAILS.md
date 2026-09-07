@@ -30,7 +30,9 @@ A 48 x 48 black canvas, everything on the C64's 48-pixel grid:
 
 Floor ramps, top to bottom: Shadow blue, black · Dancer cyan, light blue, blue, black ·
 Echo yellow, orange, brown, black · Mirror light blue, blue, black · Wanderer green,
-dark grey, black · Shy light red, red, brown, black · Sleeper purple, blue, black.
+black · Shy light red, red, brown, black · Sleeper purple, blue, black. The Wanderer's
+was chosen last (2026-09-07) from six mock-ups: the palette has no darker green, so his
+floor fades to black by dithering green with black and stays green all the way down.
 
 ## 2. Motion
 
@@ -58,7 +60,8 @@ dark grey, black. Three things happen to him, on periods that drift against each
 |---|---|
 | the-shadow.svg | 13,958 |
 | the-dancer.svg, the-echo.svg, the-shy.svg | 17,727 to 17,729 |
-| the-mirror.svg, the-wanderer.svg, the-sleeper.svg | 17,683 to 17,685 |
+| the-mirror.svg, the-sleeper.svg | 17,683 to 17,684 |
+| the-wanderer.svg | 13,960 |
 | the-glitch.svg | 25,000 |
 
 Base64, as a data URI: about 18.6 KB, 23.6 KB and 33.3 KB. The earlier files were

@@ -327,7 +327,7 @@ equality with the repository files.
 | the-dancer.svg | 17,729 | 23.6 KB |
 | the-echo.svg | 17,728 | 23.6 KB |
 | the-mirror.svg | 17,684 | 23.6 KB |
-| the-wanderer.svg | 17,685 | 23.6 KB |
+| the-wanderer.svg | 13,960 | 18.2 KB |
 | the-shy.svg | 17,727 | 23.6 KB |
 | the-sleeper.svg | 17,683 | 23.6 KB |
 | the-glitch.svg | 25,000 | 33.3 KB |
@@ -348,7 +348,7 @@ What the card is: a 48 x 48 black canvas with three parts.
 - **The floor**: rows 37 to 47, a dithered gradient from the token's colour down
   to black (Shadow: blue, black; Dancer: cyan, light blue, blue, black; Echo:
   yellow, orange, brown, black; Mirror: light blue, blue, black; Wanderer: green,
-  dark grey, black; Shy: light red, red, brown, black; Sleeper: purple, blue,
+  black; Shy: light red, red, brown, black; Sleeper: purple, blue,
   black), dithered on a half-pixel grid (96 x 22 cells, a 4 x 4 ordered matrix),
   drawn as one path per colour inside `<g transform="scale(0.5)">`.
 
