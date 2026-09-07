@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-buddy_retro_svg.py - the retro layout as an animated SVG (a mock, not the token files): the seven colours
-as a row of squares top left, the buddy dancing in the middle, a dithered gradient floor under his feet.
+buddy_retro_svg.py - the token thumbnail, the retro layout, as an animated SVG: the seven colours as a row
+of squares top left, the buddy dancing in the middle, a dithered gradient floor under his feet.
+`--final` writes the eight token files with the owner's decisions (FINAL below) into deliverables/assets/tokens/;
+every other option is for mock-ups, which go to deliverables/assets/mock/.
 His own square breathes in time with the dance (one breath per two loops); the Glitch's squares light up
 one after another, a loop each, and his body follows. Everything on the 48-pixel grid, drawn as pixel runs;
 the floor may be dithered on a half-pixel grid ("fine") and the tag squares may sit a half pixel apart.
@@ -269,6 +271,21 @@ def gif(files, prefix, seconds, fps, px=240, times=None):
             fr[0].save(out, save_all=True, append_images=fr[1:], duration=[ms for _, ms in moments], loop=0); print(out)
         b.close()
 
+# the owner's decisions, 2026-09-07: see deliverables/THUMBNAILS.md
+FINAL = dict(depth="deep-fine", gap=0.5, dim=0.3, order="complements")
+FINAL_GLITCH = dict(mode="grey-soft", body="dark-sparks", tagmode="sweep")
+TOKENS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "deliverables", "assets", "tokens")
+ALL = ["the-shadow", "the-dancer", "the-echo", "the-mirror", "the-wanderer", "the-shy", "the-sleeper", "the-glitch"]
+
+def final(frames, out=TOKENS_DIR):
+    """The eight token files."""
+    os.makedirs(out, exist_ok=True); files = []
+    for t in ALL:
+        doc = svg(frames, t, FINAL["depth"], FINAL["gap"], FINAL["dim"], FINAL_GLITCH["mode"], "light-red", FINAL_GLITCH["body"], FINAL_GLITCH["tagmode"], FINAL["order"])
+        p = os.path.join(out, f"{t}.svg"); open(p, "w").write(doc); files.append((t, "final", p))
+        print(f"{p}: {os.path.getsize(p)} bytes")
+    return files
+
 GLITCH_SHEET = [("own", "light-red"), ("spectrum", "light-red"), ("luminance", "light-red"), ("grey", "light-red"),
                 ("own", "yellow"), ("spectrum", "yellow"), ("luminance", "yellow"), ("grey", "yellow"),
                 ("own", "cyan"), ("spectrum", "cyan"), ("own", "purple"), ("spectrum", "purple")]
@@ -289,6 +306,7 @@ def main():
     ap.add_argument("--fps", type=float, default=10); ap.add_argument("--seconds", type=float, default=2 * 2 * LOOP)
     ap.add_argument("--still", type=float, default=1.0, help="the moment (seconds) the sheets are taken at")
     ap.add_argument("--burst-gif", action="store_true", help="GIF frames every 20 ms through the static bursts, every 100 ms elsewhere, two breaths")
+    ap.add_argument("--final", action="store_true", help="write the eight token files (FINAL options) to deliverables/assets/tokens/; --lineup and --gif then apply to them")
     ap.add_argument("--out", default="deliverables/assets/mock")
     ap.add_argument("--render"); ap.add_argument("--gif")
     ap.add_argument("--lineup", help="grid sheet of all the tokens given, 240 px and 48 px")
@@ -299,6 +317,11 @@ def main():
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     frames = bt.load_frames(); files = []
+    if a.final:
+        files = final(frames)
+        if a.lineup: lineup(files, a.lineup, t=a.still)
+        if a.gif: gif(files, a.gif, a.seconds, a.fps, times=burst_times() if a.burst_gif else None)
+        return
     variant = a.floor + (f"-gap{a.tag_gap:g}" if a.tag_gap != 1 else "") + (f"-dim{a.tag_dim:g}" if a.tag_dim != 0.6 else "")
     for t in a.tokens:
         v = variant

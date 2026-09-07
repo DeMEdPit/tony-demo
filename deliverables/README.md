@@ -99,12 +99,10 @@ Boards recap (details in the docs): "The Colonnade + Buddy" sources are
 `tools/build_tall_room.py` + `tools/make_buddy.py` (green buddy AI, tall
 25-row room, physics fork); the Vault is `tools/build_custom_room.py` +
 `src/kickass/level/custom/`; the trainers come from `tools/make_trainers.py`
-+ `src/kickass/cheatmenu-romfree.asm`. The token thumbnail (the buddy's idle dance
-as an animated SVG, one file per colour, the buddy alone at 48 px) is
-`tools/buddy_thumbnail.py` → `assets/tokens/the-<name>.svg`, the eight by token name (`--tokens`; the Glitch's cycles the seven colours and blinks out twice every 2.6 s, `assets/buddy-idle-glitch.gif` is a preview), and `assets/buddy-idle-<colour>.svg` by colour;
-`assets/buddy-thumbnail-seven.png` shows the seven chosen colours,
-`assets/buddy-thumbnail-options.png` the layouts that were considered, and
-`assets/buddy-palette-16.png` all sixteen C64 colours on the Chamber's black. `tools/sidreloc.py` moves a PSID tune to another page-aligned address by tag-tracking its player, and `tools/verify_reloc.py` proves the move by replaying both on minimal64 and comparing every SID register write (`src/music/RELOCATION.md`). The harness's `audio:FILE` renders the emulator's SID output to a WAV; `audio/` holds forty seconds of the Glitch (intro tune) and the Dancer (level tune) from the one base. `HANDOFF-GLITCH-TUNE.md` records how the second tune got into the base. `tools/chamber_vectors.py` writes `contract/chamber-vectors.json`, 32 blocks with what the base draws from each, for the contract tests. `screenshots/` holds before/after and
++ `src/kickass/cheatmenu-romfree.asm`. The token thumbnails (the retro layout, adopted
+2026-09-07: the seven colours as a tag top left, the buddy's idle dance, a dithered floor; the Glitch dark with static, colour sparks, a blink and a sweep) are
+`tools/buddy_retro_svg.py --final` → `assets/tokens/the-<name>.svg`; `assets/tokens-sheet.png` shows all eight and `assets/tokens-preview-<name>.gif` are previews; `THUMBNAILS.md` is the design log. The earlier buddy-alone design (`tools/buddy_thumbnail.py`, `assets/buddy-idle-<colour>.svg`, `assets/buddy-thumbnail-*.png`) is superseded but kept;
+`assets/buddy-palette-16.png` shows all sixteen C64 colours on the Chamber's black. `tools/sidreloc.py` moves a PSID tune to another page-aligned address by tag-tracking its player, and `tools/verify_reloc.py` proves the move by replaying both on minimal64 and comparing every SID register write (`src/music/RELOCATION.md`). The harness's `audio:FILE` renders the emulator's SID output to a WAV; `audio/` holds forty seconds of the Glitch (intro tune) and the Dancer (level tune) from the one base. `HANDOFF-GLITCH-TUNE.md` records how the second tune got into the base. `tools/chamber_vectors.py` writes `contract/chamber-vectors.json`, 32 blocks with what the base draws from each, for the contract tests. `screenshots/` holds before/after and
 on-target captures (`*-m64-*.png` are minimal64 framebuffer grabs;
 `buddy-m64-*.png` show the buddy build booting straight into the chamber).
 

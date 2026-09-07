@@ -96,17 +96,19 @@ that the buddy is the only colour in it. The seven keep black digits.
 
 ## The thumbnail
 
-Each token's image is the buddy alone, doing the little dance the game
-plays when a character stands still, as an animated SVG built from the
-game's own sprite bytes. The Glitch's is the same file with two additions:
-the fill cycles through the seven token colours, one every 0.4 seconds, a
-full rainbow in 2.8 seconds against the 1.8 second dance, so the two drift
-against each other rather than repeating in step; and every 2.6 seconds he
-blinks out twice, briefly, the way he does in his room, on a period that
-drifts against both the dance and the colours so no two blinks catch him
-the same. Verified in a browser colour by colour and blink by blink. All
-eight thumbnails exist by token name, in the repository under
-`deliverables/assets/tokens/`.
+Each token's card (redesigned and adopted 2026-09-07) has the seven token
+colours as a row of small squares in the top left, the buddy doing the game's
+idle dance in the middle, and a dithered floor under his feet that fades from his
+own colour to black. His own square breathes in time with the dance. The
+Glitch's card is the room with the lights out: he is dark grey on a floor that
+runs light grey to black, and three things happen to him. Every 2.6 seconds he
+blinks out twice, briefly, as he does in his room. Every 3.6 seconds a burst of
+static runs through him, a third of a second of quick flips between the greys,
+and two of those flips, thirty and twenty milliseconds long, are one of the seven
+colours, a different pair each burst. And once per burst a wave of light runs
+across the seven squares and fades. Verified in a browser blink by blink and
+spark by spark. All eight cards are in the repository under
+`deliverables/assets/tokens/`; `deliverables/THUMBNAILS.md` is the design log.
 
 ## What it means for the contract
 

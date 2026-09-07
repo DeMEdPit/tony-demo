@@ -29,7 +29,8 @@ Juntunen). Runtime: minimal64 by nopsta, GPL-2.0.
 | E12 | Chain-reactive tokens (render-time / run-time) | proposed | this file, §E12 |
 | E13 | Collection architecture (bases + patches, keyless) | proposed | this file, §E13 |
 | E14 | The Chamber: a back wall drawn from a 32-byte seed | in progress | `prg/minimal64/tony-chamber.prg`, `tools/stamp_mural.py` |
-| E15 | Token thumbnail: the buddy's idle dance as an animated SVG | in progress | `assets/buddy-idle-*.svg`, `tools/buddy_thumbnail.py` |
+| E15 | Token thumbnail: the buddy's idle dance as an animated SVG | superseded by E21 | `assets/buddy-idle-*.svg`, `tools/buddy_thumbnail.py` |
+| E21 | Token thumbnails: the retro layout (tag, buddy, dithered floor; the dark Glitch) | done, adopted 2026-09-07 | `assets/tokens/the-<name>.svg`, `tools/buddy_retro_svg.py`, `THUMBNAILS.md` |
 | E16 | The Glitch: the eighth mechanic, in the blackout room | built | `tony-chamber-the-glitch.prg`, `tools/verify_buddy.py glitch` |
 
 ---
@@ -500,7 +501,7 @@ engine) is not yet deployed; the contract that performs the 42-byte write.
 
 ---
 
-## E15 — Token thumbnail: the idle dance as an animated SVG · in progress
+## E15 — Token thumbnail: the idle dance as an animated SVG · superseded by E21 (2026-09-07)
 
 **For:** the image a marketplace shows for each of the seven tokens. The
 owner's brief: the buddy alone, in his token colour, doing the little dance
@@ -956,13 +957,21 @@ in `deliverables/contract/base-record.json`.
 
 ---
 
-## E21 — Token thumbnails: the retro layout · mock-ups (2026-09-07)
+## E21 — Token thumbnails: the retro layout · done, adopted (2026-09-07)
 
-The thumbnail redesigned as mock-ups only: the seven colours as a row of squares top
-left, the buddy centred, a dithered gradient floor under his feet; the Glitch white
-with bursts of static, a sweep of light across his squares, a grey floor. Decisions,
-open items, sizes and the regeneration commands are in `THUMBNAILS.md`. The token
-SVGs, the PRG, the vectors and the freeze are untouched.
+The thumbnail redesigned through ten rounds of mock-ups and adopted: the seven
+colours as a row of 2 x 2 squares top left (blue, yellow, purple, green, light red,
+cyan, light blue; a half-pixel gap; resting at 0.3, the token's own square breathing
+to full with a glow every 3.6 s), the buddy's idle dance centred with his feet on an
+eleven-row floor dithered on a half-pixel grid from his colour to black. The Glitch
+is dark grey on a light-grey-to-black floor, with bursts of static whose two
+brightest flips are colour sparks, the blink from E15, and a sweep of light across
+his squares once per burst. `tools/buddy_retro_svg.py --final` writes the eight
+files to `assets/tokens/`; all eight verified in Chromium by seeking the SVG clock
+(body, floor, tag order and level, the peak, the dance frames, sparks, blink,
+sweep). Sizes 13,958 to 17,729 bytes, the Glitch 25,000. `THUMBNAILS.md` is the
+design log; `HANDOFF-CONTRACTS.md` section 6 describes the files for the
+contract. The PRG, the vectors and the freeze are untouched.
 
 ## Road to seven tokens · plan (2026-09-06)
 

@@ -309,48 +309,75 @@ Everything is a view; gas is the reader's. Marketplaces cache metadata and
 re-fetch on their own schedule, so "every render" means every re-fetch;
 READY 64 and a direct call are always fresh.
 
-## 6. The image: the SVG, exactly
+## 6. The image: the SVG, exactly (redesigned 2026-09-07)
 
-Reference implementation: `tools/buddy_thumbnail.py` (default layout); the
-eight expected outputs, by token name, are
-`deliverables/assets/tokens/the-<name>.svg` (the seven in their colours,
-6,056 bytes each; the Glitch's 6,842), also available by colour as
-`deliverables/assets/buddy-idle-<colour>.svg`. The contract's output should match them byte for byte,
-which makes the test trivial. Shape of the file:
+The image was redesigned and adopted on 2026-09-07; the earlier "buddy alone"
+files (`deliverables/assets/buddy-idle-<colour>.svg`, 6,056 bytes) are
+superseded. Reference implementation: `tools/buddy_retro_svg.py --final`;
+the eight outputs, by token name, are `deliverables/assets/tokens/the-<name>.svg`.
+`deliverables/THUMBNAILS.md` is the design log. **Store the eight files as they
+are** (constants or SSTORE2 blobs) rather than generating them: the files now
+differ per token in more than the fill colour (the floor's geometry and colours,
+the position of the live square, and the Glitch's own animations), so the test is
+equality with the repository files.
 
-```xml
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" shape-rendering="crispEdges">
-<rect width="48" height="48" fill="#000"/>
-<path fill="#75cec8" d="M... (frame A, run-length pixel rows)">
-<animate attributeName="opacity" values="1;0;1;0;0;0;1" keyTimes="0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1" calcMode="discrete" dur="1.8s" repeatCount="indefinite"/>
-</path>
-<path fill="#75cec8" d="... frame B"> <animate ... values="0;1;0;1;0;0;0" .../> </path>
-<path fill="#75cec8" d="... frame C"> <animate ... values="0;0;0;0;1;0;0" .../> </path>
-<path fill="#75cec8" d="... frame D"> <animate ... values="0;0;0;0;0;1;0" .../> </path>
-</svg>
-```
+| file | bytes | base64 |
+|---|---|---|
+| the-shadow.svg | 13,958 | 18.6 KB |
+| the-dancer.svg | 17,729 | 23.6 KB |
+| the-echo.svg | 17,728 | 23.6 KB |
+| the-mirror.svg | 17,684 | 23.6 KB |
+| the-wanderer.svg | 17,685 | 23.6 KB |
+| the-shy.svg | 17,727 | 23.6 KB |
+| the-sleeper.svg | 17,683 | 23.6 KB |
+| the-glitch.svg | 25,000 | 33.3 KB |
 
-- Four frames, the game's own idle sprites (24×42 pixels each, the top and
-  bottom halves of a two-sprite character), drawn at (12, 8) on a 48×48
-  canvas; the loop is A B A B C D at 0.3 s a phase (fifteen PAL frames), as in
-  the game. Frame A is first in the file so a still render shows it.
-- The four `d` strings are constants (about 1.4 KB each, 5.6 KB in all);
-  copy them from the reference files. Only the fill colour changes per
-  token. Colour hex values (the Colodore palette the emulator uses): cyan
-  `#75cec8`, green `#56ac4d`, yellow `#edf171`, light blue `#706deb`, blue
-  `#2e2c9b`, light red `#c46c71`, purple `#8e3c97`.
-- The Glitch's image is the same file with two additions: one more
-  `<animate>` per path, `attributeName="fill"`, cycling the seven token
-  colours in discrete steps of 0.4 s (`values` = blue, cyan, yellow, light
-  blue, green, light red, purple; `dur="2.8s"`), and the four paths wrapped
-  in a `<g>` whose opacity blinks, `values="1;0;1;0;1;1"` at
-  `keyTimes="0;0.9192;0.9500;0.9654;0.9962;1"`, `dur="2.6s"`, discrete:
-  he drops out twice, briefly, every 2.6 s. Reference
-  `deliverables/assets/tokens/the-glitch.svg`, 6,842 bytes.
-- Base64 of the SVG is about 8.1 KB per render.
-- Viewers that hand the SVG to an `<img>` animate it (the major browsers
-  run SMIL there); viewers that rasterise to a cached still show frame A.
-  Measure the marketplaces you care about before promising the animation.
+What the card is: a 48 x 48 black canvas with three parts.
+
+- **The tag**: the seven token colours as seven 2 x 2 squares straight across
+  the top left, at y = 2, x = 2 + 2.5 i (a half-pixel gap), in the order blue,
+  yellow, purple, green, light red, cyan, light blue (opposite pairs side by
+  side, green in the middle). They rest at opacity 0.3. The token's own square
+  breathes: opacity 0.3 to 1 and back over 3.6 s (two dance loops, eased), with a
+  blurred glow copy beneath it (Gaussian blur 1.1, opacity 0 to 0.9). The tag is
+  drawn anti-aliased (`shape-rendering="geometricPrecision"` on its group) so the
+  half-pixel gap stays even at any display size.
+- **The buddy**: the game's own idle dance, unchanged from before: four frames,
+  24 x 42 pixels, drawn at (12, 5), the loop A B A B C D at 0.3 s a phase
+  (1.8 s), frame A first so a still shows it. His feet stand on the floor's top row.
+- **The floor**: rows 37 to 47, a dithered gradient from the token's colour down
+  to black (Shadow: blue, black; Dancer: cyan, light blue, blue, black; Echo:
+  yellow, orange, brown, black; Mirror: light blue, blue, black; Wanderer: green,
+  dark grey, black; Shy: light red, red, brown, black; Sleeper: purple, blue,
+  black), dithered on a half-pixel grid (96 x 22 cells, a 4 x 4 ordered matrix),
+  drawn as one path per colour inside `<g transform="scale(0.5)">`.
+
+The Glitch's file differs throughout:
+
+- His body is dark grey (`#4a4a4a`) on a floor that runs light grey, grey, dark
+  grey, black; the room with the lights out.
+- **Static**: once per 3.6 s, from 1.20 to 1.54 s, ten quick flips of his fill
+  between grey, dark grey and a colour; the two colour flips (30 ms and 20 ms)
+  are dealt from a fixed sequence so each of the seven colours appears twice
+  over seven bursts, never the same twice running; the fill animation's period
+  is therefore 25.2 s.
+- **The blink** from the earlier design stays: every 2.6 s he drops out for
+  80 ms, is back for 40 ms, out again for 80 ms.
+- **The sweep**: once per 3.6 s a wave of light runs across the seven squares,
+  each peaking in turn at 0.3 + 0.15 i seconds, rising in 50 ms and fading over
+  450 ms, with the same glow copy under each.
+
+All timing is SMIL `<animate>` on opacity and fill; no scripts, no external
+references, no fonts. Every file was verified in Chromium by seeking the SVG
+clock: body colour, floor, the seven squares and their order and resting level,
+the own square at the peak, the four dance frames, the Glitch's sparks, blink
+and sweep. Viewers that hand the SVG to an `<img>` animate it (the major
+browsers run SMIL there); viewers that rasterise to a cached still show the
+resting card with frame A. Measure the marketplaces you care about before
+promising the animation.
+
+Credits stay where section 5 puts them, in the token metadata: the sprite art
+is Rafał Dudek's and the file carries no text of its own.
 
 ## 7. How to prove the contract before it is deployed
 
@@ -413,7 +440,7 @@ ignored by default). If a file bundle is preferred instead, it is:
 3. The seven (behaviour, colour) pairs and names (section 3), the
    description text (section 3a, once the owner has edited it).
 4. To verify rather than trust: `tools/stamp_mural.py` (the byte
-   reference), `tools/buddy_thumbnail.py` (the image reference),
+   reference), `tools/buddy_retro_svg.py` (the image reference),
    `tools/verify_dance.py`, and `tools/m64-harness/` with nopsta's source
    (github.com/nopsta/minimal64) to run any produced PRG headless.
 5. This document and `deliverables/EXPERIMENTS.md`.
@@ -437,7 +464,9 @@ Fixed on this side, and frozen by the owner's word on 2026-09-07:
   bats from any 32 bytes, and `deliverables/contract/chamber-vectors.json`
   holds 32 worked examples with the exact bytes to write.
 - **The images**: `deliverables/assets/tokens/the-<name>.svg`, eight files,
-  the Glitch's cycling the seven colours (section 6).
+  redesigned 2026-09-07 (the retro layout: the seven colours as a tag, the
+  buddy, a dithered floor; the Glitch dark with static, sparks, a blink and a
+  sweep), to be stored as they are (section 6).
 - **The names and provisional colours**: section 3; the colours are the
   owner's to confirm before the metadata is written.
 
@@ -470,7 +499,7 @@ not here.
 | `tools/sidreloc.py`, `tools/verify_reloc.py` | move a tune to another address and prove it by replay; `src/music/TonyIntro8000_reloc.sid` is the intro tune at $8000 (E17) |
 | `tools/chamber_vectors.py` → `deliverables/contract/chamber-vectors.json` | 32 test vectors: the 42 bytes to write and what the base draws from them (wall rows, candle, bats, tune, room) |
 | `deliverables/audio/` | forty seconds of the Glitch (intro tune) and the Dancer (level tune), rendered by the emulator's own SID |
-| `tools/buddy_thumbnail.py` | the SVG reference; `deliverables/assets/buddy-idle-*.svg` its outputs |
+| `tools/buddy_retro_svg.py --final` | the image reference; `deliverables/assets/tokens/the-<name>.svg` its outputs (`tools/buddy_thumbnail.py` is the earlier, superseded design) |
 | `tools/m64-harness/` | the native minimal64 test runner (`build.sh` builds it from nopsta's source) |
 | `deliverables/EXPERIMENTS.md` | the ledger: every decision, measurement and open item |
 | `deliverables/ONCHAIN-CASTLES.md` | the other line: patches over the Tony token's bytes (not this collection) |
