@@ -9,8 +9,13 @@
   "behaviour": 0,
   "colour": 5,
   "block_number": "25850267",
-  "commit": "d7f68e9e2868de57284b5a1a6f1bdf9f88ee066e",
-  "working_tree_clean": true
+  "commit": "b35815525f40069eead087761bc711cd2c3d9f0e",
+  "working_tree_clean": true,
+  "frozen": {
+   "date": "2026-09-07",
+   "commit": "b35815525f40069eead087761bc711cd2c3d9f0e",
+   "note": "the base does not change after this; anything found later is fix-forward in new tokens"
+  }
  },
  "stamped": [
   {
