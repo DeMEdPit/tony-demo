@@ -2,71 +2,72 @@
  "images": {
   "directory": "deliverables/assets/tokens",
   "generator": "tools/buddy_retro_svg.py --final",
-  "commit": "9880f03e5330605b1246acba63fc9671f5935d88",
+  "commit": "b114468460c365ea4301073a81f217ec7b7a6dea",
   "working_tree_clean": true,
   "frozen": {
    "date": "2026-09-07",
-   "commit": "9880f03e5330605b1246acba63fc9671f5935d88",
+   "commit": "b114468460c365ea4301073a81f217ec7b7a6dea",
+   "first_freeze": "9880f03e5330605b1246acba63fc9671f5935d88",
+   "reopened_for": "frames B, C and D rest hidden (static opacity 0) so a still made without running the animation shows frame A alone; pixel-identical where the animation runs",
    "note": "the eight images do not change after this, as the base did not after 21b95e3; a change would be a new named commit, declared by the owner"
   },
   "verification": {
    "tool": "tools/verify_tokens.py",
    "output": "deliverables/contract/tokens-verify.txt",
-   "checks": 68,
+   "checks": 76,
    "failed": 0,
    "result": "ALL OK"
   },
-  "files_unchanged_since_freeze": true,
   "record_commit_note": "the record itself was committed after the freeze commit, as the base's was after 21b95e3"
  },
  "files": [
   {
    "file": "the-shadow.svg",
-   "size": 13958,
-   "sha256": "8c3bae3081db9ef38780d879648914d870a23fe9a1a08ad29ad8f4996c9bcb55",
-   "keccak256": "3b241fb70dbe79fb08ce207233a233bcdf2eae57a3e5021a82d22aaf9b8e5b1f"
+   "size": 13994,
+   "sha256": "b64ee087b1ceb2e500d59741ca202f3580cbb841bdf3a7c93cdefb8424f6bda0",
+   "keccak256": "95ce2418db4f61eb1fc8bd1828d257b230d8eb8e9884923885ab2ee2f00e1cdb"
   },
   {
    "file": "the-dancer.svg",
-   "size": 17729,
-   "sha256": "9bc81ff1f5cab654cd655497a7f0dd99b3df42603746c86822ef5bf989bd9779",
-   "keccak256": "5d46723fd3dab74f0def564a9094f6def4a96823c8f6bd6121fa83b321625c90"
+   "size": 17765,
+   "sha256": "837c7c9c90abd1688098b12876a440f4f3afde5341c14559bb9fb774242d622e",
+   "keccak256": "0d308655582ae4b6c8fc362f81a018f85645de3448054216b387e129e25a1840"
   },
   {
    "file": "the-echo.svg",
-   "size": 17728,
-   "sha256": "daf565c91381a0d5803ca2c15da6669776d4aecc2e9bcea8e30c6894b75ca15f",
-   "keccak256": "d5660e432775fef97d887c835a409da31993024055173c95f0dcdcd86c586bd1"
+   "size": 17764,
+   "sha256": "f0f0c00c733b22c2d75c5dd3ddcc9beab6ec56402bda43eeecc538f88418016c",
+   "keccak256": "8e3d33f1e8d77f48d93ca3967e7e00417ab136986246f407f550ac45f60dff84"
   },
   {
    "file": "the-mirror.svg",
-   "size": 17684,
-   "sha256": "2d395ce09049dbefe10cb5ddb9d6d08f38c1fe911da21eed635f1d4b5639b2cf",
-   "keccak256": "62141daefb3cd38f9a65846d65259ee9eb54b4e6defc0699e6f57be78a99e3cd"
+   "size": 17720,
+   "sha256": "17e6a596036613ff68bbe822ae085717d98c830d70a23fa5c482065a1528e828",
+   "keccak256": "1e980fbf521c60f46bc5ac5f1d3a43d2e38b8ab50e40d9f43f8081dbf68376ef"
   },
   {
    "file": "the-wanderer.svg",
-   "size": 13960,
-   "sha256": "a978a77c90c05e020be0693e19321404a271ad8353df7ff30490d92a01334c61",
-   "keccak256": "bf9fe869b66caee903e8b3810c7a6e8be855c158a01d9601d8ea9b6fd85a132d"
+   "size": 13996,
+   "sha256": "39335dfc1d5229b6a838cc3b56909714f72b2cbb258828138f4d39a33efee63c",
+   "keccak256": "d62bc71100e23fcc45e2bb0dcf3694c8ec176d52dcc3b27c49e7a9b1e12de64e"
   },
   {
    "file": "the-shy.svg",
-   "size": 17727,
-   "sha256": "858f8475700441240d2f2e1d4361141e32be9f1412b54848c86c6eb964cb1493",
-   "keccak256": "65b62ef9a14cdb27bc842d2c33fbd329aa7b9a9005c453c8385fdd73215c0347"
+   "size": 17763,
+   "sha256": "f3bdf52b5c17cbffc373d83309090f643224c3c0631b491b42583b530ea7a0ee",
+   "keccak256": "85fac44a4060985d004daabdc3d2ec9c1a94c74be48520bf6677526c94c55f83"
   },
   {
    "file": "the-sleeper.svg",
-   "size": 13958,
-   "sha256": "35872741f93a4fa14cf9d22740e73f0286ddf56fabbe50a1adeb94a67f4a2bac",
-   "keccak256": "30885f4d4b154039033a6dd2214f72780252440d483f80f99e060ebafb959d1b"
+   "size": 13994,
+   "sha256": "75fa54f675a65a356841d9263812fc03c23d2655542a5fc66939a73f35cc7fca",
+   "keccak256": "9544c1f071b9cda4acd2ec02bad002a79230bd8a57a0c0d9478a867fe2753e58"
   },
   {
    "file": "the-glitch.svg",
-   "size": 25000,
-   "sha256": "06bbd2a5f12f1962b1ac848f3eb1ccf87ce76f78b8b0478b3f1761efc0929b3f",
-   "keccak256": "90651c8b4f2d52f9fbefcb89b4e2e2b9f467bef9899acb7978c639163a4cac3a"
+   "size": 25036,
+   "sha256": "240a66408bb471b62b462b4a380f95a6b4164e4a92544fb3050797c5d111cc5e",
+   "keccak256": "b07f5e4e9fbef54a334a78b9398252a0518f6890889da189145bbd581659be5c"
   }
  ]
 }
