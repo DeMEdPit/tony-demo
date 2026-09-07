@@ -1,4 +1,5 @@
-the-shadow (13958 bytes)
+the-shadow (13994 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is blue ((46, 44, 155))
   ok   floor's top row is blue
   ok   seven squares in the complements order, resting at 0.3
@@ -7,7 +8,8 @@ the-shadow (13958 bytes)
   ok   dance frame visible at 0.3 s
   ok   dance frame visible at 1.2 s
   ok   dance frame visible at 1.5 s
-the-dancer (17729 bytes)
+the-dancer (17765 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is cyan ((117, 206, 200))
   ok   floor's top row is cyan
   ok   seven squares in the complements order, resting at 0.3
@@ -16,7 +18,8 @@ the-dancer (17729 bytes)
   ok   dance frame visible at 0.3 s
   ok   dance frame visible at 1.2 s
   ok   dance frame visible at 1.5 s
-the-echo (17728 bytes)
+the-echo (17764 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is yellow ((237, 241, 113))
   ok   floor's top row is yellow
   ok   seven squares in the complements order, resting at 0.3
@@ -25,7 +28,8 @@ the-echo (17728 bytes)
   ok   dance frame visible at 0.3 s
   ok   dance frame visible at 1.2 s
   ok   dance frame visible at 1.5 s
-the-mirror (17684 bytes)
+the-mirror (17720 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is light-blue ((112, 109, 235))
   ok   floor's top row is light-blue
   ok   seven squares in the complements order, resting at 0.3
@@ -34,7 +38,8 @@ the-mirror (17684 bytes)
   ok   dance frame visible at 0.3 s
   ok   dance frame visible at 1.2 s
   ok   dance frame visible at 1.5 s
-the-wanderer (13960 bytes)
+the-wanderer (13996 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is green ((86, 172, 77))
   ok   floor's top row is green
   ok   seven squares in the complements order, resting at 0.3
@@ -43,7 +48,8 @@ the-wanderer (13960 bytes)
   ok   dance frame visible at 0.3 s
   ok   dance frame visible at 1.2 s
   ok   dance frame visible at 1.5 s
-the-shy (17727 bytes)
+the-shy (17763 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is light-red ((196, 108, 113))
   ok   floor's top row is light-red
   ok   seven squares in the complements order, resting at 0.3
@@ -52,7 +58,8 @@ the-shy (17727 bytes)
   ok   dance frame visible at 0.3 s
   ok   dance frame visible at 1.2 s
   ok   dance frame visible at 1.5 s
-the-sleeper (13958 bytes)
+the-sleeper (13994 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is purple ((142, 60, 151))
   ok   floor's top row is purple
   ok   seven squares in the complements order, resting at 0.3
@@ -61,7 +68,8 @@ the-sleeper (13958 bytes)
   ok   dance frame visible at 0.3 s
   ok   dance frame visible at 1.2 s
   ok   dance frame visible at 1.5 s
-the-glitch (25000 bytes)
+the-glitch (25036 bytes)
+  ok   still: with every animation removed the file draws exactly the resting card, frame A alone
   ok   body at rest is dark grey ((74, 74, 74))
   ok   floor's top row is light grey
   ok   seven squares in the complements order, resting at 0.3

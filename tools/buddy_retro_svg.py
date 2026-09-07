@@ -122,7 +122,10 @@ def figure_paths(frames, fill, bx, by, glitch, seq, body="cascade"):
     parts = []
     for f in order:
         values = ";".join("1" if p == f else "0" for p in bt.PHASES) + ";" + ("1" if bt.PHASES[0] == f else "0")
-        parts.append(f'<path fill="{fill}" d="{bt.runs_path(frames[f], bx, by)}">')
+        # frames after the first rest hidden, so a renderer that does not run the animation (a file browser's
+        # preview, a marketplace's still) shows frame A alone; where the animation runs it overrides this
+        hidden = "" if f == order[0] else ' opacity="0"'
+        parts.append(f'<path fill="{fill}" d="{bt.runs_path(frames[f], bx, by)}"{hidden}>')
         parts.append(f'<animate attributeName="opacity" values="{values}" keyTimes="{keytimes}" calcMode="discrete" dur="{dur}" repeatCount="indefinite"/>')
         if glitch and body == "cascade":
             kt = ";".join(f"{k / 7:.4f}" for k in range(8))

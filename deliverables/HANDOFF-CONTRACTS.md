@@ -311,12 +311,18 @@ READY 64 and a direct call are always fresh.
 
 ## 6. The image: the SVG, exactly (redesigned 2026-09-07)
 
-**FROZEN 2026-09-07 at commit `9880f03e5330605b1246acba63fc9671f5935d88`**, the
-way the base is frozen at `21b95e3`: the eight files do not change after this
-commit; a change would be a new named commit, declared by the owner.
-`deliverables/contract/tokens-record.json` holds each file's size, sha256 and
-keccak256 and the commit; `deliverables/contract/tokens-verify.txt` is the
-checker's full output at the freeze (68 checks, all passing).
+**FROZEN 2026-09-07, the way the base is frozen at `21b95e3`.** The first image
+freeze, `9880f03`, was reopened by the owner later the same day for one fix and
+re-frozen: dance frames B, C and D now rest hidden (a static `opacity="0"`, 36
+bytes per file), so a viewer that does not run the animation, a file browser's
+preview or a marketplace's still, shows frame A alone instead of all four frames
+at once; where the animation runs the files draw pixel for pixel as before. The
+commit holding the frozen files is the one named in
+`deliverables/contract/tokens-record.json`, with each file's size, sha256 and
+keccak256; `deliverables/contract/tokens-verify.txt` is the checker's full output
+at the freeze (76 checks, all passing, eight of them the still). The files do not
+change after that commit; a change would be a new named commit, declared by the
+owner.
 
 The image was redesigned and adopted on 2026-09-07; the earlier "buddy alone"
 files (`deliverables/assets/buddy-idle-<colour>.svg`, 6,056 bytes) are
@@ -330,14 +336,14 @@ equality with the repository files.
 
 | file | bytes | base64 |
 |---|---|---|
-| the-shadow.svg | 13,958 | 18.6 KB |
-| the-dancer.svg | 17,729 | 23.6 KB |
-| the-echo.svg | 17,728 | 23.6 KB |
-| the-mirror.svg | 17,684 | 23.6 KB |
-| the-wanderer.svg | 13,960 | 18.2 KB |
-| the-shy.svg | 17,727 | 23.6 KB |
-| the-sleeper.svg | 13,958 | 18.2 KB |
-| the-glitch.svg | 25,000 | 33.3 KB |
+| the-shadow.svg | 13,994 | 18.2 KB |
+| the-dancer.svg | 17,765 | 23.1 KB |
+| the-echo.svg | 17,764 | 23.1 KB |
+| the-mirror.svg | 17,720 | 23.1 KB |
+| the-wanderer.svg | 13,996 | 18.2 KB |
+| the-shy.svg | 17,763 | 23.1 KB |
+| the-sleeper.svg | 13,994 | 18.2 KB |
+| the-glitch.svg | 25,036 | 32.6 KB |
 
 What the card is: a 48 x 48 black canvas with three parts.
 
@@ -351,7 +357,8 @@ What the card is: a 48 x 48 black canvas with three parts.
   half-pixel gap stays even at any display size.
 - **The buddy**: the game's own idle dance, unchanged from before: four frames,
   24 x 42 pixels, drawn at (12, 5), the loop A B A B C D at 0.3 s a phase
-  (1.8 s), frame A first so a still shows it. His feet stand on the floor's top row.
+  (1.8 s), frame A first and frames B, C and D resting hidden, so a still shows
+  frame A alone. His feet stand on the floor's top row.
 - **The floor**: rows 37 to 47, a dithered gradient from the token's colour down
   to black (Shadow: blue, black; Dancer: cyan, light blue, blue, black; Echo:
   yellow, orange, brown, black; Mirror: light blue, blue, black; Wanderer: green,
@@ -381,9 +388,10 @@ references, no fonts. Every file was verified in Chromium by seeking the SVG
 clock: body colour, floor, the seven squares and their order and resting level,
 the own square at the peak, the four dance frames, the Glitch's sparks, blink
 and sweep. Viewers that hand the SVG to an `<img>` animate it (the major
-browsers run SMIL there); viewers that rasterise to a cached still show the
-resting card with frame A. Measure the marketplaces you care about before
-promising the animation.
+browsers run SMIL there); viewers that rasterise to a still without running the
+animation show the resting card with frame A alone, which the checker proves by
+rendering each file with every animation element removed. Measure the
+marketplaces you care about before promising the animation.
 
 Credits stay where section 5 puts them, in the token metadata: the sprite art
 is Rafał Dudek's and the file carries no text of its own.
@@ -458,9 +466,9 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 Fixed on this side, and frozen by the owner's word on 2026-09-07:
 
-- **The images**: the eight SVGs, frozen at commit `9880f03` (section 6);
-  `deliverables/contract/tokens-record.json` has their hashes and
-  `deliverables/contract/tokens-verify.txt` the checker's output.
+- **The images**: the eight SVGs, frozen (section 6) at the commit named in
+  `deliverables/contract/tokens-record.json` with their hashes;
+  `deliverables/contract/tokens-verify.txt` is the checker's output.
 
 - **The base**: one PRG, 46,877 bytes, sha256 above, byte-for-byte
   reproducible from the repository; both tunes inside; the eight mechanics,
@@ -479,8 +487,8 @@ Fixed on this side, and frozen by the owner's word on 2026-09-07:
 - **The images**: `deliverables/assets/tokens/the-<name>.svg`, eight files,
   redesigned 2026-09-07 (the retro layout: the seven colours as a tag, the
   buddy, a dithered floor; the Glitch dark with static, sparks, a blink and a
-  sweep), frozen at commit `9880f03`, to be stored as they are (section 6);
-  hashes in `deliverables/contract/tokens-record.json`.
+  sweep), frozen at the commit named in `deliverables/contract/tokens-record.json`
+  with their hashes, to be stored as they are (section 6).
 - **The names and provisional colours**: section 3; the colours are the
   owner's to confirm before the metadata is written.
 

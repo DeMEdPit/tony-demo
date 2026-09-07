@@ -1,10 +1,13 @@
 # The token thumbnails: the retro layout (design log)
 
-**Frozen 2026-09-07 at commit `9880f03e5330605b1246acba63fc9671f5935d88`.** The eight
-files in `deliverables/assets/tokens/` do not change after this commit, as the base
+**Frozen 2026-09-07.** First at `9880f03`; reopened by the owner later the same day
+for one fix and re-frozen at the commit named in `deliverables/contract/tokens-record.json`
+(sizes, sha256, keccak256). The fix: dance frames B, C and D rest hidden, so a viewer
+that does not run the animation (the Finder's preview, a marketplace's still) shows
+frame A alone instead of all four frames stacked; where the animation runs nothing
+changed, pixel for pixel. The eight files do not change after that commit, as the base
 does not after `21b95e3`; a change would be a new named commit, declared by the owner.
-Record: `deliverables/contract/tokens-record.json` (sizes, sha256, keccak256);
-checker output at the freeze: `deliverables/contract/tokens-verify.txt`.
+Checker output at the freeze: `deliverables/contract/tokens-verify.txt` (76 checks).
 
 **Status: adopted 2026-09-07.** The eight token files in `deliverables/assets/tokens/`
 are this design, written by `tools/buddy_retro_svg.py --final` and verified by
@@ -68,10 +71,10 @@ dark grey, black. Three things happen to him, on periods that drift against each
 
 | file | bytes |
 |---|---|
-| the-dancer.svg, the-echo.svg, the-shy.svg | 17,727 to 17,729 |
-| the-mirror.svg | 17,684 |
-| the-shadow.svg, the-wanderer.svg, the-sleeper.svg | 13,958 to 13,960 |
-| the-glitch.svg | 25,000 |
+| the-dancer.svg, the-echo.svg, the-shy.svg | 17,763 to 17,765 |
+| the-mirror.svg | 17,720 |
+| the-shadow.svg, the-wanderer.svg, the-sleeper.svg | 13,994 to 13,996 |
+| the-glitch.svg | 25,036 |
 
 Base64, as a data URI: about 18.6 KB, 23.6 KB and 33.3 KB. The earlier files were
 6,056 and 6,842 bytes; the half-pixel floor is most of the growth.

@@ -3,9 +3,11 @@
 verify_tokens.py - checks the eight token thumbnails (deliverables/assets/tokens/the-<name>.svg) in Chromium
 by seeking the SVG clock: body colour and floor, the seven squares in the complements order resting at 0.3,
 the own square at full colour at the peak of its breath, the four dance frames; for the Glitch the colour
-sparks in the static, the blink, and the sweep across the squares. Prints one line per check and ALL OK.
+sparks in the static, the blink, and the sweep across the squares; and the still: the file with every
+animation element removed (what a renderer without SMIL draws) must equal the animated file at 0 s.
+Prints one line per check and ALL OK.
 """
-import io, os, sys
+import io, os, re, sys
 from collections import Counter
 from playwright.sync_api import sync_playwright
 from PIL import Image
@@ -35,6 +37,12 @@ with sync_playwright() as p:
         colour = 11 if glitch else rm.TOKENS[t][0]
         print(f"{t} ({os.path.getsize(f)} bytes)")
         im = shot(0.0); bc, n = body(im)
+        still_doc = re.sub(r"<animate[^>]*/>", "", open(f).read())
+        sp = b.new_page(viewport={"width": 240, "height": 240}); sp.set_content(f'<html><body style="margin:0">{still_doc}</body></html>'); sp.wait_for_timeout(120)
+        sp.evaluate("() => { const s=document.querySelector('svg'); s.setAttribute('width', 240); s.setAttribute('height', 240); }"); sp.wait_for_timeout(40)
+        still = Image.open(io.BytesIO(sp.screenshot())).convert("RGB"); sp.close()
+        check(list(still.get_flattened_data()) == list(im.get_flattened_data()) if hasattr(still, "get_flattened_data") else still.tobytes() == im.tobytes(),
+              "still: with every animation removed the file draws exactly the resting card, frame A alone")
         check(bc is not None and near(bc, PAL[colour]), f"body at rest is {NAME[colour]} ({bc})")
         floor_top = Counter(im.getpixel((x, 37 * 5 + 2)) for x in range(0, 240)).most_common(1)[0][0]
         check(near(floor_top, PAL[15 if glitch else colour]), f"floor's top row is {NAME[15 if glitch else colour]}")
