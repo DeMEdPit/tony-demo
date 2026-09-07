@@ -1,7 +1,7 @@
 {
  "base_prg": "tony-chamber.prg",
- "base_size": 46876,
- "base_sha256": "d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef",
+ "base_size": 46877,
+ "base_sha256": "67dc97bc1e3067151c8a1d24fe4bf18beabf83624c69cdb65182a34aa914ad61",
  "marker": "MURAL02\\0",
  "marker_file_offset": 20161,
  "block_file_offset": 20169,
@@ -68,7 +68,7 @@
    "token_name": "The Shadow",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -128,7 +128,7 @@
    "token_name": "The Shadow",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "dim",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -185,7 +185,7 @@
    "token_name": "The Shadow",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -245,7 +245,7 @@
    "token_name": "The Shadow",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -305,7 +305,7 @@
    "token_name": "The Shadow",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 1,
     "density": "half",
@@ -365,7 +365,7 @@
    "token_name": "The Shadow",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 2,
     "density": "three-quarter",
@@ -425,7 +425,7 @@
    "token_name": "The Shadow",
    "colour": 6,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -485,7 +485,7 @@
    "token_name": "The Dancer",
    "colour": 3,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -545,7 +545,7 @@
    "token_name": "The Echo",
    "colour": 7,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -605,7 +605,7 @@
    "token_name": "The Mirror",
    "colour": 14,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 1,
     "density": "half",
@@ -665,7 +665,7 @@
    "token_name": "The Wanderer",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "dim",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -722,7 +722,7 @@
    "token_name": "The Shy",
    "colour": 10,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -782,7 +782,7 @@
    "token_name": "The Sleeper",
    "colour": 4,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 1,
     "density": "half",
@@ -867,7 +867,7 @@
    "token_name": "The Shadow",
    "colour": 6,
    "tune": "level",
-   "room": "ordinary",
+   "room": "dim",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -924,7 +924,7 @@
    "token_name": "The Dancer",
    "colour": 3,
    "tune": "level",
-   "room": "ordinary",
+   "room": "dim",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -981,7 +981,7 @@
    "token_name": "The Echo",
    "colour": 7,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -1041,7 +1041,7 @@
    "token_name": "The Mirror",
    "colour": 14,
    "tune": "level",
-   "room": "ordinary",
+   "room": "dim",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -1098,7 +1098,7 @@
    "token_name": "The Wanderer",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "dim",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -1155,7 +1155,7 @@
    "token_name": "The Shy",
    "colour": 10,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -1215,7 +1215,7 @@
    "token_name": "The Sleeper",
    "colour": 4,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -1300,7 +1300,7 @@
    "token_name": "The Shadow",
    "colour": 6,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 2,
     "density": "three-quarter",
@@ -1360,7 +1360,7 @@
    "token_name": "The Dancer",
    "colour": 3,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 1,
     "density": "half",
@@ -1420,7 +1420,7 @@
    "token_name": "The Echo",
    "colour": 7,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -1480,7 +1480,7 @@
    "token_name": "The Mirror",
    "colour": 14,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -1540,7 +1540,7 @@
    "token_name": "The Wanderer",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -1600,7 +1600,7 @@
    "token_name": "The Shy",
    "colour": 10,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 3,
     "density": "eighth",
@@ -1660,7 +1660,7 @@
    "token_name": "The Sleeper",
    "colour": 4,
    "tune": "level",
-   "room": "ordinary",
+   "room": "lit",
    "wall": {
     "density_mode": 0,
     "density": "quarter",
@@ -1745,7 +1745,7 @@
    "token_name": "The Shadow",
    "colour": 5,
    "tune": "level",
-   "room": "ordinary",
+   "room": "dim",
    "wall": {
     "density_mode": 3,
     "density": "eighth",

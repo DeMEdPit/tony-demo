@@ -132,6 +132,7 @@ muralBehaviour:  .byte 0                                        // 0 Follow, 1 D
 muralColour:     .byte 5                                        // green, the buddy's original colour
 muralBats:       .byte 0, 0, 0, 0, 0, 0, 0, 0                   // written by the game at room entry, for the tests:
                                                                 // presence, pathA, colA, rowA, pathB, colB, rowB, 0
+muralDim:        .byte 0                                        // 1 when the room has no candle: the dim room (marker + 58)
 
 materials:
     .import binary "chamber-materials.bin"

@@ -38,7 +38,7 @@ Already there (deployed by others, or by the owner before this project):
 The owner tested the marketplace sandbox: the pages play inside the
 OpenSea frame with `allow-scripts` alone.
 
-What we add: one program (the Chamber, 46,876 bytes, a fresh build of the
+What we add: one program (the Chamber, 46,877 bytes, a fresh build of the
 game's engine, not a patch over the deployed game), stored on chain once;
 a contract that assembles each token's page from that program, 42 bytes
 written per render, and an image built in the contract; and the tokens.
@@ -177,7 +177,7 @@ reads 32 bytes. Nothing in the engine changes with this decision.
 
 ## 6. The engineering, for those who need it
 
-- **The base program** is a plain C64 PRG, 46,876 bytes, carrying both of the demo's tunes, reproducible byte
+- **The base program** is a plain C64 PRG, 46,877 bytes, carrying both of the demo's tunes, reproducible byte
   for byte from the repository. It carries a 64-byte-aligned parameter
   block with a marker; the contract writes 42 bytes after the marker: 32
   seed bytes, 8 block digits, the mechanic byte, the colour byte. Its

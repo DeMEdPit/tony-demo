@@ -99,7 +99,8 @@ def show(seed, digits):
     mode, wall, candle = predict(seed)
     names = ["quarter (A&B)", "half (A)", "three-quarter (A|B, rare)", "eighth (A&B&C)"]
     where = f"candle at column {candle[0] + 1}, rows {candle[1]}-{candle[1] + 2}" if candle else "no candle"
-    print(f"   density mode {mode}: {names[mode]}; {where}; floor reads {''.join(str(d) for d in digits)}")
+    room = "lit room (light grey stone)" if candle else "dim room (medium grey stone and Tony: no candle)"
+    print(f"   density mode {mode}: {names[mode]}; {where}; {room}; floor reads {''.join(str(d) for d in digits)}")
     presence, a, b = bats(seed)
     def bat(t):
         return f"path {t[0]} ({PATH_NAMES[t[0]]}, {PATH_TRAVEL[t[0]]} px), column {t[1]}, row {t[2]}"

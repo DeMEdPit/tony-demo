@@ -423,7 +423,34 @@ def dice(prg, A):
                               f"{'on the model' if ok else 'OFF THE MODEL'}")
 
 
-TESTS = {"dice": dice, "follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper, "glitch": glitch}
+def rooms(prg, A):
+    """The three rooms by their colours: a candle-lit room has light grey stone and Tony (15/15); a room without a
+    candle is dim, medium grey stone and Tony (12/12); the Glitch's blackout is dark grey stone and a grey Tony (11/12).
+    The wall, the number and the buddy's colour are the same in lit and dim rooms."""
+    import hashlib
+    def stamped(seed, beh, col):
+        out = tempfile.NamedTemporaryFile(suffix=".prg", delete=False).name
+        subprocess.run([sys.executable, "tools/stamp_mural.py", prg, out, "--hex", seed.hex(), "--block", "25850271",
+                        "--behaviour", str(beh), "--colour", str(col)], check=True, stdout=subprocess.DEVNULL)
+        return out
+    lit = hashlib.sha256(b"block 25850267").digest()      # a candle (seed[30] & 3 != 0)
+    dim = hashlib.sha256(b"block 25850271").digest()      # no candle
+    assert lit[30] & 3 and not dim[30] & 3
+    got = []
+    for seed, beh, col in ((lit, 0, 6), (dim, 0, 6), (dim, 7, 1)):
+        p = stamped(seed, beh, col)
+        v = run(p, f"wait:{BOOT},peek:D021,peek:D027,peek:D02C," + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35))
+                   + f"wait:100,peek:D021,peek:D027")
+        os.unlink(p)
+        got.append(((v[0] & 15, v[1] & 15, v[2] & 15), v[3:11], (v[11] & 15, v[12] & 15)))
+    (l_c, l_d, l_c2), (d_c, d_d, d_c2), (g_c, g_d, g_c2) = got
+    ok = (l_c == (15, 15, 6) and l_c2 == (15, 15) and d_c == (12, 12, 6) and d_c2 == (12, 12) and g_c[:2] == (11, 12) and g_c2 == (11, 12)
+          and l_d == d_d)
+    return report("ROOMS", ok, f"lit room stone/Tony/buddy {l_c} (again after 100 frames {l_c2}); dim room {d_c} ({d_c2}); "
+                               f"blackout {g_c[:2]} ({g_c2}); the number's chars equal in lit and dim rooms: {l_d == d_d}")
+
+
+TESTS = {"rooms": rooms, "dice": dice, "follow": follow, "dance": dance, "echo": echo, "mirror": mirror, "wander": wander, "shy": shy, "sleeper": sleeper, "glitch": glitch}
 
 if __name__ == "__main__":
     args = sys.argv[1:]

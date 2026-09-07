@@ -35,7 +35,7 @@ def vector(seed, block, behaviour, colour, note):
         "behaviour": behaviour, "mechanic": BEHAVIOURS[behaviour], "token_name": NAMES[behaviour],
         "colour": colour,
         "tune": "intro" if behaviour == 7 else "level",
-        "room": "blackout" if behaviour == 7 else "ordinary",
+        "room": "blackout" if behaviour == 7 else ("dim" if candle is None else "lit"),      # dim: no candle, medium grey stone and Tony
         "wall": None if behaviour == 7 else {
             "density_mode": mode, "density": DENSITY[mode],
             "rows": ["".join("#" if v else "." for v in row) for row in wall],

@@ -71,7 +71,7 @@ INTRO = "src/music/TonyIntro8000_reloc.sid"
 VARIANT = "tony-chamber"
 GLITCH_INK = 0
 GLITCH_DANCE_VOICE = 2
-DIM_NO_CANDLE = False      # --dim-no-candle: a room without a candle has medium grey stone (a look-see, off by default)
+DIM_NO_CANDLE = True       # a room without a candle has medium grey stone (the owner's choice, 2026-09-07); --lit-no-candle turns it off
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -80,6 +80,7 @@ while _args:
     elif _flag == "--variant": VARIANT = _args.pop(0)
     elif _flag == "--glitch-ink": GLITCH_INK = int(_args.pop(0)); assert 0 <= GLITCH_INK <= 15
     elif _flag == "--dim-no-candle": DIM_NO_CANDLE = True
+    elif _flag == "--lit-no-candle": DIM_NO_CANDLE = False
     else: raise SystemExit("unknown option " + _flag)
 _sid = open(MUSIC, "rb").read()
 assert _sid[:4] == b"PSID" and _sid[124:126] == b"\x00\xa0", "the level tune must be a PSID assembled for $A000"
@@ -121,9 +122,9 @@ muralSeed:       .byte {seed_bytes}
 muralBlock:      .byte 2, 5, 8, 5, 0, 2, 6, 7                   // block 25850267
 muralBehaviour:  .byte 0                                        // 0 Follow, 1 Dance
 muralColour:     .byte 5                                        // green, the buddy's original colour
-{"muralDim:        .byte 0                                        // 1 when the room has no candle (the dim room, an option)" + chr(10) if DIM_NO_CANDLE else ""}muralBats:       .byte 0, 0, 0, 0, 0, 0, 0, 0                   // written by the game at room entry, for the tests:
+muralBats:       .byte 0, 0, 0, 0, 0, 0, 0, 0                   // written by the game at room entry, for the tests:
                                                                 // presence, pathA, colA, rowA, pathB, colB, rowB, 0
-
+{"muralDim:        .byte 0                                        // 1 when the room has no candle: the dim room (marker + 58)" + chr(10) if DIM_NO_CANDLE else ""}
 materials:
 ''')
 src = sub(src, """// bat flight paths: long glides with slight rises and dips, all up high
@@ -839,12 +840,13 @@ src = sub(src, """    lda currentColor
     bne !+
         lda #12
     !:
-    ldx #0
+{DIM_TONY}    ldx #0
     !:
         cpx #2
         beq skip
             sta c64lib.SPRITE_0_COLOR, x""")
-src = src.replace("{DIM_CODE}", "    ldy muralDim                // no candle: the stone in medium grey (an option)\n    beq !+\n        lda #12\n    !:\n" if DIM_NO_CANDLE else "")
+src = src.replace("{DIM_CODE}", "    ldy muralDim                // no candle: the stone in medium grey\n    beq !+\n        lda #12\n    !:\n" if DIM_NO_CANDLE else "")
+src = src.replace("{DIM_TONY}", "    ldy muralDim                // and Tony in the same medium grey, as the owner asked\n    beq !+\n        lda #12\n    !:\n" if DIM_NO_CANDLE else "")
 src = sub(src, """    lda buddyHop
     beq notHopping""", """    lda buddyHop
     ora buddyJumpPose

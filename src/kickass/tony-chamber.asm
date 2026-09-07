@@ -509,10 +509,18 @@ doEachFrameTop: {
     bne !+
         lda #11
     !:
+    ldy muralDim                // no candle: the stone in medium grey
+    beq !+
+        lda #12
+    !:
     sta c64lib.BG_COL_0
     lda currentColor
     cpx #7
     bne !+
+        lda #12
+    !:
+    ldy muralDim                // and Tony in the same medium grey, as the owner asked
+    beq !+
         lda #12
     !:
     ldx #0
@@ -3161,7 +3169,11 @@ muralStamp: {
     !:
     lda muralSeed + 30
     and #3
-    beq candleDone
+    bne !+
+        lda #1                      // no candle: remembered for the dim room
+        sta muralDim
+        jmp candleDone
+    !:
     lda muralSeed + 29
     and #15
     tax

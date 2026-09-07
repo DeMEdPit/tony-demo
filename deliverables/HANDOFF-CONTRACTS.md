@@ -171,19 +171,20 @@ rules of section 1):
 
 ## 4. The base program and its parameter block
 
-Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 46,876 bytes,
+Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 46,877 bytes,
 a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program,
 ending at `$BF1A`), sha256
-`d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef`.
+`67dc97bc1e3067151c8a1d24fe4bf18beabf83624c69cdb65182a34aa914ad61`.
 One base for all eight tokens: it carries both of the demo's tunes, the
 level tune for the seven and the intro tune for The Glitch (section 4a).
 
-**FROZEN 2026-09-07.** The base is the file in commit `c0b350a` on the
-branch (the tree the E19 audit ran on; the freeze is declared in the commit
-after it, and `deliverables/contract/base-record.json` names that one).
-From here the program does not change; anything found later is fix-forward
-in new tokens. **Record of the base:** size 46,876 bytes;
-sha256 `d45a129aab3ad60d79b3972f1d3047b99e425a3a8845fead9cf2d67401abd7ef`; keccak256 `cedeb14bf1a39b763c696ab3d7c8fe1b43ffd24edc881efb394783fbb0c72361`; marker at file offset `0x04EC1`, the 42 bytes
+**RE-FROZEN 2026-09-07, later the same day.** The first freeze (commit
+`c0b350a`) was reopened before anything left the repository, for one
+change: a room without a candle is dim (section 4b). The base is now the
+file in the commit named in section 8c and in
+`deliverables/contract/base-record.json`. From here the program does not
+change; anything found later is fix-forward in new tokens. **Record of the base:** size 46,877 bytes;
+sha256 `67dc97bc1e3067151c8a1d24fe4bf18beabf83624c69cdb65182a34aa914ad61`; keccak256 `7677e3e91210588a9ecf781e493646836fbcde6e218173a304eb8253eeadb1ab`; marker at file offset `0x04EC1`, the 42 bytes
 at `0x04EC9`. `tools/freeze_record.py`
 prints these for the working tree, and `deliverables/contract/base-record.json`
 holds the last run, with the eight stamped files' digests.
@@ -241,7 +242,11 @@ How the seed is used (so a test can predict a wall; the Python model is
 (from byte 0, byte 19 and byte 25, each wrapping at 32); `seed[31] & 7` picks
 the wall density through the table `3,3,3,0,0,1,1,2` (fewer bricks common,
 the near-full wall rare); `seed[30] & 3 != 0` means a candle (three in
-four); `seed[29]` places it (low 4 bits column, next 3 bits row). Any 32
+four); `seed[29]` places it (low 4 bits column, next 3 bits row). **A room
+without a candle is dim**: the stone (pillars, floor, ceiling, bricks) and
+Tony drop from light grey (15) to medium grey (12), keyed on that same bit;
+a lit room is unchanged, and The Glitch's blackout (dark grey 11, Tony 12)
+takes precedence (section 4b). Any 32
 bytes are valid; bytes 24–27 choose the bats (paths, start columns and
 rows, presence; the model is `bats()` in `tools/stamp_mural.py`). A wall
 seen at block N cannot be recomputed on chain more
@@ -249,10 +254,27 @@ than 256 blocks later; the renders are impressions, not a series. If a
 permanent "birth wall" is wanted, store the mint block's hash at mint and
 render it alongside (owner's decision, not made).
 
+## 4b. The dim room (decided 2026-09-07)
+
+Three rooms, by their colours, all from the same base and the same block:
+
+| room | when | stone | Tony | the rest |
+|---|---|---|---|---|
+| lit | a candle (`seed[30] & 3 != 0`, three in four) | light grey 15 | light grey 15 | wall, candle, bats, number as before |
+| dim | no candle (`seed[30] & 3 == 0`) | medium grey 12 | medium grey 12 | wall, bats, number as before; the buddy keeps his colour |
+| blackout | behaviour 7, The Glitch | dark grey 11 | grey 12 | no wall, no candle, no bats, number in black |
+
+The candle class is a stored trait per token in the contracts session's
+table, so a candle-less token is a dim room for life, and the description
+can say so ("a dim room" or the owner's words). The engine keeps one byte,
+`muralDim`, at `marker + 58`, set at room entry; a contract never writes it.
+The `rooms` test in `tools/verify_buddy.py` reads the three rooms' colours
+off the machine; `tools/stamp_mural.py --show` names the room.
+
 ## 5. What `tokenURI(id)` must do
 
 1. `prg = base2()` — the frozen program, from the collection's own data
-   blobs (the Tony token's three-blob pattern). The base is 46,876 bytes;
+   blobs (the Tony token's three-blob pattern). The base is 46,877 bytes;
    two SSTORE2-style blobs hold 49,150, so it fits in two with 2,274 bytes
    of headroom. Anything further means a third blob.
 2. Guard: `require(prg[MARKER..MARKER+8] == "MURAL02\0")`.
@@ -400,11 +422,14 @@ ignored by default). If a file bundle is preferred instead, it is:
 
 Fixed on this side, and frozen by the owner's word on 2026-09-07:
 
-- **The base**: one PRG, 46,876 bytes, sha256 above, byte-for-byte
+- **The base**: one PRG, 46,877 bytes, sha256 above, byte-for-byte
   reproducible from the repository; both tunes inside; the eight mechanics,
-  the seeded wall, candle and bats, the blackout with a black number.
-  Commit `c0b350a` on the branch holds the frozen file (tags cannot be
-  pushed from this session, so the commit is the reference).
+  the seeded wall, candle and bats, the dim room without a candle, the
+  blackout with a black number.
+  The commit holding the frozen file is the one named in
+  `deliverables/contract/base-record.json` (tags cannot be pushed from this
+  session, so the commit is the reference); the first freeze's `c0b350a`
+  was reopened the same day for the dim room, section 4b.
 - **The block**: 42 bytes at `marker + 8` (file offset `0x04EC9` in this
   build; find the marker), seed, digits, behaviour, colour. Behaviour 7 is
   the only value that changes the room and the tune.
@@ -435,7 +460,7 @@ not here.
 
 | path | what |
 |---|---|
-| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (46,876 bytes, both tunes; default block: Follow, green, block 25850267) |
+| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (46,877 bytes, both tunes; default block: Follow, green, block 25850267) |
 | `deliverables/prg/minimal64/tony-chamber-the-<name>.prg` | the same build stamped for each of the eight (provisional colours) |
 | `tools/make_chamber.py` | generates the Chamber sources from the buddy build (block, mural, mechanics) |
 | `tools/build_chamber_room.py` | the room map, charset and materials |

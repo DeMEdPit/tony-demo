@@ -920,6 +920,42 @@ way, with a new hash.
 
 ---
 
+## E20 — The dim room: no candle, medium grey · done, re-frozen (2026-09-07)
+
+**Ask (owner):** rooms without a candle (one in four by the seed, a stored
+class per token) could look a little darker, between the lit room and the
+Glitch's blackout: the pillars, floor, ceiling and Tony. Is it possible?
+
+**The palette allows exactly one step:** black 0, dark grey 11, medium grey
+12, light grey 15, white 1. The lit stone is 15, the blackout's 11, so the
+dim room is 12. It is one register: the screen's background colour, the
+same one the blackout sets, so the stone, pillars, floor, ceiling and the
+wall's bricks darken together. A flag byte `muralDim` (marker + 58) is set
+at room entry when `seed[30] & 3 == 0`; the frame interrupt reads it and
+writes 12 to the background and to Tony's sprite colour ("make the user
+controlled Tony match", the owner, mid-build). The Glitch's blackout takes
+precedence (his flag stays 0). The buddy keeps his colour and stands in
+front of the black wall, so his legibility does not change (checked for
+blue and purple, the two dark ones). Shown as a look-see first, then made
+the default; `--lit-no-candle` turns it off.
+
+**Measured on the new base** (46,877 bytes, one byte more, the flag; the
+block at file offset 0x04EC9 unchanged; sha256 `67dc97bc1e3067151c8a1d24fe4bf18beabf83624c69cdb65182a34aa914ad61`, keccak256 `7677e3e91210588a9ecf781e493646836fbcde6e218173a304eb8253eeadb1ab`): the
+new `rooms` test reads the three rooms off the machine, lit 15/15, dim
+12/12, blackout 11/12, with the number's characters equal in lit and dim;
+all ten mechanic tests and the bats pass; wall, candle, digits and room
+colours match the model for eleven seeds including the extremes (0
+mismatches); a clean-checkout rebuild reproduces the hash. The deliverables
+were re-stamped, the vectors regenerated (their `room` field is now lit,
+dim or blackout; 7 of the 32 are dim), and the screenshots redrawn from the
+final build: `screenshots/chamber-dim-no-candle-m64.png` and the crop.
+
+**Freeze:** the morning's freeze (`c0b350a`) was reopened for this before
+anything had left the repository; the base is re-frozen at the commit named
+in `deliverables/contract/base-record.json`.
+
+---
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the
