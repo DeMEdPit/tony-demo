@@ -29,12 +29,22 @@ GREY_RAMP = [1, 15, 12, 11, 0]                     # white, light grey, medium g
 GREY_SOFT = [15, 12, 11, 0]                        # the same floor starting on light grey
 GREY_DUSK = [12, 11, 0]                            # medium grey down to black
 GREY_DARK = [11, 0]                                # dark grey down to black: the room with the lights out
-GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11}
+GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11, "static": 1, "dark-static": 11}
+# a burst of static once per breath: a third of a second of quick flips between the greys, then back to the body's grey
+STATIC = {"static": [(1.20, 15), (1.24, 1), (1.27, 12), (1.30, 1), (1.36, 15), (1.39, 1), (1.45, 12), (1.47, 1), (1.52, 15), (1.54, 1)],
+          "dark-static": [(1.20, 12), (1.24, 11), (1.27, 15), (1.30, 11), (1.36, 12), (1.39, 11), (1.45, 15), (1.47, 11), (1.52, 12), (1.54, 11)]}
 SWEEPS = {"sweep": (0.15, 0.05, 0.45), "comet": (0.22, 0.05, 1.0)}   # seconds per square, rise, decay
 def luma(c): r, g, b = rm.rgb(c); return 0.299 * r + 0.587 * g + 0.114 * b
 LUMINANCE = sorted(rm.STRIP, key=lambda c: -luma(c))
 ROSTER = [6, 3, 7, 14, 5, 10, 4]                   # token 1..7: Shadow, Dancer, Echo, Mirror, Wanderer, Shy, Sleeper
 ORDERS = {"hue": rm.STRIP, "roster": ROSTER, "luminance": LUMINANCE}
+
+def order_of(spec):
+    """A named order, or seven colour names separated by commas."""
+    if spec in ORDERS: return ORDERS[spec]
+    order = [NAMES[n.strip()] for n in spec.split(",")]
+    assert sorted(order) == sorted(rm.STRIP), f"{spec}: need each of the seven colours once"
+    return order
 EXE = "/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell"
 
 def own_ramp(colour):
@@ -110,11 +120,10 @@ def figure_paths(frames, fill, bx, by, glitch, seq, body="cascade"):
             kt = ";".join(f"{k / 7:.4f}" for k in range(8))
             cols = ";".join(rm.PAL[c] for c in seq) + ";" + rm.PAL[seq[0]]
             parts.append(f'<animate attributeName="fill" values="{cols}" keyTimes="{kt}" calcMode="discrete" dur="{CASCADE}" repeatCount="indefinite"/>')
-        elif glitch and body == "static":
-            # a burst of static once per breath: a third of a second of quick flips between the greys, then white again
-            burst = [(1.20, 15), (1.24, 1), (1.27, 12), (1.30, 1), (1.36, 15), (1.39, 1), (1.45, 12), (1.47, 1), (1.52, 15), (1.54, 1)]
+        elif glitch and body in STATIC:
+            burst = STATIC[body]; base = rm.PAL[GREYS[body]]
             kt = "0;" + ";".join(f"{t / (2 * LOOP):.4f}" for t, _ in burst) + ";1"
-            cols = rm.PAL[1] + ";" + ";".join(rm.PAL[c] for _, c in burst) + ";" + rm.PAL[1]
+            cols = base + ";" + ";".join(rm.PAL[c] for _, c in burst) + ";" + base
             parts.append(f'<animate attributeName="fill" values="{cols}" keyTimes="{kt}" calcMode="discrete" dur="{BREATH}" repeatCount="indefinite"/>')
         parts.append('</path>')
     body = "\n".join(parts)
@@ -166,7 +175,7 @@ def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {SIZE} {SIZE}" shape-rendering="crispEdges">',
              '<defs><filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.1"/></filter></defs>',
              f'<rect width="{SIZE}" height="{SIZE}" fill="#000"/>',
-             floor_paths(rows, SIZE - h, scale, fills), tag(token, glitch, gap, dim, seq, tagmode, ORDERS[order]),
+             floor_paths(rows, SIZE - h, scale, fills), tag(token, glitch, gap, dim, seq, tagmode, order_of(order)),
              figure_paths(frames, fill, bx, by, glitch, seq, body), '</svg>']
     return "\n".join(parts) + "\n"
 
@@ -192,10 +201,11 @@ def lineup(files, path, columns=4, t=1.0):
     im = Image.new("RGB", (pad + columns * cw, pad + rows * chh), (24, 24, 24)); d = ImageDraw.Draw(im)
     with sync_playwright() as p:
         b = p.chromium.launch(executable_path=EXE if os.path.exists(EXE) else None)
-        for k, (label, v, f) in enumerate(files):
+        for k, entry in enumerate(files):
+            (label, v, f), tt = entry[:3], (entry[3] if len(entry) > 3 else t)     # an optional fourth field: its own moment
             x, y = pad + (k % columns) * cw, pad + (k // columns) * chh
             d.text((x, y + 2), f"{label} · {v}", fill=(230, 230, 230))
-            im.paste(shoot(b, f, 240, t), (x, y + th)); im.paste(shoot(b, f, 48, t), (x + 240 + pad, y + th + 240 - 48))
+            im.paste(shoot(b, f, 240, tt), (x, y + th)); im.paste(shoot(b, f, 48, tt), (x + 240 + pad, y + th + 240 - 48))
         b.close()
     im.save(path); print(path)
 
@@ -249,10 +259,11 @@ def main():
     ap.add_argument("--tag-dim", type=float, default=0.6, help="opacity of the resting tag squares; the live one rises to 1")
     ap.add_argument("--glitch-start", default="light-red", choices=sorted(NAMES), help="the colour the Glitch's cascade starts on")
     ap.add_argument("--glitch-floor", default="own", choices=["own", "spectrum", "luminance", "follow", "grey", "grey-soft", "grey-dusk", "grey-dark"])
-    ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
+    ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static", "dark-static"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
     ap.add_argument("--glitch-tag", default="cascade", choices=["cascade", "sweep", "comet"], help="his tag: one square per loop, or a wave across the row once per breath")
-    ap.add_argument("--tag-order", default="hue", choices=sorted(ORDERS), help="the order of the seven squares: round the colour wheel, the token roster, or brightest first")
-    ap.add_argument("--order-strip", help="sheet of the first token with the tag in each of the three orders")
+    ap.add_argument("--tag-order", default="hue", help="the order of the seven squares: hue (round the colour wheel), roster, luminance, or seven colour names separated by commas")
+    ap.add_argument("--order-strip", help="sheet of the first token with the tag in each of the orders given by --orders")
+    ap.add_argument("--orders", nargs="*", default=["hue", "roster", "luminance"], help="label=order entries for --order-strip")
     ap.add_argument("--fps", type=float, default=10); ap.add_argument("--seconds", type=float, default=2 * 2 * LOOP)
     ap.add_argument("--still", type=float, default=1.0, help="the moment (seconds) the sheets are taken at")
     ap.add_argument("--out", default="deliverables/assets/mock")
@@ -284,8 +295,11 @@ def main():
               a.dim_strip, crops=((1.8, "peak"), (0.0, "resting")))
     if a.order_strip:
         names = {"hue": "round the colour wheel (now)", "roster": "token order, Shadow to Sleeper", "luminance": "brightest first"}
-        strip([(f"{a.tokens[0]} · {names[o]}", svg(frames, a.tokens[0], a.floor, a.tag_gap, a.tag_dim, order=o)) for o in ("hue", "roster", "luminance")],
-              a.order_strip, crops=((1.8, "peak"),))
+        docs = []
+        for o in a.orders:
+            label, spec = o.split("=", 1) if "=" in o else (names.get(o, o), o)
+            docs.append((label, svg(frames, a.tokens[0], a.floor, a.tag_gap, a.tag_dim, order=spec)))
+        strip(docs, a.order_strip, crops=((1.8, "peak"),))
     if a.glitch_sheet:
         gs = []
         for mode, start in GLITCH_SHEET:
