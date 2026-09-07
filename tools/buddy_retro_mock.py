@@ -15,7 +15,7 @@ def rgb(i): h = PAL[i]; return tuple(int(h[k:k + 2], 16) for k in (1, 3, 5))
 # the seven tokens: colour index, and a ramp (top to bottom) for the gradient, ending in black
 TOKENS = {"the-shadow": (6, [14, 6, 0]), "the-dancer": (3, [1, 3, 14, 6, 0]), "the-echo": (7, [1, 7, 8, 9, 0]),
           "the-mirror": (14, [3, 14, 6, 0]), "the-wanderer": (5, [13, 5, 0]), "the-shy": (10, [1, 10, 2, 9, 0]),
-          "the-sleeper": (4, [10, 4, 6, 0])}
+          "the-sleeper": (4, [10, 4, 0])}
 STRIP = [10, 7, 5, 3, 14, 6, 4]           # warm to cool, the seven token colours
 BAYER = [[0, 2], [3, 1]]                    # 2x2 ordered dither thresholds (0..3)
 
