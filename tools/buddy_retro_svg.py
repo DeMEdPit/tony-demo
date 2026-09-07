@@ -33,6 +33,8 @@ GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11}
 SWEEPS = {"sweep": (0.15, 0.05, 0.45), "comet": (0.22, 0.05, 1.0)}   # seconds per square, rise, decay
 def luma(c): r, g, b = rm.rgb(c); return 0.299 * r + 0.587 * g + 0.114 * b
 LUMINANCE = sorted(rm.STRIP, key=lambda c: -luma(c))
+ROSTER = [6, 3, 7, 14, 5, 10, 4]                   # token 1..7: Shadow, Dancer, Echo, Mirror, Wanderer, Shy, Sleeper
+ORDERS = {"hue": rm.STRIP, "roster": ROSTER, "luminance": LUMINANCE}
 EXE = "/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell"
 
 def own_ramp(colour):
@@ -123,14 +125,14 @@ def figure_paths(frames, fill, bx, by, glitch, seq, body="cascade"):
                 f'calcMode="discrete" dur="{bt.BLINK_PERIOD:g}s" repeatCount="indefinite"/>\n' + body + '\n</g>')
     return body
 
-def tag(token, glitch, gap, dim, seq, tagmode="cascade"):
+def tag(token, glitch, gap, dim, seq, tagmode="cascade", order=None):
     """Seven 2x2 squares straight across the top left, at gap pixels apart (may be a half pixel), the
     resting ones at opacity dim. Drawn anti-aliased so a half-pixel gap never snaps unevenly."""
     colour = rm.TOKENS.get(token, (None, None))[0]
     kt = ";".join(f"{k / 7:.4f}" for k in range(8))
     spline = 'keyTimes="0;0.5;1" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1"'
     parts = ['<g shape-rendering="geometricPrecision">']
-    for i, c in enumerate(rm.STRIP):
+    for i, c in enumerate(order or rm.STRIP):
         x = f"{2 + i * (2 + gap):g}"
         if glitch or c == colour:
             if glitch and tagmode in SWEEPS:
@@ -154,7 +156,7 @@ def tag(token, glitch, gap, dim, seq, tagmode="cascade"):
     parts.append('</g>')
     return "\n".join(parts)
 
-def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-red", body="cascade", tagmode="cascade"):
+def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-red", body="cascade", tagmode="cascade", order="hue"):
     glitch = (token == "the-glitch")
     k = rm.STRIP.index(NAMES[start]); seq = rm.STRIP[k:] + rm.STRIP[:k]
     rows, h, scale, fills = floor(token, depth, glitch, mode, seq)
@@ -164,7 +166,7 @@ def svg(frames, token, depth="deep", gap=1.0, dim=0.6, mode="own", start="light-
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {SIZE} {SIZE}" shape-rendering="crispEdges">',
              '<defs><filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.1"/></filter></defs>',
              f'<rect width="{SIZE}" height="{SIZE}" fill="#000"/>',
-             floor_paths(rows, SIZE - h, scale, fills), tag(token, glitch, gap, dim, seq, tagmode),
+             floor_paths(rows, SIZE - h, scale, fills), tag(token, glitch, gap, dim, seq, tagmode, ORDERS[order]),
              figure_paths(frames, fill, bx, by, glitch, seq, body), '</svg>']
     return "\n".join(parts) + "\n"
 
@@ -249,6 +251,8 @@ def main():
     ap.add_argument("--glitch-floor", default="own", choices=["own", "spectrum", "luminance", "follow", "grey", "grey-soft", "grey-dusk", "grey-dark"])
     ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
     ap.add_argument("--glitch-tag", default="cascade", choices=["cascade", "sweep", "comet"], help="his tag: one square per loop, or a wave across the row once per breath")
+    ap.add_argument("--tag-order", default="hue", choices=sorted(ORDERS), help="the order of the seven squares: round the colour wheel, the token roster, or brightest first")
+    ap.add_argument("--order-strip", help="sheet of the first token with the tag in each of the three orders")
     ap.add_argument("--fps", type=float, default=10); ap.add_argument("--seconds", type=float, default=2 * 2 * LOOP)
     ap.add_argument("--still", type=float, default=1.0, help="the moment (seconds) the sheets are taken at")
     ap.add_argument("--out", default="deliverables/assets/mock")
@@ -268,7 +272,9 @@ def main():
             v += f"-{a.glitch_body}" if a.glitch_body != "cascade" else ""
             v += f"-{a.glitch_tag}" if a.glitch_tag != "cascade" else ""
         p = os.path.join(a.out, f"{t}-retro-{v}.svg")
-        open(p, "w").write(svg(frames, t, a.floor, a.tag_gap, a.tag_dim, a.glitch_floor, a.glitch_start, a.glitch_body, a.glitch_tag)); files.append((t, v, p))
+        v += f"-{a.tag_order}" if a.tag_order != "hue" else ""
+        p = os.path.join(a.out, f"{t}-retro-{v}.svg")
+        open(p, "w").write(svg(frames, t, a.floor, a.tag_gap, a.tag_dim, a.glitch_floor, a.glitch_start, a.glitch_body, a.glitch_tag, a.tag_order)); files.append((t, v, p))
         print(f"{p}: {os.path.getsize(p)} bytes")
     if a.lineup: lineup(files, a.lineup, t=a.still)
     if a.tag_strip:
@@ -276,6 +282,10 @@ def main():
     if a.dim_strip:
         strip([(f"{a.tokens[0]} · resting squares at {d:g}", svg(frames, a.tokens[0], a.floor, a.tag_gap, d)) for d in (0.6, 0.45, 0.3)],
               a.dim_strip, crops=((1.8, "peak"), (0.0, "resting")))
+    if a.order_strip:
+        names = {"hue": "round the colour wheel (now)", "roster": "token order, Shadow to Sleeper", "luminance": "brightest first"}
+        strip([(f"{a.tokens[0]} · {names[o]}", svg(frames, a.tokens[0], a.floor, a.tag_gap, a.tag_dim, order=o)) for o in ("hue", "roster", "luminance")],
+              a.order_strip, crops=((1.8, "peak"),))
     if a.glitch_sheet:
         gs = []
         for mode, start in GLITCH_SHEET:

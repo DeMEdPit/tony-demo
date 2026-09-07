@@ -84,6 +84,8 @@ field report on the first play-test and what it changed.
   measured findings about the deployed bytes.
 - **`EXPERIMENTS.md`** — the experiment ledger: every experiment started,
   its status, what it produced and taught, what is open.
+- **`THUMBNAILS.md`** — the token thumbnail redesign (the retro layout):
+  what is decided, what is open, sizes, how to regenerate the mock-ups.
 - **`TRAINER.md`** — the trainer builds and the full ROM-free verification
   (on-target runs + static scan).
 - **`VAULT.md`** — the Idol Vault board: design, route, how it's made.

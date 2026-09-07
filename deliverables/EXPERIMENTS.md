@@ -956,6 +956,14 @@ in `deliverables/contract/base-record.json`.
 
 ---
 
+## E21 — Token thumbnails: the retro layout · mock-ups (2026-09-07)
+
+The thumbnail redesigned as mock-ups only: the seven colours as a row of squares top
+left, the buddy centred, a dithered gradient floor under his feet; the Glitch white
+with bursts of static, a sweep of light across his squares, a grey floor. Decisions,
+open items, sizes and the regeneration commands are in `THUMBNAILS.md`. The token
+SVGs, the PRG, the vectors and the freeze are untouched.
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the
