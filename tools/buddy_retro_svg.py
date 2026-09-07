@@ -29,7 +29,9 @@ GREY_RAMP = [1, 15, 12, 11, 0]                     # white, light grey, medium g
 GREY_SOFT = [15, 12, 11, 0]                        # the same floor starting on light grey
 GREY_DUSK = [12, 11, 0]                            # medium grey down to black
 GREY_DARK = [11, 0]                                # dark grey down to black: the room with the lights out
-GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11, "static": 1, "dark-static": 11}
+GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11, "static": 1, "dark-static": 11, "sparks": 1, "dark-sparks": 11}
+# "sparks": the same bursts, but the light-grey flips become colours, a different pair each burst, over a seven-burst cycle
+SPARKS = [3, 10, 6, 7, 14, 4, 5, 7, 3, 4, 10, 5, 14, 6]          # a scrambled deal: each of the seven twice, never twice running
 # a burst of static once per breath: a third of a second of quick flips between the greys, then back to the body's grey
 STATIC = {"static": [(1.20, 15), (1.24, 1), (1.27, 12), (1.30, 1), (1.36, 15), (1.39, 1), (1.45, 12), (1.47, 1), (1.52, 15), (1.54, 1)],
           "dark-static": [(1.20, 12), (1.24, 11), (1.27, 15), (1.30, 11), (1.36, 12), (1.39, 11), (1.45, 15), (1.47, 11), (1.52, 12), (1.54, 11)]}
@@ -126,6 +128,16 @@ def figure_paths(frames, fill, bx, by, glitch, seq, body="cascade"):
             kt = "0;" + ";".join(f"{t / (2 * LOOP):.4f}" for t, _ in burst) + ";1"
             cols = base + ";" + ";".join(rm.PAL[c] for _, c in burst) + ";" + base
             parts.append(f'<animate attributeName="fill" values="{cols}" keyTimes="{kt}" calcMode="discrete" dur="{BREATH}" repeatCount="indefinite"/>')
+        elif glitch and body in ("sparks", "dark-sparks"):
+            burst = STATIC["static" if body == "sparks" else "dark-static"]; base = rm.PAL[GREYS[body]]
+            import itertools
+            cycle = 7 * 2 * LOOP; times, vals = [], []; deal = itertools.cycle(SPARKS)
+            for k in range(7):
+                for t, c in burst:
+                    times.append(k * 2 * LOOP + t); vals.append(rm.PAL[next(deal)] if c == 15 else rm.PAL[c])
+            kt = "0;" + ";".join(f"{t / cycle:.5f}" for t in times) + ";1"
+            cols = base + ";" + ";".join(vals) + ";" + base
+            parts.append(f'<animate attributeName="fill" values="{cols}" keyTimes="{kt}" calcMode="discrete" dur="{cycle:g}s" repeatCount="indefinite"/>')
         parts.append('</path>')
     body = "\n".join(parts)
     if glitch:
@@ -229,8 +241,16 @@ def strip(docs, path, crops=((1.0, "peak"),), crop_h=60):
         b.close()
     im.save(path); print(path)
 
-def gif(files, prefix, seconds, fps, px=240):
-    """Animated GIFs of the files, seeking one page through the SVG clock."""
+def burst_times(breaths=2, coarse=0.1, fine=0.02, window=(1.15, 1.62)):
+    """Moments for a GIF: coarse steps, and fine steps through each breath's static burst; (t, milliseconds)."""
+    out, t = [], 0.0
+    while t < breaths * 2 * LOOP:
+        step = fine if window[0] <= (t % (2 * LOOP)) < window[1] else coarse
+        out.append((round(t, 3), int(step * 1000))); t += step
+    return out
+
+def gif(files, prefix, seconds, fps, px=240, times=None):
+    """Animated GIFs of the files, seeking one page through the SVG clock; times overrides seconds/fps with (t, ms) pairs."""
     import io
     from playwright.sync_api import sync_playwright
     from PIL import Image
@@ -239,13 +259,14 @@ def gif(files, prefix, seconds, fps, px=240):
         for label, v, f in files:
             pg = b.new_page(viewport={"width": px, "height": px}); pg.goto("file://" + os.path.abspath(f)); pg.wait_for_timeout(150)
             pg.evaluate("() => { const s=document.querySelector('svg'); s.setAttribute('width', innerWidth); s.setAttribute('height', innerHeight); s.pauseAnimations(); }")
+            moments = times or [(i / fps, int(1000 / fps)) for i in range(int(seconds * fps))]
             fr = []
-            for i in range(int(seconds * fps)):
-                pg.evaluate("t => document.querySelector('svg').setCurrentTime(t)", i / fps); pg.wait_for_timeout(20)
+            for t, _ in moments:
+                pg.evaluate("t => document.querySelector('svg').setCurrentTime(t)", t); pg.wait_for_timeout(20)
                 fr.append(Image.open(io.BytesIO(pg.screenshot())).convert("RGB"))
             pg.close()
             out = f"{prefix}-{label}-{v}.gif"
-            fr[0].save(out, save_all=True, append_images=fr[1:], duration=int(1000 / fps), loop=0); print(out)
+            fr[0].save(out, save_all=True, append_images=fr[1:], duration=[ms for _, ms in moments], loop=0); print(out)
         b.close()
 
 GLITCH_SHEET = [("own", "light-red"), ("spectrum", "light-red"), ("luminance", "light-red"), ("grey", "light-red"),
@@ -260,13 +281,14 @@ def main():
     ap.add_argument("--tag-dim", type=float, default=0.6, help="opacity of the resting tag squares; the live one rises to 1")
     ap.add_argument("--glitch-start", default="light-red", choices=sorted(NAMES), help="the colour the Glitch's cascade starts on")
     ap.add_argument("--glitch-floor", default="own", choices=["own", "spectrum", "luminance", "follow", "grey", "grey-soft", "grey-dusk", "grey-dark"])
-    ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static", "dark-static"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
+    ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static", "dark-static", "sparks", "dark-sparks"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
     ap.add_argument("--glitch-tag", default="cascade", choices=["cascade", "sweep", "comet"], help="his tag: one square per loop, or a wave across the row once per breath")
     ap.add_argument("--tag-order", default="hue", help="the order of the seven squares: hue (round the colour wheel), roster, luminance, or seven colour names separated by commas")
     ap.add_argument("--order-strip", help="sheet of the first token with the tag in each of the orders given by --orders")
     ap.add_argument("--orders", nargs="*", default=["hue", "roster", "luminance"], help="label=order entries for --order-strip")
     ap.add_argument("--fps", type=float, default=10); ap.add_argument("--seconds", type=float, default=2 * 2 * LOOP)
     ap.add_argument("--still", type=float, default=1.0, help="the moment (seconds) the sheets are taken at")
+    ap.add_argument("--burst-gif", action="store_true", help="GIF frames every 20 ms through the static bursts, every 100 ms elsewhere, two breaths")
     ap.add_argument("--out", default="deliverables/assets/mock")
     ap.add_argument("--render"); ap.add_argument("--gif")
     ap.add_argument("--lineup", help="grid sheet of all the tokens given, 240 px and 48 px")
@@ -311,7 +333,7 @@ def main():
         import buddy_badge_mock as bm
         bm.LOOP = LOOP
         bm.render(files, a.render, None)
-    if a.gif: gif(files, a.gif, a.seconds, a.fps)
+    if a.gif: gif(files, a.gif, a.seconds, a.fps, times=burst_times() if a.burst_gif else None)
 
 if __name__ == "__main__":
     main()
