@@ -373,7 +373,8 @@ Fixed on this side (2026-09-07), pending only the owner's word "frozen":
 - **The base**: one PRG, 46,876 bytes, sha256 above, byte-for-byte
   reproducible from the repository; both tunes inside; the eight mechanics,
   the seeded wall, candle and bats, the blackout with a black number.
-  The git tag `chamber-base-candidate-1` marks the commit.
+  Commit `bff7ba8` on the branch is the build (tags cannot be pushed from
+  this session; the local tag `chamber-base-candidate-1` points there).
 - **The block**: 42 bytes at `marker + 8` (file offset `0x04EC9` in this
   build; find the marker), seed, digits, behaviour, colour. Behaviour 7 is
   the only value that changes the room and the tune.
