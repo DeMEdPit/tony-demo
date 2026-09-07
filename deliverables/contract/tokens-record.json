@@ -3,7 +3,7 @@
   "directory": "deliverables/assets/tokens",
   "generator": "tools/buddy_retro_svg.py --final",
   "commit": "9880f03e5330605b1246acba63fc9671f5935d88",
-  "working_tree_clean": false,
+  "working_tree_clean": true,
   "frozen": {
    "date": "2026-09-07",
    "commit": "9880f03e5330605b1246acba63fc9671f5935d88",
@@ -15,7 +15,9 @@
    "checks": 68,
    "failed": 0,
    "result": "ALL OK"
-  }
+  },
+  "files_unchanged_since_freeze": true,
+  "record_commit_note": "the record itself was committed after the freeze commit, as the base's was after 21b95e3"
  },
  "files": [
   {
