@@ -1,0 +1,1811 @@
+{
+ "base_prg": "tony-chamber.prg",
+ "base_size": 46876,
+ "base_sha256": "044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf",
+ "marker": "MURAL02\\0",
+ "marker_file_offset": 20161,
+ "block_file_offset": 20169,
+ "block_bytes": 42,
+ "layout": "seed[32] + digits[8] (0-9 each, most significant first) + behaviour[1] (0-7) + colour[1] (0-15)",
+ "density_table": [
+  3,
+  3,
+  3,
+  0,
+  0,
+  1,
+  1,
+  2
+ ],
+ "mechanics": [
+  "Follow",
+  "Dance",
+  "Echo",
+  "Mirror",
+  "Wander",
+  "Shy",
+  "Sleeper",
+  "Glitch"
+ ],
+ "token_names": [
+  "The Shadow",
+  "The Dancer",
+  "The Echo",
+  "The Mirror",
+  "The Wanderer",
+  "The Shy One",
+  "The Sleeper",
+  "The Glitch"
+ ],
+ "provisional_colours": [
+  6,
+  3,
+  7,
+  14,
+  5,
+  10,
+  4,
+  1
+ ],
+ "vectors": [
+  {
+   "note": "sha256('block N'), as the stamped deliverables",
+   "block_number": 25850267,
+   "bytes_hex": "c83fa38f73ca43b5261d059cb83a8ab717d26439364934684c5e21831284be8c02050805000206070005",
+   "seed_hex": "c83fa38f73ca43b5261d059cb83a8ab717d26439364934684c5e21831284be8c",
+   "digits": [
+    2,
+    5,
+    8,
+    5,
+    0,
+    2,
+    6,
+    7
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     "....#.....##.##",
+     "........#.....#",
+     "...##......#..#",
+     "....#....#...#.",
+     "...#......#....",
+     "#.........#..#.",
+     ".###..#...#....",
+     "...#.......#.#.",
+     "#.#...##.....##",
+     "#.#.#..#..#...."
+    ],
+    "bricks": 38
+   },
+   "candle": {
+    "column": 14,
+    "top_row": 4
+   },
+   "bats": {
+    "presence": "right only",
+    "left": {
+     "path": 4,
+     "path_name": "glide with two hops",
+     "travel_px": 56,
+     "column": 3,
+     "row": 8
+    },
+    "right": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 25,
+     "row": 6
+    }
+   }
+  },
+  {
+   "note": "sha256('block N'), as the stamped deliverables",
+   "block_number": 25850271,
+   "bytes_hex": "c81ddbfa7a8f063c30c29b967a2d71cfbadb5bf5e641758c9de6d276c409883a02050805000207010005",
+   "seed_hex": "c81ddbfa7a8f063c30c29b967a2d71cfbadb5bf5e641758c9de6d276c409883a",
+   "digits": [
+    2,
+    5,
+    8,
+    5,
+    0,
+    2,
+    7,
+    1
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "##.............",
+     "..#.......#....",
+     "......#...#...#",
+     ".........#.....",
+     ".......#....##.",
+     ".........#.....",
+     "..........#.#..",
+     "..........#....",
+     "........#.....#",
+     "....##.#......."
+    ],
+    "bricks": 20
+   },
+   "candle": null,
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 5,
+     "row": 8
+    },
+    "right": {
+     "path": 4,
+     "path_name": "glide with two hops",
+     "travel_px": 56,
+     "column": 26,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('block N'), as the stamped deliverables",
+   "block_number": 25850251,
+   "bytes_hex": "bc28646cc8ac2ed52522f841f79949a68edf258012f449448d1ad27198b9527002050805000205010005",
+   "seed_hex": "bc28646cc8ac2ed52522f841f79949a68edf258012f449448d1ad27198b95270",
+   "digits": [
+    2,
+    5,
+    8,
+    5,
+    0,
+    2,
+    5,
+    1
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "...............",
+     "..##.........#.",
+     "...............",
+     "...........#..#",
+     "......#........",
+     ".......#.#....#",
+     "........#......",
+     "...#...........",
+     "..#..#.........",
+     ".##..#........."
+    ],
+    "bricks": 16
+   },
+   "candle": {
+    "column": 24,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "left only",
+    "left": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 3,
+     "row": 4
+    },
+    "right": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 26,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('block N'), as the stamped deliverables",
+   "block_number": 25850252,
+   "bytes_hex": "c30e0e5b31ce821a720d9ffcd300897e7c6723219208e88352ebc43b1ed51f7302050805000205020005",
+   "seed_hex": "c30e0e5b31ce821a720d9ffcd300897e7c6723219208e88352ebc43b1ed51f73",
+   "digits": [
+    2,
+    5,
+    8,
+    5,
+    0,
+    2,
+    5,
+    2
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     ".......#......#",
+     ".....#....#..#.",
+     ".........#.#...",
+     ".#.#.....#.....",
+     "......##..#....",
+     ".##..#..#.#.#..",
+     ".###...#.#..##.",
+     "...........#...",
+     "....###..#.##..",
+     "...#....#......"
+    ],
+    "bricks": 35
+   },
+   "candle": {
+    "column": 16,
+    "top_row": 6
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 2,
+     "path_name": "short flutter",
+     "travel_px": 32,
+     "column": 4,
+     "row": 5
+    },
+    "right": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 28,
+     "row": 2
+    }
+   }
+  },
+  {
+   "note": "sha256('block N'), as the stamped deliverables",
+   "block_number": 25850254,
+   "bytes_hex": "507d5d613973b56502ed2471899c8a19c8d66037b24cbcca119951082f77a1de02050805000205040005",
+   "seed_hex": "507d5d613973b56502ed2471899c8a19c8d66037b24cbcca119951082f77a1de",
+   "digits": [
+    2,
+    5,
+    8,
+    5,
+    0,
+    2,
+    5,
+    4
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 1,
+    "density": "half",
+    "rows": [
+     ".#.#.....#####.",
+     "#.#.###.#.##...",
+     ".#..###..#.###.",
+     ".###.##.#.#.##.",
+     ".#.#......#.###",
+     ".##.#..#..#...#",
+     "##...##...#..##",
+     "..###..#...#.#.",
+     "...##..###..#..",
+     ".##.#.##..##..."
+    ],
+    "bricks": 70
+   },
+   "candle": {
+    "column": 20,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 1,
+     "path_name": "shorter glide",
+     "travel_px": 48,
+     "column": 4,
+     "row": 3
+    },
+    "right": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 25,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('block N'), as the stamped deliverables",
+   "block_number": 25850256,
+   "bytes_hex": "cebbbd843b2bde4c93f88d636c133b31de3efcc61f94758e8eca12fa0d36ce6702050805000205060005",
+   "seed_hex": "cebbbd843b2bde4c93f88d636c133b31de3efcc61f94758e8eca12fa0d36ce67",
+   "digits": [
+    2,
+    5,
+    8,
+    5,
+    0,
+    2,
+    5,
+    6
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 2,
+    "density": "three-quarter",
+    "rows": [
+     "##..###.#.#####",
+     "##.####.#####.#",
+     ".##.#######.#.#",
+     "#####.####..#.#",
+     "###.#####.#####",
+     "###.##.########",
+     "#.####.##.#####",
+     "#.######.###.##",
+     "#.####.###.####",
+     "...############"
+    ],
+    "bricks": 119
+   },
+   "candle": {
+    "column": 18,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 6,
+     "path_name": "long glide with a dip",
+     "travel_px": 64,
+     "column": 3,
+     "row": 4
+    },
+    "right": {
+     "path": 1,
+     "path_name": "shorter glide",
+     "travel_px": 48,
+     "column": 26,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26000000,
+   "bytes_hex": "b5ad45dc932b245a2f88f729ce30a4a098c868bd549de8bf8d8641b37a5e850102060000000000000006",
+   "seed_hex": "b5ad45dc932b245a2f88f729ce30a4a098c868bd549de8bf8d8641b37a5e8501",
+   "digits": [
+    2,
+    6,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 6,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "#....#.........",
+     "........#.#..#.",
+     ".....#..#......",
+     "..#............",
+     "......#....#...",
+     "......#.#.#....",
+     ".....#.........",
+     ".#.............",
+     "........#...#..",
+     ".#.........#.#."
+    ],
+    "bricks": 20
+   },
+   "candle": {
+    "column": 14,
+    "top_row": 6
+   },
+   "bats": {
+    "presence": "right only",
+    "left": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 3,
+     "row": 8
+    },
+    "right": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 25,
+     "row": 2
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26007919,
+   "bytes_hex": "755857880e120d9459f8a967958f4bf832e02acdb94518de504f35c6443d818a02060000070901090103",
+   "seed_hex": "755857880e120d9459f8a967958f4bf832e02acdb94518de504f35c6443d818a",
+   "digits": [
+    2,
+    6,
+    0,
+    0,
+    7,
+    9,
+    1,
+    9
+   ],
+   "behaviour": 1,
+   "mechanic": "Dance",
+   "token_name": "The Dancer",
+   "colour": 3,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     ".#...#.#...#...",
+     "..#...#........",
+     "......##.......",
+     ".......#......#",
+     ".#...#.......#.",
+     ".........#.....",
+     "...............",
+     "....#.#........",
+     ".#.#...........",
+     "..............."
+    ],
+    "bricks": 18
+   },
+   "candle": {
+    "column": 32,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 4,
+     "row": 9
+    },
+    "right": {
+     "path": 1,
+     "path_name": "shorter glide",
+     "travel_px": 48,
+     "column": 29,
+     "row": 8
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26015838,
+   "bytes_hex": "da360ee2266b1c52042a4d8735d594f85d129c90d4ddc1cc5eab4f491787270402060001050803080207",
+   "seed_hex": "da360ee2266b1c52042a4d8735d594f85d129c90d4ddc1cc5eab4f4917872704",
+   "digits": [
+    2,
+    6,
+    0,
+    1,
+    5,
+    8,
+    3,
+    8
+   ],
+   "behaviour": 2,
+   "mechanic": "Echo",
+   "token_name": "The Echo",
+   "colour": 7,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     "#..#.......#.#.",
+     ".....##..##....",
+     ".......#...#..#",
+     ".#.....#....#..",
+     "..#............",
+     "...#......#.#..",
+     "...###.....#..#",
+     "#.#.......#.#..",
+     "....#....#.....",
+     ".......#.....#."
+    ],
+    "bricks": 31
+   },
+   "candle": {
+    "column": 20,
+    "top_row": 4
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 6,
+     "path_name": "long glide with a dip",
+     "travel_px": 64,
+     "column": 5,
+     "row": 5
+    },
+    "right": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 28,
+     "row": 3
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26023757,
+   "bytes_hex": "801d8b5450e12d2a81b26bd0bdab479dbac079fa9717d4ba0e2df9bc8d07bb1d0206000203070507030e",
+   "seed_hex": "801d8b5450e12d2a81b26bd0bdab479dbac079fa9717d4ba0e2df9bc8d07bb1d",
+   "digits": [
+    2,
+    6,
+    0,
+    2,
+    3,
+    7,
+    5,
+    7
+   ],
+   "behaviour": 3,
+   "mechanic": "Mirror",
+   "token_name": "The Mirror",
+   "colour": 14,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 1,
+    "density": "half",
+    "rows": [
+     "#..........###.",
+     "##...#.##.#.#.#",
+     "...#.#....###..",
+     "..#..#.##.#..#.",
+     "#.#.#......##.#",
+     "#..#..##.#.####",
+     ".#....#.####.##",
+     ".#.#.##.#...###",
+     "#..###.##.###.#",
+     ".##.......####."
+    ],
+    "bricks": 70
+   },
+   "candle": {
+    "column": 20,
+    "top_row": 4
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 6,
+     "path_name": "long glide with a dip",
+     "travel_px": 64,
+     "column": 3,
+     "row": 7
+    },
+    "right": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 25,
+     "row": 9
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26031676,
+   "bytes_hex": "82853c20b7e39fd5593a04bc3f0d2727b3a0dcf2692b92c182684ff1f9d2dc7002060003010607060405",
+   "seed_hex": "82853c20b7e39fd5593a04bc3f0d2727b3a0dcf2692b92c182684ff1f9d2dc70",
+   "digits": [
+    2,
+    6,
+    0,
+    3,
+    1,
+    6,
+    7,
+    6
+   ],
+   "behaviour": 4,
+   "mechanic": "Wander",
+   "token_name": "The Wanderer",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "...............",
+     "#..#...........",
+     "..#.......#....",
+     "...............",
+     "...........#..#",
+     "##...........#.",
+     ".#.#....#......",
+     "............#.#",
+     "..........#....",
+     ".........#....."
+    ],
+    "bricks": 16
+   },
+   "candle": null,
+   "bats": {
+    "presence": "left only",
+    "left": {
+     "path": 2,
+     "path_name": "short flutter",
+     "travel_px": 32,
+     "column": 2,
+     "row": 2
+    },
+    "right": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 28,
+     "row": 3
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26039595,
+   "bytes_hex": "aa23a3af72f8686185a2da17fbd6bcf31879454a21c7f709c686f88378de5af10206000309050905050a",
+   "seed_hex": "aa23a3af72f8686185a2da17fbd6bcf31879454a21c7f709c686f88378de5af1",
+   "digits": [
+    2,
+    6,
+    0,
+    3,
+    9,
+    5,
+    9,
+    5
+   ],
+   "behaviour": 5,
+   "mechanic": "Shy",
+   "token_name": "The Shy One",
+   "colour": 10,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "......#...#....",
+     ".#.....##..#...",
+     "...........#...",
+     ".............#.",
+     "...........#..#",
+     ".....#...#.#...",
+     ".#..#.####.....",
+     ".........#.....",
+     "#......#.......",
+     "..#.#.........."
+    ],
+    "bricks": 24
+   },
+   "candle": {
+    "column": 14,
+    "top_row": 6
+   },
+   "bats": {
+    "presence": "right only",
+    "left": {
+     "path": 6,
+     "path_name": "long glide with a dip",
+     "travel_px": 64,
+     "column": 2,
+     "row": 8
+    },
+    "right": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 24,
+     "row": 9
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26047514,
+   "bytes_hex": "98c15860ca5ebb463468135d3ccc6de5853c1d4c9a5847037f6392d1e41c4e1e02060004070501040604",
+   "seed_hex": "98c15860ca5ebb463468135d3ccc6de5853c1d4c9a5847037f6392d1e41c4e1e",
+   "digits": [
+    2,
+    6,
+    0,
+    4,
+    7,
+    5,
+    1,
+    4
+   ],
+   "behaviour": 6,
+   "mechanic": "Sleeper",
+   "token_name": "The Sleeper",
+   "colour": 4,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 1,
+    "density": "half",
+    "rows": [
+     "#..##...##.....",
+     "#.#.##....##...",
+     "..##..#.#..#.##",
+     "##.#.###.##.#..",
+     ".##...##.#...##",
+     ".#......#..##.#",
+     ".###.#..####..#",
+     "#..##...##.##.#",
+     "###..#.##....#.",
+     "#..####.....###"
+    ],
+    "bricks": 71
+   },
+   "candle": {
+    "column": 30,
+    "top_row": 6
+   },
+   "bats": {
+    "presence": "left only",
+    "left": {
+     "path": 7,
+     "path_name": "tight flutter",
+     "travel_px": 24,
+     "column": 9,
+     "row": 5
+    },
+    "right": {
+     "path": 4,
+     "path_name": "glide with two hops",
+     "travel_px": 56,
+     "column": 26,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26055433,
+   "bytes_hex": "6f1c35579bbf3607ee6f054d179b7a62f15ea684a10d85d48bc3887f95b5faaf02060005050403030701",
+   "seed_hex": "6f1c35579bbf3607ee6f054d179b7a62f15ea684a10d85d48bc3887f95b5faaf",
+   "digits": [
+    2,
+    6,
+    0,
+    5,
+    5,
+    4,
+    3,
+    3
+   ],
+   "behaviour": 7,
+   "mechanic": "Glitch",
+   "token_name": "The Glitch",
+   "colour": 1,
+   "tune": "intro",
+   "room": "blackout",
+   "wall": null,
+   "candle": null,
+   "bats": null
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26063352,
+   "bytes_hex": "3747d57a30d7f2e91a6ef5755d21da0c244d39ca91069756736dd2f9fed4808902060006030305020006",
+   "seed_hex": "3747d57a30d7f2e91a6ef5755d21da0c244d39ca91069756736dd2f9fed48089",
+   "digits": [
+    2,
+    6,
+    0,
+    6,
+    3,
+    3,
+    5,
+    2
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 6,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "...............",
+     "............#..",
+     "#....#.........",
+     "...............",
+     ".............#.",
+     "..#...#.#......",
+     ".............#.",
+     ".#......#......",
+     "..........#....",
+     "............#.."
+    ],
+    "bricks": 12
+   },
+   "candle": null,
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 8,
+     "row": 7
+    },
+    "right": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 26,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26071271,
+   "bytes_hex": "1b315ac57eaebb5cb13bcb44d8d2d201b34b3ec358dce4841b5bf516a078fc0102060007010207010103",
+   "seed_hex": "1b315ac57eaebb5cb13bcb44d8d2d201b34b3ec358dce4841b5bf516a078fc01",
+   "digits": [
+    2,
+    6,
+    0,
+    7,
+    1,
+    2,
+    7,
+    1
+   ],
+   "behaviour": 1,
+   "mechanic": "Dance",
+   "token_name": "The Dancer",
+   "colour": 3,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "......##...#...",
+     "....#....#.....",
+     "..............#",
+     "..........#...#",
+     ".......#.......",
+     "......#.......#",
+     "...#...........",
+     "..#..#....#....",
+     "...............",
+     "#.#..#.#......#"
+    ],
+    "bricks": 20
+   },
+   "candle": null,
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 5,
+     "row": 5
+    },
+    "right": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 29,
+     "row": 8
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26079190,
+   "bytes_hex": "03b8a5a703e9d3f8336122e6426e45df88df237837507b0b29ce72eaa9ca391002060007090109000207",
+   "seed_hex": "03b8a5a703e9d3f8336122e6426e45df88df237837507b0b29ce72eaa9ca3910",
+   "digits": [
+    2,
+    6,
+    0,
+    7,
+    9,
+    1,
+    9,
+    0
+   ],
+   "behaviour": 2,
+   "mechanic": "Echo",
+   "token_name": "The Echo",
+   "colour": 7,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "..........##...",
+     "...........#...",
+     ".#......#...#.#",
+     "..#............",
+     "......#.......#",
+     "....#......#...",
+     "...............",
+     ".....#.........",
+     ".......#.......",
+     ".......#...#..."
+    ],
+    "bricks": 16
+   },
+   "candle": {
+    "column": 26,
+    "top_row": 12
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 1,
+     "path_name": "shorter glide",
+     "travel_px": 48,
+     "column": 7,
+     "row": 8
+    },
+    "right": {
+     "path": 1,
+     "path_name": "shorter glide",
+     "travel_px": 48,
+     "column": 26,
+     "row": 8
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26087109,
+   "bytes_hex": "7d55ae3ea7df57c7cacdad81837a8cf8c97f4ba9c440feab646f89270c63e0030206000807010009030e",
+   "seed_hex": "7d55ae3ea7df57c7cacdad81837a8cf8c97f4ba9c440feab646f89270c63e003",
+   "digits": [
+    2,
+    6,
+    0,
+    8,
+    7,
+    1,
+    0,
+    9
+   ],
+   "behaviour": 3,
+   "mechanic": "Mirror",
+   "token_name": "The Mirror",
+   "colour": 14,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     "..#.#..#.#...#.",
+     "...........####",
+     "#.#.#...##.#...",
+     "#...#...####...",
+     "...#......#....",
+     ".##....#....##.",
+     "............##.",
+     "####........#..",
+     "#.#.#.......#..",
+     "...#..###.#..#."
+    ],
+    "bricks": 45
+   },
+   "candle": null,
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 4,
+     "path_name": "glide with two hops",
+     "travel_px": 56,
+     "column": 6,
+     "row": 9
+    },
+    "right": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 25,
+     "row": 3
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26095028,
+   "bytes_hex": "31540fa8840e8066ad99927fad063a416cf32c2b42922bd1fde75268640ba05802060009050002080405",
+   "seed_hex": "31540fa8840e8066ad99927fad063a416cf32c2b42922bd1fde75268640ba058",
+   "digits": [
+    2,
+    6,
+    0,
+    9,
+    5,
+    0,
+    2,
+    8
+   ],
+   "behaviour": 4,
+   "mechanic": "Wander",
+   "token_name": "The Wanderer",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "..#....#.#.....",
+     "...........#...",
+     "...............",
+     "...............",
+     "...............",
+     "...............",
+     "..........#....",
+     "...............",
+     ".......#....#..",
+     ".#...........##"
+    ],
+    "bricks": 10
+   },
+   "candle": null,
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 9,
+     "row": 9
+    },
+    "right": {
+     "path": 4,
+     "path_name": "glide with two hops",
+     "travel_px": 56,
+     "column": 26,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26102947,
+   "bytes_hex": "3d0f0171e93d984e78e400fef8ab77f84c2e14780ebfb4e60b398396d1023a3b0206010002090407050a",
+   "seed_hex": "3d0f0171e93d984e78e400fef8ab77f84c2e14780ebfb4e60b398396d1023a3b",
+   "digits": [
+    2,
+    6,
+    1,
+    0,
+    2,
+    9,
+    4,
+    7
+   ],
+   "behaviour": 5,
+   "mechanic": "Shy",
+   "token_name": "The Shy One",
+   "colour": 10,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     "..###.......###",
+     "........#..##..",
+     "..###.........#",
+     "..#...##.......",
+     "..#....#....##.",
+     "...............",
+     "###.#...###....",
+     ".#.#..#.....###",
+     ".........#.....",
+     "...#.#......#.#"
+    ],
+    "bricks": 38
+   },
+   "candle": {
+    "column": 10,
+    "top_row": 4
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 3,
+     "row": 3
+    },
+    "right": {
+     "path": 7,
+     "path_name": "tight flutter",
+     "travel_px": 24,
+     "column": 27,
+     "row": 2
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26110866,
+   "bytes_hex": "af321a1eac88adf59692e5b92d7582aadef46151de660cca6df5680d4859ff5202060101000806060604",
+   "seed_hex": "af321a1eac88adf59692e5b92d7582aadef46151de660cca6df5680d4859ff52",
+   "digits": [
+    2,
+    6,
+    1,
+    1,
+    0,
+    8,
+    6,
+    6
+   ],
+   "behaviour": 6,
+   "mechanic": "Sleeper",
+   "token_name": "The Sleeper",
+   "colour": 4,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     ".......#.......",
+     ".............#.",
+     "......#.......#",
+     ".............#.",
+     "...............",
+     ".............#.",
+     "#.#............",
+     ".#..#.#........",
+     "......#....#..#",
+     ".#.#..#........"
+    ],
+    "bricks": 17
+   },
+   "candle": {
+    "column": 24,
+    "top_row": 6
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 7,
+     "row": 7
+    },
+    "right": {
+     "path": 6,
+     "path_name": "long glide with a dip",
+     "travel_px": 64,
+     "column": 24,
+     "row": 7
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26118785,
+   "bytes_hex": "3d922003e0c8ca3ff1566b8ec5a7551bb95c93942e0f03841985fe7a1b95cd0602060101080708050701",
+   "seed_hex": "3d922003e0c8ca3ff1566b8ec5a7551bb95c93942e0f03841985fe7a1b95cd06",
+   "digits": [
+    2,
+    6,
+    1,
+    1,
+    8,
+    7,
+    8,
+    5
+   ],
+   "behaviour": 7,
+   "mechanic": "Glitch",
+   "token_name": "The Glitch",
+   "colour": 1,
+   "tune": "intro",
+   "room": "blackout",
+   "wall": null,
+   "candle": null,
+   "bats": null
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26126704,
+   "bytes_hex": "52fa4ae3e0beee4f11c0b595f8339782e31bfff606ce2088e20ecf0c19fd7e8702060102060700040006",
+   "seed_hex": "52fa4ae3e0beee4f11c0b595f8339782e31bfff606ce2088e20ecf0c19fd7e87",
+   "digits": [
+    2,
+    6,
+    1,
+    2,
+    6,
+    7,
+    0,
+    4
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 6,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 2,
+    "density": "three-quarter",
+    "rows": [
+     "####.##.#######",
+     ".##..###.###...",
+     "#####.#...#####",
+     "##.###.###.##..",
+     "####...###.###.",
+     "##..#######.###",
+     "##############.",
+     "###..##########",
+     "##..#.#.###...#",
+     "######.########"
+    ],
+    "bricks": 113
+   },
+   "candle": {
+    "column": 32,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 2,
+     "path_name": "short flutter",
+     "travel_px": 32,
+     "column": 6,
+     "row": 8
+    },
+    "right": {
+     "path": 1,
+     "path_name": "shorter glide",
+     "travel_px": 48,
+     "column": 28,
+     "row": 3
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26134623,
+   "bytes_hex": "4bb25d4438d6dd241102ea5d48944a1048c0efcb7da18645fea9ccf737729d7d02060103040602030103",
+   "seed_hex": "4bb25d4438d6dd241102ea5d48944a1048c0efcb7da18645fea9ccf737729d7d",
+   "digits": [
+    2,
+    6,
+    1,
+    3,
+    4,
+    6,
+    2,
+    3
+   ],
+   "behaviour": 1,
+   "mechanic": "Dance",
+   "token_name": "The Dancer",
+   "colour": 3,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 1,
+    "density": "half",
+    "rows": [
+     ".#..#.###.##..#",
+     "..#.###.#.#...#",
+     "....###...##.#.",
+     "##.##.###.#..#.",
+     ".#.....#...#...",
+     "...#.###.#.#..#",
+     ".###.#.#..#...#",
+     "..#.#...#..#.#.",
+     "...#.....#..#..",
+     ".##......###.##"
+    ],
+    "bricks": 62
+   },
+   "candle": {
+    "column": 10,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 6,
+     "path_name": "long glide with a dip",
+     "travel_px": 64,
+     "column": 9,
+     "row": 3
+    },
+    "right": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 28,
+     "row": 3
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26142542,
+   "bytes_hex": "8829611d71c7792835ba946a92a2364991efdad492099a6435bd3f8fd5c0ebfb02060104020504020207",
+   "seed_hex": "8829611d71c7792835ba946a92a2364991efdad492099a6435bd3f8fd5c0ebfb",
+   "digits": [
+    2,
+    6,
+    1,
+    4,
+    2,
+    5,
+    4,
+    2
+   ],
+   "behaviour": 2,
+   "mechanic": "Echo",
+   "token_name": "The Echo",
+   "colour": 7,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     "#..............",
+     "........#...##.",
+     "...##..........",
+     "#.#..###..#..#.",
+     "#........#.##..",
+     "#....#........#",
+     "#.#.#.#..#..#.#",
+     ".........#.....",
+     ".#.....#...#...",
+     "#.##....###...."
+    ],
+    "bricks": 37
+   },
+   "candle": {
+    "column": 6,
+    "top_row": 12
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 5,
+     "path_name": "bobbing",
+     "travel_px": 48,
+     "column": 8,
+     "row": 7
+    },
+    "right": {
+     "path": 7,
+     "path_name": "tight flutter",
+     "travel_px": 24,
+     "column": 28,
+     "row": 9
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26150461,
+   "bytes_hex": "c4db182da4662858bac6f090a7f654bf70fbb310aeea6c0160f3244ac6b9a6f40206010500040601030e",
+   "seed_hex": "c4db182da4662858bac6f090a7f654bf70fbb310aeea6c0160f3244ac6b9a6f4",
+   "digits": [
+    2,
+    6,
+    1,
+    5,
+    0,
+    4,
+    6,
+    1
+   ],
+   "behaviour": 3,
+   "mechanic": "Mirror",
+   "token_name": "The Mirror",
+   "colour": 14,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     "........#...#.#",
+     ".....#.....#.##",
+     "...........##..",
+     ".....#.........",
+     "........#.#.##.",
+     "..##.#.##....#.",
+     "......#.#..#..#",
+     "#...#...#.#....",
+     "...##.....#....",
+     ".#.#.......#..."
+    ],
+    "bricks": 34
+   },
+   "candle": {
+    "column": 24,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 6,
+     "row": 5
+    },
+    "right": {
+     "path": 6,
+     "path_name": "long glide with a dip",
+     "travel_px": 64,
+     "column": 28,
+     "row": 6
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26158380,
+   "bytes_hex": "9a6330f5af36be5e155d78f1b33f22e5eac6036189efe01e6a40b6ff2a914b5202060105080308000405",
+   "seed_hex": "9a6330f5af36be5e155d78f1b33f22e5eac6036189efe01e6a40b6ff2a914b52",
+   "digits": [
+    2,
+    6,
+    1,
+    5,
+    8,
+    3,
+    8,
+    0
+   ],
+   "behaviour": 4,
+   "mechanic": "Wander",
+   "token_name": "The Wanderer",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "...............",
+     "...#.......#...",
+     "...............",
+     ".#............#",
+     "..#........#...",
+     "........#......",
+     ".....#...#..#..",
+     "..##.#.......#.",
+     ".........#.....",
+     "..............."
+    ],
+    "bricks": 15
+   },
+   "candle": {
+    "column": 8,
+    "top_row": 6
+   },
+   "bats": {
+    "presence": "both",
+    "left": {
+     "path": 2,
+     "path_name": "short flutter",
+     "travel_px": 32,
+     "column": 7,
+     "row": 2
+    },
+    "right": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 26,
+     "row": 8
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26166299,
+   "bytes_hex": "56db427db1daf1bd2017e0a147dfa2fc528566cb8572a1c9389d24215a31733a0206010606020909050a",
+   "seed_hex": "56db427db1daf1bd2017e0a147dfa2fc528566cb8572a1c9389d24215a31733a",
+   "digits": [
+    2,
+    6,
+    1,
+    6,
+    6,
+    2,
+    9,
+    9
+   ],
+   "behaviour": 5,
+   "mechanic": "Shy",
+   "token_name": "The Shy One",
+   "colour": 10,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "...............",
+     "...............",
+     ".........#...#.",
+     "......#........",
+     ".#.............",
+     "...#...#.......",
+     "#....#......#..",
+     "#.#....#.......",
+     "...........#...",
+     ".#............."
+    ],
+    "bricks": 14
+   },
+   "candle": {
+    "column": 8,
+    "top_row": 10
+   },
+   "bats": {
+    "presence": "left only",
+    "left": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 9,
+     "row": 7
+    },
+    "right": {
+     "path": 3,
+     "path_name": "wave",
+     "travel_px": 48,
+     "column": 28,
+     "row": 6
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26174218,
+   "bytes_hex": "6954fc0dd8cdd03b620c622384ec8a2aa8f60a3afc2ef89134b854737120db0b02060107040201080604",
+   "seed_hex": "6954fc0dd8cdd03b620c622384ec8a2aa8f60a3afc2ef89134b854737120db0b",
+   "digits": [
+    2,
+    6,
+    1,
+    7,
+    4,
+    2,
+    1,
+    8
+   ],
+   "behaviour": 6,
+   "mechanic": "Sleeper",
+   "token_name": "The Sleeper",
+   "colour": 4,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 0,
+    "density": "quarter",
+    "rows": [
+     "..#.#....#.#.#.",
+     "...#.##......#.",
+     "..#..#.........",
+     "#..#..#.......#",
+     ".....##...#....",
+     ".......#.......",
+     "....##.........",
+     "##.#...........",
+     "..#.#.......#..",
+     ".##.#........#."
+    ],
+    "bricks": 31
+   },
+   "candle": {
+    "column": 6,
+    "top_row": 8
+   },
+   "bats": {
+    "presence": "right only",
+    "left": {
+     "path": 4,
+     "path_name": "glide with two hops",
+     "travel_px": 56,
+     "column": 8,
+     "row": 2
+    },
+    "right": {
+     "path": 7,
+     "path_name": "tight flutter",
+     "travel_px": 24,
+     "column": 28,
+     "row": 4
+    }
+   }
+  },
+  {
+   "note": "sha256('vector k'), one of each mechanic in turn",
+   "block_number": 26182137,
+   "bytes_hex": "8a1502691710a0bc4e30ef9fac6b9ccfa9d58943d85bf1fc212971259e8e5ad502060108020103070701",
+   "seed_hex": "8a1502691710a0bc4e30ef9fac6b9ccfa9d58943d85bf1fc212971259e8e5ad5",
+   "digits": [
+    2,
+    6,
+    1,
+    8,
+    2,
+    1,
+    3,
+    7
+   ],
+   "behaviour": 7,
+   "mechanic": "Glitch",
+   "token_name": "The Glitch",
+   "colour": 1,
+   "tune": "intro",
+   "room": "blackout",
+   "wall": null,
+   "candle": null,
+   "bats": null
+  },
+  {
+   "note": "all-zero seed: eighth wall, no candle, bats none",
+   "block_number": 0,
+   "bytes_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000005",
+   "seed_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+   "digits": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "behaviour": 0,
+   "mechanic": "Follow",
+   "token_name": "The Shadow",
+   "colour": 5,
+   "tune": "level",
+   "room": "ordinary",
+   "wall": {
+    "density_mode": 3,
+    "density": "eighth",
+    "rows": [
+     "...............",
+     "...............",
+     "...............",
+     "...............",
+     "...............",
+     "...............",
+     "...............",
+     "...............",
+     "...............",
+     "..............."
+    ],
+    "bricks": 0
+   },
+   "candle": null,
+   "bats": {
+    "presence": "none",
+    "left": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 2,
+     "row": 2
+    },
+    "right": {
+     "path": 0,
+     "path_name": "long glide",
+     "travel_px": 64,
+     "column": 24,
+     "row": 2
+    }
+   }
+  },
+  {
+   "note": "all-ones seed, the Glitch: the blackout ignores the wall bits",
+   "block_number": 99999999,
+   "bytes_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff09090909090909090701",
+   "seed_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+   "digits": [
+    9,
+    9,
+    9,
+    9,
+    9,
+    9,
+    9,
+    9
+   ],
+   "behaviour": 7,
+   "mechanic": "Glitch",
+   "token_name": "The Glitch",
+   "colour": 1,
+   "tune": "intro",
+   "room": "blackout",
+   "wall": null,
+   "candle": null,
+   "bats": null
+  }
+ ]
+}

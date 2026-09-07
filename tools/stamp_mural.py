@@ -117,7 +117,8 @@ def main():
     print(f"{marker[:7].decode()} block at file offset 0x{off:05X} (address ${addr:04X}): {nbytes} bytes"
           + (" = 32 seed + 8 digits + behaviour + colour" if nbytes == 42 else " = 32 seed + 8 digits"))
     print(f"current seed {cur_seed.hex()} block {''.join(str(d) for d in cur_digits)}"
-          + (f" behaviour {cur_beh} ({BEHAVIOURS[cur_beh] if cur_beh < len(BEHAVIOURS) else '?'}) colour {cur_col}" if nbytes == 42 else ""))
+          + (f" behaviour {cur_beh} ({BEHAVIOURS[cur_beh] if cur_beh < len(BEHAVIOURS) else '?'}) colour {cur_col}"
+             f" tune {'intro (the Glitch)' if cur_beh == 7 else 'level'}" if nbytes == 42 else ""))
     if a.show or not a.out:
         show(cur_seed, cur_digits)
         return

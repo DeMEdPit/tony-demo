@@ -50,7 +50,6 @@ tools/stamp_mural.py writes seed, block number, behaviour and colour.
 
 Run from repo root after tools/make_buddy.py and tools/build_chamber_room.py:
     python3 tools/make_chamber.py
-    python3 tools/make_chamber.py --music src/music/TonyIntroA000_reloc.sid --variant tony-chamber-intro
 """
 import hashlib
 import os
@@ -58,32 +57,36 @@ import sys
 
 import re as _re
 
-# Options: --music PATH   the tune the variant carries (a PSID assembled for $A000;
-#                         default the level tune, src/music/TonyLevelA000_V2.sid)
+# Options: --music PATH   the level tune (a PSID assembled for $A000; default src/music/TonyLevelA000_V2.sid)
+#          --intro PATH   the Glitch's tune (a PSID assembled for $8000; default src/music/TonyIntro8000_reloc.sid)
 #          --variant NAME the .asm/.prg name (default tony-chamber)
-#          --dance-voice N the voice (1-3) whose line the Dancer steps to (default 1)
+#          --glitch-ink N the colour of the block number's cells in the Glitch's blackout
+#                         (default 0, black on the dark grey stone, the owner's choice; 15 was light grey)
+# The base carries both tunes. Behaviour 7 (the Glitch) plays the intro tune; the seven play the
+# level tune. The Dancer steps to voice 1 of the level tune and bounces the moment he lands; the
+# Glitch's Dance phase steps to voice 2 of the intro tune and keeps the engine's pause after a
+# landing (measured: the intro tune's lead would otherwise keep him in the air 99% of the time).
 MUSIC = "src/music/TonyLevelA000_V2.sid"
+INTRO = "src/music/TonyIntro8000_reloc.sid"
 VARIANT = "tony-chamber"
-#          --dance-cool    keep the engine's pause after a landing in the Dance mechanic
-#                          (default: none, he may bounce again the moment he lands)
-#          --glitch-ink N  the colour of the block number's cells in the Glitch's blackout
-#                          (default 0, black on the dark grey stone, the owner's choice; 15 was light grey)
-DANCE_VOICE = 1
-DANCE_COOL = False
 GLITCH_INK = 0
+GLITCH_DANCE_VOICE = 2
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
     if _flag == "--music": MUSIC = _args.pop(0)
+    elif _flag == "--intro": INTRO = _args.pop(0)
     elif _flag == "--variant": VARIANT = _args.pop(0)
-    elif _flag == "--dance-voice": DANCE_VOICE = int(_args.pop(0)); assert DANCE_VOICE in (1, 2, 3)
-    elif _flag == "--dance-cool": DANCE_COOL = True
     elif _flag == "--glitch-ink": GLITCH_INK = int(_args.pop(0)); assert 0 <= GLITCH_INK <= 15
     else: raise SystemExit("unknown option " + _flag)
 _sid = open(MUSIC, "rb").read()
-assert _sid[:4] == b"PSID" and _sid[124:126] == b"\x00\xa0", "the tune must be a PSID assembled for $A000"
+assert _sid[:4] == b"PSID" and _sid[124:126] == b"\x00\xa0", "the level tune must be a PSID assembled for $A000"
 _m = _re.search(rb"\xBD(..)\x9D\x00\xD4", _sid[124 + 2:], _re.S)      # LDA image,X / STA $D400,X
-SID_IMAGE = (_m.group(1)[0] | (_m.group(1)[1] << 8)) + 7 * (DANCE_VOICE - 1)   # the player's register image ($A474 for the level tune), at the Dancer's voice
+SID_IMAGE = _m.group(1)[0] | (_m.group(1)[1] << 8)                       # the level player's register image ($A474), voice 1
+_isid = open(INTRO, "rb").read()
+assert _isid[:4] == b"PSID" and _isid[124:126] == b"\x00\x80", "the intro tune must be a PSID assembled for $8000"
+_m = _re.search(rb"\xBD(..)\x9D\x00\xD4", _isid[124 + 2:], _re.S)
+INTRO_IMAGE = (_m.group(1)[0] | (_m.group(1)[1] << 8)) + 7 * (GLITCH_DANCE_VOICE - 1)   # the intro player's image ($844B), at the Glitch's voice
 DEFAULT_SEED = hashlib.sha256(b"block 25850267").digest()   # a typical roll: half-density wall, one candle high on the left
 
 # ------------------------------------------------------------- level data
@@ -155,7 +158,57 @@ print("wrote src/kickass/level/chamber/data.asm")
 # ------------------------------------------------------------- game variant
 src = open("src/kickass/tony-buddy.asm").read()
 src = sub(src, '.file [name="./tony-buddy.prg"', f'.file [name="./{VARIANT}.prg"')
-src = sub(src, '.var music = LoadSid("TonyLevelA000_V2.sid")', f'.var music = LoadSid("{os.path.basename(MUSIC)}")')
+src = sub(src, '.var music = LoadSid("TonyLevelA000_V2.sid")\n',
+          f'.var music = LoadSid("{os.path.basename(MUSIC)}")\n.var intro = LoadSid("{os.path.basename(INTRO)}")   // the Glitch\'s tune, at $8000\n')
+# both tunes in the load image: the intro tune first in the Movable segment, copied out last
+src = sub(src, ".segment Movable\n\nmusicData:\n", ".segment Movable\n\nintroData:\n    .fill intro.size, intro.getData(i)\nmusicData:\n")
+src = sub(src, """    c64lib_pushParamW(musicData)
+    c64lib_pushParamW(MUSIC_MEM)
+    c64lib_pushParamW(musicSize)
+    jsr copyLargeMemForward
+""", """    c64lib_pushParamW(musicData)
+    c64lib_pushParamW(MUSIC_MEM)
+    c64lib_pushParamW(musicSize)
+    jsr copyLargeMemForward
+
+    c64lib_pushParamW(introData)        // the Glitch's tune, to $8000 (free at run time), after the level tune
+    c64lib_pushParamW(intro.location)   // whose source it would otherwise overwrite
+    c64lib_pushParamW(intro.size)
+    jsr copyLargeMemForward
+""")
+src = sub(src, """initSound: {
+    ldx #0
+    ldy #0
+    lda #0
+    jsr music.init
+    rts
+}""", """initSound: {
+    ldx #0
+    ldy #0
+    lda #0
+    ldy muralBehaviour          // the Glitch plays the intro tune, the seven the level tune
+    cpy #7
+    beq !+
+        jsr music.init
+        rts
+    !:
+    jsr intro.init
+    rts
+}""")
+src = sub(src, """    doPlay:
+        jsr music.play
+    rts
+}""", """    doPlay:
+        ldx muralBehaviour
+        cpx #7
+        beq !+
+            jsr music.play
+            rts
+        !:
+        jsr intro.play
+    rts
+}""")
+src = sub(src, '.print "Music size = " + music.size\n', '.print "Music size = " + music.size\n.print "Intro tune (the Glitch) = $" + toHexString(intro.location) + ", size " + intro.size + ", init $" + toHexString(intro.init) + " play $" + toHexString(intro.play)\n')
 src = sub(src, '#import "level/buddy/data.asm"', '#import "level/chamber/data.asm"')
 src = sub(src, "    jsr _draw_playfield\n", "    jsr _draw_playfield\n    jsr muralStamp   // the back wall, from the seed\n")
 
@@ -1164,6 +1217,7 @@ glitchTick: {{
 //    at half speed when the player is farther than SHY_CALM_AT; watches him in
 //    between.
 .label SID_IMAGE = ${SID_IMAGE:04X}
+.label INTRO_IMAGE = ${INTRO_IMAGE:04X}
 buddyDecide: {{
     lda #0
     sta buddyMoving
@@ -1197,6 +1251,9 @@ buddyDecide: {{
     rts
 
     dance:
+    lda muralBehaviour              // the Glitch dances to the intro tune's voice 2
+    cmp #7
+    beq rereadIntro
     reread:                         // the player runs in the interrupt: read lo, hi, lo again
         lda SID_IMAGE
         sta noteNew
@@ -1205,6 +1262,16 @@ buddyDecide: {{
         lda SID_IMAGE
         cmp noteNew
         bne reread
+    jmp noteRead
+    rereadIntro:
+        lda INTRO_IMAGE
+        sta noteNew
+        lda INTRO_IMAGE + 1
+        sta noteNew + 1
+        lda INTRO_IMAGE
+        cmp noteNew
+        bne rereadIntro
+    noteRead:
     sec                             // diff = |new - old|
     lda noteNew
     sbc noteOld
@@ -1259,7 +1326,11 @@ buddyDecide: {{
     noSlide:
     lda #0
     sta buddyDelay                  // the pose moves only with the music
-{"" if DANCE_COOL else "    sta buddyCool                   // and he may bounce again the moment he lands"}
+    ldx muralBehaviour              // the Dancer may bounce again the moment he lands;
+    cpx #7                          // the Glitch keeps the engine's pause (his tune's hits never stop)
+    beq !+
+        sta buddyCool
+    !:
     lda $D41C                       // ENV3: voice 3's envelope, from the chip
     tax
     sec
@@ -1616,7 +1687,8 @@ echoAnim: .fill 256, ANIM_IDLING_RIGHT
 echoPose: .byte 4, 5, 8, 9, 0, 1, 2, 12, 13, 2, 0, 1, 2, 2, 0, 1, 2, 2, 8, 9
 """)
 open(f"src/kickass/{VARIANT}.asm", "w").write(src)
-print(f"wrote src/kickass/{VARIANT}.asm (music {os.path.basename(MUSIC)}, the Dancer reads voice {DANCE_VOICE} at ${SID_IMAGE:04X})")
+print(f"wrote src/kickass/{VARIANT}.asm (level tune {os.path.basename(MUSIC)}, image ${SID_IMAGE:04X}; "
+      f"the Glitch's tune {os.path.basename(INTRO)} at $8000, his Dance voice at ${INTRO_IMAGE:04X})")
 
 # ------------------------------------------------------------- build wiring
 g = open("build.gradle.kts").read()

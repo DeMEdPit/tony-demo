@@ -57,8 +57,9 @@ def addresses(prg):
     A["playerX"] = m.group(1)[0] | (m.group(1)[1] << 8)
     A["playerY"] = A["playerX"] + 2
     A["playerAnim"] = A["playerX"] + 6
-    m = re.search(rb"\xBD(..)\x9D\x00\xD4", data, re.S)                            # the tune's player: LDA image,X / STA $D400,X
-    A["sidImage"] = m.group(1)[0] | (m.group(1)[1] << 8)
+    images = sorted(g[0] | (g[1] << 8) for g in re.findall(rb"\xBD(..)\x9D\x00\xD4", data, re.S))   # each player's LDA image,X / STA $D400,X
+    A["sidImage"] = [a for a in images if a >= 0xA000][0]                                        # the level tune's player ($A474)
+    A["introImage"] = ([a for a in images if a < 0xA000] or [None])[0]                            # the intro tune's player ($844B), the Glitch's
     # the voice the Dancer reads: his reread loop LDA v / STA noteNew / LDA v+1 / STA noteNew+1 / LDA v / CMP noteNew / BNE
     m = re.search(rb"\xAD(..)\x8D(..)\xAD..\x8D..\xAD\1\xCD\2\xD0", data, re.S)
     A["danceVoice"] = (m.group(1)[0] | (m.group(1)[1] << 8)) if m else A["sidImage"]
@@ -138,10 +139,15 @@ def dance(prg, A):
     p = stamp(prg, 1, 3)
     n = 900
     S = A["danceVoice"]
+    I = A["introImage"] or S
     per = (f"peek:D41C,peek:{A['buddyHop']:X},peek:{A['buddyFacing']:X},peek:{A['buddyX']:X},"
            f"peek:{A['buddyPhase']:X},peek:{S:X},peek:{S + 1:X},wait:1,")
     v = run(p, f"wait:{BOOT},peek:D02C,peek:D02D," + per * n)
     col5, col6, v = v[0] & 15, v[1] & 15, v[2:]
+    # which tune plays: the level player's register image must move over a second, the intro player's must not
+    tunes = run(p, f"wait:{BOOT}," + "".join(f"peek:{S + k:X}," for k in range(7)) + "".join(f"peek:{I + k:X}," for k in range(7))
+                + "wait:50," + "".join(f"peek:{S + k:X}," for k in range(7)) + "".join(f"peek:{I + k:X}," for k in range(7)))
+    level_moves, intro_moves = tunes[0:7] != tunes[14:21], tunes[7:14] != tunes[21:28]
     env, hop, facing, bx, phase = v[0::7], v[1::7], v[2::7], v[3::7], v[4::7]
     freq = [lo | (hi << 8) for lo, hi in zip(v[5::7], v[6::7])]
     notes = [f for f in range(1, n) if abs(freq[f] - freq[f - 1]) >= freq[f - 1] // 32]
@@ -170,7 +176,8 @@ def dance(prg, A):
     os.unlink(p)
     same = still == walk
     airborne = 100 * sum(1 for h in hop if h) // n
-    return report("DANCE", ok and same, f"{n / 50:.0f} s: notes {len(notes)}, steps {len(steps)} (off the beat {len(steps_off)}, unanswered {len(unanswered)}), "
+    ok = ok and level_moves and (not intro_moves or A["introImage"] is None)
+    return report("DANCE", ok and same, f"{n / 50:.0f} s: level tune playing {level_moves}, intro tune playing {intro_moves}; notes {len(notes)}, steps {len(steps)} (off the beat {len(steps_off)}, unanswered {len(unanswered)}), "
                   f"turns {len(turns)}, ENV3 rises {len(rises)}, hops {len(hops)} (without a rise {len(hops_unfounded)}, rises unanswered {len(rises_unanswered)}, airborne {airborne}% of the time), "
                   f"X {min(bx)}..{max(bx)}, colours {col5},{col6}; path with the player still vs walking {'identical' if same else 'DIFFERS'}")
 
@@ -330,6 +337,14 @@ def glitch(prg, A):
     scr = run(p, f"wait:{BOOT},peek:D015," + "".join(f"peek:{0xC000 + r * 40 + c:X}," for r in range(2, 22) for c in range(5, 35)) + "".join(f"peek:{0xC000 + 23 * 40 + c:X}," for c in range(27, 35)))
     tint = run(p, f"wait:{BOOT},peek:D021,peek:D027,peek:D028," + "".join(f"peek:{0xD800 + 23 * 40 + c:X}," for c in range(27, 35)))
     inks = [v & 15 for v in run(p, f"wait:{BOOT}," + f"peek:{0xD800 + 23 * 40 + 27:X},wait:5," * 200)]   # the digits' ink over 20 s
+    S, I = A["sidImage"], A["introImage"] or A["sidImage"]
+    tunes = run(p, f"wait:{BOOT}," + "".join(f"peek:{S + k:X}," for k in range(7)) + "".join(f"peek:{I + k:X}," for k in range(7))
+                + "wait:50," + "".join(f"peek:{S + k:X}," for k in range(7)) + "".join(f"peek:{I + k:X}," for k in range(7)))
+    level_moves, intro_moves = tunes[0:7] != tunes[14:21], tunes[7:14] != tunes[21:28]
+    # his Dance phase: while he wears mechanic 1, how much of the time is he in the air (raw pogo: 99%; tamed: about 55%)
+    hops = frames(p, A, ["glitchMode", "buddyHop"], [(None, n)])
+    dance_frames = [f for f in range(n) if hops["glitchMode"][f] == 1]
+    dance_air = (100 * sum(1 for f in dance_frames if hops["buddyHop"][f]) // len(dance_frames)) if len(dance_frames) >= 100 else None
     os.unlink(p)
     # the digits are compared with an ordinary room's (the screen holds translated character codes)
     p0 = stamp(prg, 0, 5)
@@ -357,8 +372,9 @@ def glitch(prg, A):
     teleported_on_change = sum(1 for c in change_frames if any(c <= j <= c + 12 for j in jumps))
     ok = (len(worn) >= 3 and changes >= 3 and len(palette) >= 6 and 0 < blinks < n // 6 and max(bx) - min(bx) >= 40
           and teleported_on_change >= 2 and MIN_X <= min(bx) and max(bx) <= MAX_X
-          and not any(wall) and carved and not (en & 0b11000) and tinted)
-    return report("GLITCH", ok, f"{n / 50:.0f} s: wore mechanics {worn} with {changes} changes ({teleported_on_change} of them teleporting), "
+          and not any(wall) and carved and not (en & 0b11000) and tinted
+          and intro_moves and not level_moves and (dance_air is None or dance_air < 85))
+    return report("GLITCH", ok, f"his tune: intro playing {intro_moves}, level playing {level_moves}; Dance phase airborne {dance_air}% ({len(dance_frames)} frames); {n / 50:.0f} s: wore mechanics {worn} with {changes} changes ({teleported_on_change} of them teleporting), "
                   f"{len(jumps)} teleports in all; colours seen {palette} with {blinks} blink frames; X {min(bx)}..{max(bx)}; "
                   f"room: wall cells lit {sum(1 for w in wall if w)} of 600, block number carved as in an ordinary room {carved}, "
                   f"bat sprites enabled {bool(en & 8)},{bool(en & 16)}; colours: room {room}, Tony {tony}, the digits' ink "

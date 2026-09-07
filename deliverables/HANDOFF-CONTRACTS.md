@@ -168,9 +168,12 @@ rules of section 1):
 
 ## 4. The base program and its parameter block
 
-Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 41,094 bytes,
-a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program),
-sha256 `f9f7225f507c954f50c43f557643039d6f7bd59b2520ecc4dde82c845ad1e262`.
+Current file: `deliverables/prg/minimal64/tony-chamber.prg`, 46,876 bytes,
+a plain C64 PRG (2-byte load address `$0801`, BASIC stub, then the program,
+ending at `$BF1A`), sha256
+`044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf`.
+One base for all eight tokens: it carries both of the demo's tunes, the
+level tune for the seven and the intro tune for The Glitch (section 4a).
 Byte-for-byte reproducible from the repository (section 9). **Feature
 complete, not frozen**: the freeze follows the owner's play-through and any
 change it asks for; a rebuild moves the block. Find the block by its
@@ -192,15 +195,22 @@ marker is at file offset `0x04EC1` and the 42 bytes start at file offset
 digits are bytes 0–9, not ASCII. Bytes never written keep the file's
 defaults (block 25850267, Follow, green).
 
-**A second tune for The Glitch, being tried (E17):** the demo's other tune
-(the intro scroller's) has been relocated into the Chamber's music slot and
-proved identical by replay; `tony-chamber-intro.prg` (41,368 bytes, sha256
-`170789a970c7b30a6b4283c3fdf5fa092a703eb907cab39db7d6cb74237c24b9`, the
-block at the same file offset 0x04EC9) is the same engine carrying it. The
-owner likes the sound; the shipping shape (a second base, or both tunes in
-one base) is not chosen. `HANDOFF-GLITCH-TUNE.md` has the two bases side by
-side, the two shapes and a recommendation. Until that decision, the
-one-base table above stands.
+## 4a. The Glitch's tune (decided 2026-09-07)
+
+The demo has two tunes, both by Sami Juntunen (MIT): the level tune, which
+the seven play, and the intro scroller's tune, which The Glitch alone plays.
+The intro tune was relocated from $E000 to $8000 (`tools/sidreloc.py`,
+proved note-for-note identical by an eight-minute replay with
+`tools/verify_reloc.py`; `src/music/RELOCATION.md`) and lives inside the
+one base at $8000–$9695, a region the engine never touches at run time
+(measured). Behaviour 7 starts and plays the intro tune, anything else the
+level tune; nothing in the block format changes and the contract does
+nothing extra. The Glitch's Dance phase steps to the intro tune's second
+voice and keeps a short pause after each landing (measured: airborne 59%,
+about one bounce a second; the Dancer token, on the level tune, airborne
+33%). `HANDOFF-GLITCH-TUNE.md` is the record of how this was decided and
+verified. **The intro tune is The Glitch's alone**: the Dancer keeps the
+level tune (he dances better to it: 42 steps against 7 in the same time).
 
 How the seed is used (so a test can predict a wall; the Python model is
 `tools/stamp_mural.py --show`): three bit streams run through the 32 bytes
@@ -356,19 +366,51 @@ ignored by default). If a file bundle is preferred instead, it is:
    (github.com/nopsta/minimal64) to run any produced PRG headless.
 5. This document and `deliverables/EXPERIMENTS.md`.
 
+## 8c. Ready for contract writing and a testnet: what is fixed, what is yours
+
+Fixed on this side (2026-09-07), pending only the owner's word "frozen":
+
+- **The base**: one PRG, 46,876 bytes, sha256 above, byte-for-byte
+  reproducible from the repository; both tunes inside; the eight mechanics,
+  the seeded wall, candle and bats, the blackout with a black number.
+  The git tag `chamber-base-candidate-1` marks the commit.
+- **The block**: 42 bytes at `marker + 8` (file offset `0x04EC9` in this
+  build; find the marker), seed, digits, behaviour, colour. Behaviour 7 is
+  the only value that changes the room and the tune.
+- **The model**: `tools/stamp_mural.py --show` predicts wall, candle and
+  bats from any 32 bytes, and `deliverables/contract/chamber-vectors.json`
+  holds 32 worked examples with the exact bytes to write.
+- **The images**: `deliverables/assets/tokens/the-<name>.svg`, eight files,
+  the Glitch's cycling the seven colours (section 6).
+- **The names and provisional colours**: section 3; the colours are the
+  owner's to confirm before the metadata is written.
+
+Yours (the contracts agent's), from the main sections: the seed rule
+(section 5, seed = the newest block hash the view can read, with the
+token id mixed in if the synthesis's per-token arrangement is kept), the
+`tokenURI` assembly (section 5), the storage of the base and the write of
+the 42 bytes into a copy of it at render time, the proof plan (section 7:
+write a vector's bytes, render through the launcher, compare with the
+vector's wall rows), and the testnet deployment order (section 8). The
+owner still holds: the freeze, the colour table, the description text
+(section 3a has the draft) and the token-id-to-class table (the natural one
+is nine per class in the order of section 3, ids 1–63, and id 64 The
+Glitch; not yet confirmed).
+
 ## 9. Where things are in this repository
 
 | path | what |
 |---|---|
-| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (41,094 bytes; default block: Follow, green, block 25850267) |
+| `deliverables/prg/minimal64/tony-chamber.prg` | base 2, current build (46,876 bytes, both tunes; default block: Follow, green, block 25850267) |
 | `deliverables/prg/minimal64/tony-chamber-the-<name>.prg` | the same build stamped for each of the eight (provisional colours) |
 | `tools/make_chamber.py` | generates the Chamber sources from the buddy build (block, mural, mechanics) |
 | `tools/build_chamber_room.py` | the room map, charset and materials |
 | `tools/stamp_mural.py` | writes seed, digits, behaviour, colour into a PRG; `--show` predicts the wall |
 | `tools/verify_buddy.py` | scripted tests of all seven mechanics on minimal64 |
 | `tools/verify_bats.py` | the seeded bats checked over sixteen seeds on minimal64 |
-| `tools/sidreloc.py`, `tools/verify_reloc.py` | move a tune to another address and prove it by replay; `src/music/TonyIntroA000_reloc.sid` is the intro tune at $A000 (E17) |
-| `deliverables/prg/minimal64/tony-chamber-intro*.prg` | the Chamber carrying the intro tune, unstamped and stamped as the Glitch and the Dancer (E17, not decided) |
+| `tools/sidreloc.py`, `tools/verify_reloc.py` | move a tune to another address and prove it by replay; `src/music/TonyIntro8000_reloc.sid` is the intro tune at $8000 (E17) |
+| `tools/chamber_vectors.py` → `deliverables/contract/chamber-vectors.json` | 32 test vectors: the 42 bytes to write and what the base draws from them (wall rows, candle, bats, tune, room) |
+| `deliverables/audio/` | forty seconds of the Glitch (intro tune) and the Dancer (level tune), rendered by the emulator's own SID |
 | `tools/buddy_thumbnail.py` | the SVG reference; `deliverables/assets/buddy-idle-*.svg` its outputs |
 | `tools/m64-harness/` | the native minimal64 test runner (`build.sh` builds it from nopsta's source) |
 | `deliverables/EXPERIMENTS.md` | the ledger: every decision, measurement and open item |

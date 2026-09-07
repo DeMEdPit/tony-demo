@@ -774,6 +774,28 @@ assumption) — not built; `HANDOFF-GLITCH-TUNE.md` puts both to the
 contracts agent; (3) the Dance knobs: the plain pogo (no knobs) or the
 one-a-second bounce (voice 2 + landing pause). The number's ink is decided: black.
 
+**Decided and built (2026-09-07):** the owner keeps the tune for the Glitch
+alone (the Dancer dances worse to it: 7 steps against 42), takes the tamed
+bounce, and asked for the one-base shape. Engineering: the intro tune
+relocated a second time, to $8000 (289 bytes, replay-identical over 24,000
+frames), and carried in the base's Movable segment ahead of the level tune,
+copied out last into $8000–$9695, a region measured untouched by the engine
+over 3,000 frames of play; `initSound` and `doPlay` route on behaviour 7;
+the Dance mechanic rereads the intro player's voice 2 and skips the
+cooldown reset when behaviour is 7. The load image now ends at $BF1A, 229
+bytes under the screen at $C000 (the ceiling for growth). **Base:**
+`tony-chamber.prg`, 46,876 bytes, sha256
+`044f1f714e3e68cc94d79ac6dc16cf8a963cf6ad3d08cab8b900898aa79f6bcf`, the
+block at file offset 0x04EC9, unchanged. Measured on it: all eight tests
+pass (the Glitch's build plays the intro tune and not the level tune, the
+Dancer's the level tune and not the intro tune); the Glitch's Dance phase
+over 90 s: airborne 59%, 0.97 hops/s; the Dancer unchanged (42 steps, 33%
+airborne); bats over sixteen seeds pass; the register fingerprints match
+the right tune for each. The second-base files and variant are retired.
+For the contracts: `tools/chamber_vectors.py` writes 32 test vectors
+(`deliverables/contract/chamber-vectors.json`) and `HANDOFF-CONTRACTS.md`
+gained section 4a (the tune) and 8c (what is fixed and what is theirs).
+
 ---
 
 ## Road to seven tokens · plan (2026-09-06)

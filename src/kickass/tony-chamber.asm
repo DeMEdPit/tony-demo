@@ -40,6 +40,7 @@
 .file [name="./tony-chamber.prg", segments="Code, Movable", modify="BasicUpstart", _start=LDR_MAIN_START_ADDRESS]
 
 .var music = LoadSid("TonyLevelA000_V2.sid")
+.var intro = LoadSid("TonyIntro8000_reloc.sid")   // the Glitch's tune, at $8000
 
 
 .label musicLocation = music.location
@@ -165,6 +166,11 @@ unpack: {
     c64lib_pushParamW(musicData)
     c64lib_pushParamW(MUSIC_MEM)
     c64lib_pushParamW(musicSize)
+    jsr copyLargeMemForward
+
+    c64lib_pushParamW(introData)        // the Glitch's tune, to $8000 (free at run time), after the level tune
+    c64lib_pushParamW(intro.location)   // whose source it would otherwise overwrite
+    c64lib_pushParamW(intro.size)
     jsr copyLargeMemForward
 
     rts
@@ -2511,6 +2517,7 @@ glitchTick: {
 //    at half speed when the player is farther than SHY_CALM_AT; watches him in
 //    between.
 .label SID_IMAGE = $A474
+.label INTRO_IMAGE = $8452
 buddyDecide: {
     lda #0
     sta buddyMoving
@@ -2544,6 +2551,9 @@ buddyDecide: {
     rts
 
     dance:
+    lda muralBehaviour              // the Glitch dances to the intro tune's voice 2
+    cmp #7
+    beq rereadIntro
     reread:                         // the player runs in the interrupt: read lo, hi, lo again
         lda SID_IMAGE
         sta noteNew
@@ -2552,6 +2562,16 @@ buddyDecide: {
         lda SID_IMAGE
         cmp noteNew
         bne reread
+    jmp noteRead
+    rereadIntro:
+        lda INTRO_IMAGE
+        sta noteNew
+        lda INTRO_IMAGE + 1
+        sta noteNew + 1
+        lda INTRO_IMAGE
+        cmp noteNew
+        bne rereadIntro
+    noteRead:
     sec                             // diff = |new - old|
     lda noteNew
     sbc noteOld
@@ -2606,7 +2626,11 @@ buddyDecide: {
     noSlide:
     lda #0
     sta buddyDelay                  // the pose moves only with the music
-    sta buddyCool                   // and he may bounce again the moment he lands
+    ldx muralBehaviour              // the Dancer may bounce again the moment he lands;
+    cpx #7                          // the Glitch keeps the engine's pause (his tune's hits never stop)
+    beq !+
+        sta buddyCool
+    !:
     lda $D41C                       // ENV3: voice 3's envelope, from the chip
     tax
     sec
@@ -5027,7 +5051,13 @@ initSound: {
     ldx #0
     ldy #0
     lda #0
-    jsr music.init
+    ldy muralBehaviour          // the Glitch plays the intro tune, the seven the level tune
+    cpy #7
+    beq !+
+        jsr music.init
+        rts
+    !:
+    jsr intro.init
     rts
 }
 
@@ -5043,7 +5073,13 @@ playMusic: {
         stx ntscCounter
         rts
     doPlay:
-        jsr music.play
+        ldx muralBehaviour
+        cpx #7
+        beq !+
+            jsr music.play
+            rts
+        !:
+        jsr intro.play
     rts
 }
 
@@ -5188,6 +5224,8 @@ endOfNonMovable:
 
 .segment Movable
 
+introData:
+    .fill intro.size, intro.getData(i)
 musicData:
     .fill music.size, music.getData(i)
     // .fill 8*1024 - music.size, random()*256 // filler to the whole 8kb
@@ -5256,6 +5294,7 @@ endOfTony:
 .print "Music location = $" + toHexString(music.location)
 .print "Music original location = $" + toHexString(musicData) + " - $" + toHexString(musicDataEnd - 1)
 .print "Music size = " + music.size
+.print "Intro tune (the Glitch) = $" + toHexString(intro.location) + ", size " + intro.size + ", init $" + toHexString(intro.init) + " play $" + toHexString(intro.play)
 .print "Music init address = $" + toHexString(music.init)
 .print "Music play address = $" + toHexString(music.play)
 

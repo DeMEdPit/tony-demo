@@ -142,20 +142,21 @@ Sami Juntunen, all MIT. Runtime: minimal64 by nopsta, GPL-2.0. nopsta
 stored the machine on Ethereum in 2022 and has since passed away; this
 work was made after he was gone and independently of him.
 
-## An open question: his own tune
+## His own tune
 
 The demo has one other piece of music, the tune of the intro scroller,
-which no Chamber build has ever played. It is faster and denser than the
+which no Chamber build had ever played. It is faster and denser than the
 level tune, about 107 beats a minute against a slow 75, with runs and
 arpeggios on two voices and a filter sweeping under the third. It was
-written for a different part of memory, so it has been moved into the
-Chamber's music slot with a tool that changes only the addresses inside
-the player, and the move was proved by playing both copies for eight
-minutes and comparing every write to the sound chip. Under it the Glitch
-is the same Glitch in the same blackout, but when he blinks in as the
-Dancer the faster music changes him: the lead line's attacks would keep
-him in the air nearly all the time, so the build for this tune has him
-step to the steadier second voice and rest a moment after each landing,
-about one bounce a second. Whether he takes the tune at all, and whether
-moving a tune counts as changing the music, are the owner's calls; the
-builds exist to listen to (`tony-chamber-intro-the-glitch.prg`).
+written for a different part of memory, so it was moved into a corner of
+the Chamber the engine never uses, with a tool that changes only the
+addresses inside the player, and the move was proved by playing both
+copies for eight minutes and comparing every write to the sound chip. The
+Glitch plays it, and only he does: the same program serves all eight
+tokens and starts whichever tune the token's mechanic byte asks for. The
+Dancer was tried on it and dances worse, so the tune stays the Glitch's.
+When he blinks in as the Dancer the faster music would keep him in the air
+nearly all the time, so in his room the Dance mechanic steps to the
+steadier second voice and rests a moment after each landing, about one
+bounce a second. It is the one place in the collection where the music
+changes, and it belongs to the token where everything else changes too.
