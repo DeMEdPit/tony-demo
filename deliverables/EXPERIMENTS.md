@@ -976,6 +976,8 @@ contract. **Frozen 2026-09-07**: first at `9880f03`, reopened the same day for o
 frame A alone rather than the four frames stacked, as the Finder's preview had shown)
 and re-frozen at the commit named in `contract/tokens-record.json`; the checker's
 output at the freeze is `contract/tokens-verify.txt` (76 checks, eight of them the still).
+Measured 2026-09-08 on the live collection page: OpenSea runs the animation in the item
+grid and in the profile picture, on the desktop and on the phone.
 The PRG, the vectors and the base's freeze are untouched.
 
 ## Road to seven tokens · plan (2026-09-06)

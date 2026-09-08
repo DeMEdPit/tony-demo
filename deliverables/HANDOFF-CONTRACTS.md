@@ -390,8 +390,10 @@ the own square at the peak, the four dance frames, the Glitch's sparks, blink
 and sweep. Viewers that hand the SVG to an `<img>` animate it (the major
 browsers run SMIL there); viewers that rasterise to a still without running the
 animation show the resting card with frame A alone, which the checker proves by
-rendering each file with every animation element removed. Measure the
-marketplaces you care about before promising the animation.
+rendering each file with every animation element removed. Measured 2026-09-08
+on the live collection page: OpenSea runs the SVG animation in the item grid,
+on the desktop and on the phone, and as the collection's profile picture; the
+banner is cropped to its middle band on the desktop and shown whole on the phone.
 
 Credits stay where section 5 puts them, in the token metadata: the sprite art
 is Rafał Dudek's and the file carries no text of its own.

@@ -67,6 +67,13 @@ dark grey, black. Three things happen to him, on periods that drift against each
 - **The sweep** (every 3.6 s): a wave of light across the seven squares, each peaking in
   turn at 0.3 + 0.15 i seconds, rising in 50 ms and fading over 450 ms, a glow under each.
 
+## 3a. On the marketplace (measured 2026-09-08)
+
+The owner's collection page on OpenSea, desktop and phone: the item grid runs the SVG
+animation (the dance, the breathing square, the Glitch's static and sweep), and so does
+the profile picture. The Finder's preview and any renderer without SMIL show the resting
+card with frame A, which the still fix guarantees.
+
 ## 4. Sizes
 
 | file | bytes |
