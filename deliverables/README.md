@@ -88,6 +88,8 @@ field report on the first play-test and what it changed.
   what is decided, what is open, sizes, how to regenerate the mock-ups.
 - **`BUILD-DEMO.md`** — the building demo: a separate PRG where down + fire
   lays a brick and up + fire climbs it; controls, rules, bench, what it confirmed.
+- **`HANDOFF-CLONE.md`** — for the brain session: what the two-room demo is,
+  what the engine taught, and how a body, a joystick contract and a brain would fit.
 - **`TRAINER.md`** — the trainer builds and the full ROM-free verification
   (on-target runs + static scan).
 - **`VAULT.md`** — the Idol Vault board: design, route, how it's made.
