@@ -137,3 +137,76 @@ token.
 2. A hand-written builder brain: lay when blocked, step up, repeat toward you. Watch him build.
 3. Record your play; train the first network in the emulator; run it on the 6502.
 4. The save-to-token piece with the contracts session.
+
+## 8. Settled with the contracts session (2026-09-09)
+
+Their answers to section 6, recorded here so both sessions build to the same thing:
+
+- **The clone can lay bricks.** Building his own way up to you is taught first; a race is the game.
+- **Storage: 256 bytes of weights per token plus an 8-byte header** (a magic word, the layer sizes, a
+  version), readable by the program. The stamped block grows from 42 bytes to about 300, which is a new
+  parameter block and marker, `MURAL03`, in a new base for the new collection. The Chamber stays as it is.
+- **Save rights: the owner only, a signed transaction.** Anyone can play a token and teach the clone for
+  the length of a visit; only the holder makes it stick. The frame cannot sign, so "save your clone" lives
+  on the loading page with the wallet button, which reads the weights out of the emulator's memory. An
+  owner-opened training session is a later refinement.
+- **Rooms: he waits.** Following through exits is a second brain.
+- **Both code paths**: hidden size zero is the perceptron; choose after the first training runs.
+- **Arithmetic**: weights as signed bytes, inputs as 4-bit values, multiplied through a table, no
+  shift-and-add loop; a 16-bit accumulator per unit; about three hundred multiplies every fourth frame.
+- **Two additions.** Two to four recurrent units fed back from the previous think, so an intention such
+  as "building a staircase" survives across frames (an Elman network, still tiny). And legibility by
+  construction: the header, and the weights laid out as a labelled block anyone can find with a hex
+  editor, as the `MURAL02` marker is today. The brain should be readable off the chain.
+- **For the save piece they need**: the header format, the block's offset and size, and a reference
+  implementation of the think step in Python that the 6502 matches bit for bit, checked the way the
+  stamp is checked today.
+
+### The budget, counted
+
+256 bytes of signed-byte weights holds less than "twelve hidden over twenty inputs". With I inputs,
+R recurrent units, H hidden and 7 outputs, the weights are (I + R) x H + H x 7 plus H + 7 biases:
+
+| shape | weight bytes | fits 256? |
+|---|---|---|
+| perceptron, 20 inputs, 7 outputs | 147 | yes, with 109 spare |
+| 20 + 2 recurrent inputs, 8 hidden, 7 outputs | 247 | yes, just |
+| 16 + 2 recurrent, 8 hidden | 203 | yes |
+| 20 + 4 recurrent, 12 hidden | 391 | no |
+| 20 + 4 recurrent, 12 hidden, 4-bit weights | 196 | yes |
+
+So within 256 bytes the choice is eight hidden units at byte weights, or twelve at nibble weights, or
+the budget goes to 512 bytes for twelve at byte weights. My recommendation is eight hidden units at
+byte weights with two recurrent units: it fits the table-driven multiply as specified, and eight units
+over these senses is plenty for follow, climb and build. Nibble weights are possible with the same
+multiply table (the table is 4-bit by 4-bit already) but halve the precision the learning rule has to work
+with, which matters more for learning in play than for the trained set.
+
+### The multiply, as it would be done
+
+A 4-bit input times a signed byte weight through one 256-entry table: the weight's magnitude is split
+into two nibbles, each looked up against the input in a 16 x 16 table of products (each product at most
+225, a byte), the high nibble's product shifted left by four before the add, the sign applied once to the
+sum. Two lookups, one shift, one add per weight; the 16-bit accumulator absorbs it. Activation: hidden
+units clamp their accumulator to 0..15, so their outputs are 4-bit like the inputs and feed both the
+output layer and the recurrent inputs of the next think; outputs fire when the accumulator is positive.
+All of it is integer and deterministic, so a Python twin matches it exactly.
+
+### A header to react to (eight bytes)
+
+`"BRN"` (3 bytes, the magic), version (1), inputs (1), hidden (1), recurrent (1), outputs (1). The
+weights follow in a fixed order: input-to-hidden by hidden unit, recurrent-to-hidden, hidden biases,
+hidden-to-output by output, output biases; for hidden = 0, input-to-output then output biases. The 8-byte
+header and the 256 bytes sit right after the `MURAL03` block's own fields, at a fixed offset from the
+marker, so a hex editor finds them the way it finds the seed today. The recurrent state is not stored;
+it starts at zero every render.
+
+### What this session delivers, in order
+
+1. The body: the physics as a second pass, on the two-room demo, with the follow rule as the first brain.
+2. The hand-written builder brain, using the joystick contract, so the senses and the reflex layer get
+   exercised before any training.
+3. The think step on the 6502 with the header above, its Python twin, a bench that runs both on recorded
+   inputs and compares every output, and the first trained weights.
+4. With the contracts session: the `MURAL03` block's layout, the offset and size, and the twin as the
+   check on the contract side.
