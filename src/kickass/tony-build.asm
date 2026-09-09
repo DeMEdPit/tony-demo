@@ -5257,8 +5257,9 @@ endOfNonMovable:
 // ===================================================================== the build demo
 // Down + fire lays a 2x2 brick in the wall slot in front of Tony at his foot level, or
 // lifts it again if it is one he laid. A placed brick is four screen codes of its own
-// ($40-$43, copies of the mural's brick glyphs) carrying wall material, so the engine's
-// own collision makes it floor and wall with no change to the physics. The mural's
+// ($40-$43, with the glyphs of a small stone block: the two ends of a floor brick, so it reads as
+// built, not as the dotted mural) carrying wall material, so the engine's own collision makes it
+// floor and wall with no change to the physics. The mural's
 // seeded bricks stay decoration; a placed brick may cover them and they come back when
 // it is lifted (muralBits remembers where they were). The second Tony checks the column
 // ahead of every step against the same materials, so a placed brick is a wall to him.
@@ -5279,6 +5280,7 @@ buildI:        .byte 0
 buildBCol:     .byte 0
 buildTmp:      .word 0
 brickCodes:    .fill 4, 0         // the mural bricks' screen codes, TL TR BL BR (from the decoding table)
+stoneCodes:    .byte $31, $36, $37, $3C   // the placed brick's look: a floor brick's left and right ends, map codes
 muralBits:     .fill 19, 0        // 150 slots (15 x 10), bit set = a seeded brick
 
 // once the room's characters are translated: the codes, glyphs, materials, the bitmap, the count
@@ -5295,10 +5297,12 @@ buildInit: {
     sta roomMaterialsBuffer + BUILD_CODE + 1
     sta roomMaterialsBuffer + BUILD_CODE + 2
     sta roomMaterialsBuffer + BUILD_CODE + 3
-    // glyphs: the four brick glyphs copied to the placed codes (the room's charset is at TEXT_CHARSET_MEM)
+    // glyphs: a floor brick's two ends copied to the placed codes (the room's charset is at TEXT_CHARSET_MEM)
     ldx #0
     glyphLoop:
-        ldy brickCodes, x
+        ldy stoneCodes, x
+        lda roomCharsDecodingBuffer, y
+        tay
         lda targetCharset.lo, y
         sta SOURCE_PTR
         lda targetCharset.hi, y

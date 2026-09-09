@@ -7,11 +7,11 @@ It is a branch of the frozen base, not a change to it: the base (`tony-chamber.p
 | | |
 |---|---|
 | file | `deliverables/prg/minimal64/tony-build.prg` |
-| size | 42,303 bytes |
-| sha256 | `05ef5e3b4b2c8f543e30a6d3e2c4a3707f3351c77d2eaa3821d4559ef76cecf3` |
+| size | 42,311 bytes |
+| sha256 | `9a35cc8ff638deeadfc031dc3197e915156361dade4d796bca05d9f4a9d12344` |
 | boots on | minimal64 (the bench in `tools/verify_build.py`, ten checks passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
 | built from | the Chamber base at `21b95e3`, room and seed as the base's default block, by `tools/make_chamber.py --variant tony-build --build-demo` and `tools/build_demo.sh tony-build` |
-| diff | `deliverables/build-demo/tony-build.diff`, the demo's source against the base's (595 lines changed, most of them the new code) |
+| diff | `deliverables/build-demo/tony-build.diff`, the demo's source against the base's (599 lines changed, most of them the new code) |
 
 ## Controls
 
@@ -27,7 +27,8 @@ The second Tony is **the Shadow** (behaviour 0, the base's default), green.
 
 ## The verb, exactly
 
-- **The grid.** Bricks are the mural's own 2 x 2 dotted brick, laid on the wall's grid of 15 columns
+- **The grid.** A brick is 2 x 2 cells drawn as a small stone block, the two ends of a floor brick, so it
+  reads as built next to the dotted mural (changed 2026-09-09 at the owner's request). It is laid on the wall's grid of 15 columns
   (screen columns 5 + 2i) and 10 levels (rows 21 to 22 on the floor, then two rows up per level). The
   lowest level sits on the floor at row 23.
 - **Lay.** With his feet on something (standing, walking or ducking), the target is the slot past his
@@ -80,7 +81,7 @@ stops the Shadow at X 159 while Tony walks to 286. Screenshot: `deliverables/scr
 - The placed bricks are recognisable by their codes, so no separate map of them is kept; a room map for a
   token would be the 150-slot bitmap of placed bricks, 19 bytes, next to the seed. The lift rule already
   reads the mural from such a bitmap.
-- The placed brick uses the mural's dotted glyph so it looks native. If a built brick should read as
-  built, a solid glyph for the four codes is a 32-byte change.
+- The placed brick's look is four glyphs copied at start (the floor brick's ends, map codes $31 $36 /
+  $37 $3C); any other 2 x 2 look is a change to that list.
 - The Shadow's guard is the first piece of a second Tony that knows the map; the next is making him an
   actor on the player's physics, which is where any trained policy would have to sit.

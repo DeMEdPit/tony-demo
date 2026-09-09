@@ -1,4 +1,4 @@
-tony-build.prg: 42303 bytes
+tony-build.prg: 42311 bytes
 stairs:
   ok   boots into the room, Tony on the floor, no bricks
   ok   down + fire lays one brick (four cells)

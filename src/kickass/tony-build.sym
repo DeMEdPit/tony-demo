@@ -39,10 +39,10 @@
   }
 }
 .label SPRITES_2ND_BANK_BEGIN=$10
-.label dasboardCharset=$803e
+.label dasboardCharset=$8046
 .label EFX_ANIM_FLAME=$0
 .label SCHEME_AMBER_BRIGHT=$7
-.label musicData=$6aba
+.label musicData=$6ac2
 .label level_objectControlPtr=$5d83
 .label blankScreen=$3c5d {
 }
@@ -182,9 +182,9 @@
 .label _phys_jumpPhase=$4a59
 .label ZR_1=$14
 .label ZR_0=$12
-.label buildStepUp=$6871 {
-  .label no=$68eb
-  .label check=$688c
+.label buildStepUp=$6879 {
+  .label no=$68f3
+  .label check=$6894
 }
 .label joyPreviousValue=$4e5c
 .label _aniPlayerPhase=$3fbc
@@ -258,7 +258,7 @@
 .label BG_CLSE_LADDER_FAR=$10
 .label CMD_IDLE=$0
 .label MAX_TITLE_TEXT=$5
-.label buildBlockedRight=$6a36 {
+.label buildBlockedRight=$6a3e {
 }
 .label _aniPlayerDelayCounter=$3fd4
 .label pathsPtrsHi=$5dfa
@@ -266,7 +266,7 @@
 .label _aniAnimateAddrHi=$3fe0
 .label physResetActorPositionY=$46d7 {
 }
-.label fontEnd=$865e
+.label fontEnd=$8666
 .label MAX_SPRITES=$4
 .label rollNext=$18ed
 .label physResetActorPositionX=$46ca {
@@ -375,11 +375,11 @@
 .label phys_init=$3ff8 {
 }
 .label pikesCounters=$4e6e
-.label buildAct=$6812 {
-  .label no=$6832
-  .label lay=$6833
-  .label lift=$6856
-  .label decide=$6818
+.label buildAct=$681a {
+  .label no=$683a
+  .label lay=$683b
+  .label lift=$685e
+  .label decide=$6820
 }
 .label SPRITES_IN_ZONE_3=$8
 .label duckRightAnimationQuickBL=$3f48
@@ -391,10 +391,10 @@
 .label STATE_ON_LADDER_STOPPED_FACING_RIGHT=$87
 .label buddyPhase=$1892
 .label ANI_MAX_ACTORS=$6
-.label buildFourFree=$68ec {
-  .label bad=$6907
-  .label cellOk=$6908 {
-    .label fine=$6923
+.label buildFourFree=$68f4 {
+  .label bad=$690f
+  .label cellOk=$6910 {
+    .label fine=$692b
   }
 }
 .label STEP_DEADMAN=$1
@@ -426,7 +426,7 @@
 .label findCollidingSprite=$dfd {
   .label loop=$dff
 }
-.label skullSpritesEnd=$acfe
+.label skullSpritesEnd=$ad06
 .label enemiesCounters=$4e86
 .label SOC_DOORCODE=$bc
 .label txtLine2=$5336 {
@@ -489,7 +489,7 @@
   .label sIdx=$2493
   .label t3=$24a5
 }
-.label secondSpriteBankEnd=$8bfe
+.label secondSpriteBankEnd=$8c06
 .label _phys_checkProposalState=$46e5 {
 }
 .label findItemInInventory=$114e {
@@ -506,8 +506,8 @@
 }
 .label LDR_MAIN_UNPACK_START_ADDRESS=$d00
 .label STATE_DEATH_RIGHT=$88
-.label buildWriteCell=$66ec {
-  .label wr=$66fa
+.label buildWriteCell=$66f4 {
+  .label wr=$6702
 }
 .label startGame=$b0f {
 }
@@ -529,7 +529,7 @@
 .label physPlayerBGCollisionExt=$4a4c
 .label STEP_SKULLx2=$2
 .label txtPressFire=$5390
-.label thirdSpriteBank=$8bfe
+.label thirdSpriteBank=$8c06
 .label CMD_JUMP=$7
 .label noteNew=$18b4
 .label deathLeftAnimate=$3eac {
@@ -563,11 +563,11 @@
 .label jumpRightAnimationBG=$3f7e
 .label SO_SNAKE_R=$c
 .label start=$8c0
-.label buildBuddyClear=$6925 {
-  .label bLeft=$69ab
-  .label bRight=$69ac
-  .label clear=$69a8
-  .label bTop=$69aa
+.label buildBuddyClear=$692d {
+  .label bLeft=$69b3
+  .label bRight=$69b4
+  .label clear=$69b0
+  .label bTop=$69b2
 }
 .label target=$18ca
 .label levelDataEnd=$6602
@@ -585,9 +585,9 @@
 }
 .label muralDim=$56fa
 .label BG_CLSN_LADDER=$2
-.label buildColumnWall=$6a99 {
-  .label rows=$6aa3
-  .label wall=$6ab8
+.label buildColumnWall=$6aa1 {
+  .label rows=$6aab
+  .label wall=$6ac0
 }
 .label playerRespawnState=$52d2
 .label _copyChar=$395a {
@@ -623,7 +623,7 @@
 .label level_pikes=$5bda
 .label roomChange=$4e55
 .label ANIM_BAT_LEFT=$10
-.label firstSpriteBank=$8dfe
+.label firstSpriteBank=$8e06
 .label LDR_SPLASH_START_ADDRESS=$a0bd
 .label BUDDY_COLOR=$5
 .label snakeCounter=$4e65
@@ -677,7 +677,7 @@
 .label SCHEME_EMBER_DARK=$6
 .label ANIM_DUCK_LEFT=$2
 .label level_objectSizes=$5d8b
-.label musicDataEnd=$803e
+.label musicDataEnd=$8046
 .label STONES_PHASE_3d=$10
 .label SCHEME_AMBER_DIMMED=$0
 .label currentColor=$4e8c
@@ -807,7 +807,7 @@
 .label _grab_decompress=$3c6f {
 }
 .label SHY_CALM_AT=$6e
-.label gameEnd=$865e {
+.label gameEnd=$8666 {
 }
 .label CHEAT_INITIAL=$0
 .label muralRowA1=$259d
@@ -889,7 +889,7 @@
   }
 }
 .label STATE_ON_GROUND_LEFT=$0
-.label font=$8536
+.label font=$853e
 .label level_stones=$5c2a
 .label gameCheatState=$2d
 .label PLAYER_WALK_LEFT_BG=$d0
@@ -1126,10 +1126,10 @@
 .label wanderRngHi=$18da
 .label duckLeftAnimationQuickTL=$3f38
 .label echoPose=$2286
-.label buildVerb=$6722 {
-  .label upChord=$674d
-  .label done=$675a
-  .label layChord=$673d
+.label buildVerb=$672a {
+  .label upChord=$6755
+  .label done=$6762
+  .label layChord=$6745
 }
 .label BUDDY_HOP_COOL=$14
 .label phys_die=$4656 {
@@ -1147,12 +1147,12 @@
   .label resetJumpPhase=$424b
 }
 .label stonesCounter=$4e7d
-.label buildInit=$6627 {
-  .label notBrick=$66a5
-  .label slotCols=$6684
-  .label glyphLoop=$6644
-  .label floorPattern=$66d4
-  .label slotRows=$667f
+.label buildInit=$662b {
+  .label notBrick=$66ad
+  .label slotCols=$668c
+  .label glyphLoop=$6648
+  .label floorPattern=$66dc
+  .label slotRows=$6687
 }
 .label DANCE_SLIDE=$6
 .label buddyMoving=$188f
@@ -1161,7 +1161,7 @@
 .label _phys_stateChange=$4a5b
 .label _phys_jumpYScheme=$4a5c
 .label CLSN_SPRITE_X_MAX=$4
-.label endOfTony=$ad3e
+.label endOfTony=$ad46
 .label SPRITES_BANK3=$d600
 .label SPRITES_BANK_BEGIN=$80
 .label findObjCollision=$f0b {
@@ -1200,12 +1200,12 @@
   }
 }
 .label level_snakeLeft=$5ada
-.label dashboardCharsetEnd=$8536
+.label dashboardCharsetEnd=$853e
 .label buildCount=$6604
 .label ENEMY_BAT_VERTICAL=$10
 .label DANCE_RISE=$6
 .label ROOM_TRANSIT_EAST=$14
-.label muralBits=$6614
+.label muralBits=$6618
 .label STATE_DUCK_RIGHT=$83
 .label skullAnimate=$3ed8 {
 }
@@ -1253,16 +1253,16 @@
 }
 .label LDR_MAIN_END=$77e9
 .label MATERIALS_MEM=$b400
-.label buildReadCell=$66dc {
-  .label rd=$66e8
+.label buildReadCell=$66e4 {
+  .label rd=$66f0
 }
-.label buildSlotBit=$66fe {
-  .label bitMask=$671a
+.label buildSlotBit=$6706 {
+  .label bitMask=$6722
 }
-.label firstSpriteBankEnd=$ad3e
+.label firstSpriteBankEnd=$ad46
 .label STATE_JUMPING_RIGHT=$84
 .label actorPlayerCommand=$4a55
-.label buildBlockedLeft=$6a5f {
+.label buildBlockedLeft=$6a67 {
 }
 .label startLevel=$bb7 {
   .label commonEntry=$c7a {
@@ -1355,7 +1355,7 @@
 }
 .label ANIM_DEADMAN_RIGHT=$f
 .label BG_CLSN_BOX_MASK=$46
-.label gameEndEnd=$88fe
+.label gameEndEnd=$8906
 .label COPPER_LIST_PTR=$5
 .label level_movableObjectValue2Ptr=$5d89
 .label PIKES_MAX_FRAME=$1e
@@ -1450,14 +1450,14 @@
 .label buildRow=$6605
 .label deathLeftAnimationBL=$3f85
 .label SOC_KEY=$e0
-.label tonySpritesEnd=$abfe
+.label tonySpritesEnd=$ac06
 .label noteOld=$18b2
 .label copyBitmapChar=$3600 {
 }
 .label PLAYER_JUMP_LEFT=$b4
-.label thirdSpriteBankEnd=$8dfe
+.label thirdSpriteBankEnd=$8e06
 .label level_startRoom=$54a8
-.label skullSprites=$abfe
+.label skullSprites=$ac06
 .label FLASH_DELAY=$1
 .label joyHandlingForBorg=$3afe {
   .label storeA=$3b41
@@ -1534,11 +1534,11 @@
 .label currentChamberNumber=$4e51
 .label actorPositionX=$4aca
 .label actorPositionY=$4ad0
-.label buildTarget=$675e {
-  .label no=$6810
-  .label haveCol=$6803
-  .label right=$67fb
-  .label ok=$6771
+.label buildTarget=$6766 {
+  .label no=$6818
+  .label haveCol=$680b
+  .label right=$6803
+  .label ok=$6779
 }
 .label ANIM_IDLING_LEFT=$4
 .label SO_DEAD=$0
@@ -1588,11 +1588,12 @@
 }
 .label STATE_ON_LADDER_STOPPED_FACING_LEFT=$7
 .label SCHEME_EMBER_BRIGHT=$7
-.label buildRestoreCell=$69ad {
-  .label rowSave=$69f8
-  .label colSave=$69f9
-  .label write=$69ef
-  .label empty=$69ed
+.label stoneCodes=$6614
+.label buildRestoreCell=$69b5 {
+  .label rowSave=$6a00
+  .label colSave=$6a01
+  .label write=$69f7
+  .label empty=$69f5
 }
 .label chooseRoom=$1490 {
 }
@@ -1631,10 +1632,10 @@
   .label setPose=$187b
 }
 .label PLAYER_IDLING_LEFT_BG=$d8
-.label buildDrawCount=$69fa {
-  .label d0=$6a33
-  .label d1=$6a34
-  .label d2=$6a35
+.label buildDrawCount=$6a02 {
+  .label d0=$6a3b
+  .label d1=$6a3c
+  .label d2=$6a3d
 }
 .label drawSnakeL=$333c {
 }
@@ -1657,10 +1658,10 @@
 .label actorDepackValue=$4adc
 .label ANIM_IDLING_RIGHT=$5
 .label CLSN_FLOOR_COMPENSATION_Y=$4
-.label secondSpriteBank=$88fe
+.label secondSpriteBank=$8906
 .label CHEAT_STONE_INVINCIBLE=$2
 .label PLAYER_DEATH_LEFT_BG=$ee
-.label tonySprites=$8dfe
+.label tonySprites=$8e06
 .label PLAYER_JUMP_RIGHT=$b8
 .label _seq_delay=$4aa9
 .label PLAYER_DUCK_LEFT=$90
