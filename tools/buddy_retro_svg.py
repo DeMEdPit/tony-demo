@@ -33,7 +33,7 @@ GREY_RAMP = [1, 15, 12, 11, 0]                     # white, light grey, medium g
 GREY_SOFT = [15, 12, 11, 0]                        # the same floor starting on light grey
 GREY_DUSK = [12, 11, 0]                            # medium grey down to black
 GREY_DARK = [11, 0]                                # dark grey down to black: the room with the lights out
-GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11, "static": 1, "dark-static": 11, "sparks": 1, "dark-sparks": 11}
+GREYS = {"white": 1, "light-grey": 15, "grey": 12, "dark-grey": 11, "static": 1, "dark-static": 11, "sparks": 1, "dark-sparks": 11, "white-sparks": 1}
 # "sparks": the same bursts, but the light-grey flips become colours, a different pair each burst, over a seven-burst cycle
 SPARKS = [3, 10, 6, 7, 14, 4, 5, 7, 3, 4, 10, 5, 14, 6]          # a scrambled deal: each of the seven twice, never twice running
 # a burst of static once per breath: a third of a second of quick flips between the greys, then back to the body's grey
@@ -136,8 +136,10 @@ def figure_paths(frames, fill, bx, by, glitch, seq, body="cascade"):
             kt = "0;" + ";".join(f"{t / (2 * LOOP):.4f}" for t, _ in burst) + ";1"
             cols = base + ";" + ";".join(rm.PAL[c] for _, c in burst) + ";" + base
             parts.append(f'<animate attributeName="fill" values="{cols}" keyTimes="{kt}" calcMode="discrete" dur="{BREATH}" repeatCount="indefinite"/>')
-        elif glitch and body in ("sparks", "dark-sparks"):
+        elif glitch and body in ("sparks", "dark-sparks", "white-sparks"):
+            # "white-sparks": the dark Glitch's burst exactly, on a white body (his own grey 11 becomes white)
             burst = STATIC["static" if body == "sparks" else "dark-static"]; base = rm.PAL[GREYS[body]]
+            if body == "white-sparks": burst = [(t, 1 if c == 11 else c) for t, c in burst]
             import itertools
             cycle = 7 * 2 * LOOP; times, vals = [], []; deal = itertools.cycle(SPARKS)
             for k in range(7):
@@ -304,7 +306,7 @@ def main():
     ap.add_argument("--tag-dim", type=float, default=0.6, help="opacity of the resting tag squares; the live one rises to 1")
     ap.add_argument("--glitch-start", default="light-red", choices=sorted(NAMES), help="the colour the Glitch's cascade starts on")
     ap.add_argument("--glitch-floor", default="own", choices=["own", "spectrum", "luminance", "follow", "grey", "grey-soft", "grey-dusk", "grey-dark"])
-    ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static", "dark-static", "sparks", "dark-sparks"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
+    ap.add_argument("--glitch-body", default="cascade", choices=["cascade", "white", "light-grey", "grey", "dark-grey", "static", "dark-static", "sparks", "dark-sparks", "white-sparks"], help="his body: the seven-colour cascade, a grey, or grey with bursts of static")
     ap.add_argument("--glitch-tag", default="cascade", choices=["cascade", "sweep", "comet"], help="his tag: one square per loop, or a wave across the row once per breath")
     ap.add_argument("--tag-order", default="hue", help="the order of the seven squares: hue (round the colour wheel), roster, luminance, or seven colour names separated by commas")
     ap.add_argument("--order-strip", help="sheet of the first token with the tag in each of the orders given by --orders")
