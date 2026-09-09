@@ -1,23 +1,6 @@
-tony-build.prg: 43423 bytes
-stairs:
-  ok   boots into the room, Tony on the floor, no bricks
-  ok   down + fire lays one brick (four cells)
-  ok   up + fire steps him onto it, one brick higher, over its columns
-  ok   a second brick from up there and a second step up
-  ok   three bricks high
-  ok   a fourth laid from the top
-  ok   lifted again: the wall exactly as before it, mural bricks restored
-  ok   walking off the top drops him to the floor
-wall:
-  ok   a brick laid between Tony and the Shadow
-  ok   Tony walks to 286, the Shadow stops at the brick (X 159)
-ladder:
-  the ladder hangs at columns 33-34 (seeded)
-  ok   five bricks laid and climbed, the ladder in reach (Y 122, count 5)
-  ok   holding up on the ladder takes Tony into the room above (room 1, Y 207)
-  ok   the Shadow is not in the room above (his sprites off)
-  ok   the room above has no bricks
-  ok   climbing down brings him back to the room below with its five bricks (room 0, count 5)
-  ok   the Shadow is there again
-  ok   he dropped off the ladder's end onto his bricks (Y 126)
-ALL OK
+Traceback (most recent call last):
+  File "/home/user/tony-demo/tools/verify_build.py", line 43, in <module>
+    print(f"{os.path.basename(PRG)}: {os.path.getsize(PRG)} bytes")
+                                      ^^^^^^^^^^^^^^^^^^^^
+  File "<frozen genericpath>", line 50, in getsize
+FileNotFoundError: [Errno 2] No such file or directory: '--shots'

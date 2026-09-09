@@ -1,5 +1,5 @@
 --- src/kickass/tony-chamber.asm	2026-09-07 03:39:51.953957942 +0000
-+++ src/kickass/tony-build.asm	2026-09-09 19:55:54.415653593 +0000
++++ src/kickass/tony-build.asm	2026-09-09 19:58:04.246721364 +0000
 @@ -37,7 +37,7 @@
  .segmentdef Code [start=LDR_MAIN_START_ADDRESS]
  .segmentdef Movable [startAfter="Code"]
@@ -185,7 +185,7 @@
      lda currentChamberNumber
      // TODO: currently rooms with stones are hardcoded in this place!
      cmp #22
-@@ -5251,15 +5333,707 @@
+@@ -5251,15 +5333,711 @@
  
  // temporarily...
  levelDataStart:
@@ -484,6 +484,10 @@
 +// its press: down + fire lays or lifts, up + fire steps up onto the brick in front.
 +buildVerb: {
 +    sta buildJoy
++    lda c64lib.SPRITE_ENABLE       // the bats' sprites stay off (a room change would show them again)
++    and #%11100111
++    sta c64lib.SPRITE_ENABLE
++    lda buildJoy
 +    eor #$1f
 +    tax
 +    and #%00010010

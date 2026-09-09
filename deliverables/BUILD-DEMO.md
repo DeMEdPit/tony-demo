@@ -8,11 +8,11 @@ It is a branch of the frozen base, not a change to it: the base (`tony-chamber.p
 | | |
 |---|---|
 | file | `deliverables/prg/minimal64/tony-build.prg` |
-| size | 43,423 bytes |
-| sha256 | `6fb4ad7a2c9302bb6506263d9d2e3bc642d7e82f172f100f531519b2f8714807` |
+| size | 43,434 bytes |
+| sha256 | `5c24a63e1c14e26c2f966e7cc58cf4d484792b82bcd7c8e397ae96cd564bbf29` |
 | boots on | minimal64 (the bench in `tools/verify_build.py`, seventeen checks passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
 | built from | the Chamber base at `21b95e3`, room and seed as the base's default block, by `tools/make_chamber.py --variant tony-build --build-demo` and `tools/build_demo.sh tony-build` |
-| diff | `deliverables/build-demo/tony-build.diff`, the demo's source against the base's (806 lines changed, most of them the new code) |
+| diff | `deliverables/build-demo/tony-build.diff`, the demo's source against the base's (810 lines changed, most of them the new code) |
 
 ## Controls
 

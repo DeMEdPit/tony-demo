@@ -478,6 +478,10 @@ buildSlotBit: {
 // its press: down + fire lays or lifts, up + fire steps up onto the brick in front.
 buildVerb: {
     sta buildJoy
+    lda c64lib.SPRITE_ENABLE       // the bats' sprites stay off (a room change would show them again)
+    and #%11100111
+    sta c64lib.SPRITE_ENABLE
+    lda buildJoy
     eor #$1f
     tax
     and #%00010010
