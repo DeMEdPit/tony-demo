@@ -37,7 +37,7 @@
 .segmentdef Code [start=LDR_MAIN_START_ADDRESS]
 .segmentdef Movable [startAfter="Code"]
 
-.file [name="./tony-body.prg", segments="Code, Movable", modify="BasicUpstart", _start=LDR_MAIN_START_ADDRESS]
+.file [name="./tony-body-builder.prg", segments="Code, Movable", modify="BasicUpstart", _start=LDR_MAIN_START_ADDRESS]
 
 .var music = LoadSid("TonyLevelA000_V2.sid")
 .var intro = LoadSid("TonyIntro8000_reloc.sid")   // the Glitch's tune, at $8000
@@ -6588,7 +6588,7 @@ cloneFramesBGhi: .byte >walkLeftAnimationBG, >walkRightAnimationBG, >duckLeftAni
 brainMarker:    .text "BRAIN01"
                 .byte 0
 brainHeader:
-brainKind:      .byte 0                 // +8  (--brain-kind)
+brainKind:      .byte 2                 // +8  (--brain-kind)
 brainLayout:    .byte 1                 // +9   the sense packing and the action vocabulary, version 1
 brainInputCount: .byte SENSE_COUNT      // +10
 brainHiddenCount: .byte 0               // +11  0: the perceptron

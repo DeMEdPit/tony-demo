@@ -90,7 +90,8 @@ brain slot, `BRAIN01` page-aligned with the header (kind 0 says "no brain yet"),
 weights, the mood, the forward pass proved against a Python reference on random vectors, the ten-action
 decoder with the build macro and the release frame, a think every fourth frame in the main loop that
 runs under teaching; and the harness page, `HARNESS.md`, with snapshot, restore and load and one worked
-episode. Example weight files in `deliverables/brains/`.
+episode. Example weight files in `deliverables/brains/`. The builder brain (kind 2) is in the same
+program; `tony-body-builder.prg` has it on from the start, for play.
 
 Everything the player can do is five lines a frame, up down left right fire, and in this demo two
 chords. So the brain's output is one byte a frame: the five lines, plus "lay" and "step up" as two more

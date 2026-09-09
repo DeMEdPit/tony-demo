@@ -63,6 +63,8 @@ import re as _re
 #          --build-demo   the building demo (see BUILD_DEMO below): no bats, no Glitch tune, down + fire lays a brick
 #          --body         with --build-demo: the clone's body (see BODY below): the Shadow runs the player's physics,
 #                         driven by a joystick byte a brain writes; the follow rule is the first brain
+#          --brain-kind N with --body: the brain slot's kind byte as assembled (0 the follow rule, the default;
+#                         1 the perceptron over the slot's weights; 2 the hand-written builder)
 #          --glitch-ink N the colour of the block number's cells in the Glitch's blackout
 #                         (default 0, black on the dark grey stone, the owner's choice; 15 was light grey)
 # The base carries both tunes. Behaviour 7 (the Glitch) plays the intro tune; the seven play the
@@ -77,6 +79,7 @@ GLITCH_DANCE_VOICE = 2
 DIM_NO_CANDLE = True       # a room without a candle has medium grey stone (the owner's choice, 2026-09-07); --lit-no-candle turns it off
 BUILD_DEMO = False         # --build-demo: a separate PRG for the owner to play; the base is untouched
 BODY = False               # --body: the clone's body on top of the build demo (tony-body.prg)
+BRAIN_KIND = 0             # --brain-kind: the slot's kind byte as assembled (tony-body-builder.prg is 2)
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -88,6 +91,7 @@ while _args:
     elif _flag == "--lit-no-candle": DIM_NO_CANDLE = False
     elif _flag == "--build-demo": BUILD_DEMO = True
     elif _flag == "--body": BODY = True
+    elif _flag == "--brain-kind": BRAIN_KIND = int(_args.pop(0)); assert 0 <= BRAIN_KIND <= 2
     else: raise SystemExit("unknown option " + _flag)
 assert BUILD_DEMO or not BODY, "--body needs --build-demo"
 _sid = open(MUSIC, "rb").read()
@@ -2207,11 +2211,12 @@ brainForward: {
 
 // the builder rule (kind 2): the senses in brainIn -> brainAction, hand-written over the vocabulary,
 // so the decoder, the macro and the senses are exercised by a brain anyone can read. Toward the
-// player: walk. Facing his way, a wall at the feet with the head clear is a step: jump it, that way; a
-// wall at the head too is a climb: build a brick if the slot is free. The player above with a ladder
-// in the box: climb. On a ladder: up or down after him, hang on when level. In the air: nothing, the
-// physics finish the jump. Within sixteen pixels of him with nothing ahead and two bricks or more
-// below him: build, the way he faces.
+// player when 48 px or more away: walk; nearer, stay beside him, out of the slot he builds in, unless
+// he is two bricks or more above. Facing his way, a wall at the feet with the head clear is a step:
+// jump it, that way; a wall at the head too is a climb: build a brick if the slot is free. The player
+// above with a ladder in the box: climb. On a ladder: up or down after him, hang on when level. In
+// the air: nothing, the physics finish the jump. Near and well below him with nothing ahead: build,
+// the way he faces.
 builderThink: {
     .label sDx = brainIn + 1
     .label sDy = brainIn + 2
@@ -2277,6 +2282,22 @@ builderThink: {
         inc wantRight
     haveDir:
     stx dir
+    lda dx                              // the distance, unsigned
+    bpl !+
+        eor #$ff
+        clc
+        adc #1
+    !:
+    sta adx
+    cmp #5
+    bcs act                             // 48 px or more away: go
+    lda dy                              // nearer: stay beside him (out of the slot he builds in) unless
+    bmi wait                            // he is two bricks or more above
+    cmp #2
+    bcs act
+    wait:
+    rts
+    act:
     lda sFacing                         // facing his way: what is ahead decides first
     beq facingLeft
         lda wantRight
@@ -2307,25 +2328,16 @@ builderThink: {
         rts
     notFacing:
     nothingAhead:
-    lda dx                              // the distance, unsigned
-    bpl !+
-        eor #$ff
-        clc
-        adc #1
-    !:
-    cmp #2
+    lda adx
+    cmp #5
     bcc near
-        lda dir                         // sixteen pixels or more away: walk his way (turning if needed)
+        lda dir                         // 48 px or more away: walk his way (turning if needed)
         sta brainAction
         rts
     near:
-    lda dy                              // within sixteen pixels: two bricks or more below him, build up
-    bmi !+
-    cmp #2
-    bcc !+
-    lda sBuildable
+    lda sBuildable                      // near and well below him with nothing ahead: build up, the way he faces
     beq !+
-        ldx #8                          // build, the way he faces
+        ldx #8
         lda sFacing
         beq build
             inx
@@ -2335,6 +2347,7 @@ builderThink: {
     rts
     dx:        .byte 0
     dy:        .byte 0
+    adx:       .byte 0
     dir:       .byte 0
     wantRight: .byte 0
 }
@@ -3042,6 +3055,7 @@ def body(src):
     j = src.index("\n}\n", src.index("buildColumnWall: {", i)) + 3
     src = src[:i] + src[j:]
     src = sub(src, ".segment Movable\n", BODY_CODE_ASM + "\n.segment Movable\n")
+    src = sub(src, "brainKind:      .byte 0                 // +8\n", f"brainKind:      .byte {BRAIN_KIND}                 // +8  (--brain-kind)\n")
     return src
 
 

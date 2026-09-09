@@ -102,14 +102,14 @@ poke:6bc6:88
 wait:20
 poke:6bc6:00
 wait:100
-sync,peek:6bd1,peek:6BD2,peek:7ae1,peek:7AE2,peek:7ACD,peek:7ACE,peek:7ACF,peek:7AD0,peek:7AD1,peek:7AD2,peek:7AD3,peek:7AD4,peek:7AD5,peek:7AD6,peek:7AD7,peek:7AD8,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
 restore
 load:7410:deliverables/brains/build-left.bin
 poke:7408:01
 wait:150
-sync,peek:6bd1,peek:6BD2,peek:7ae1,peek:7AE2,peek:7ACD,peek:7ACE,peek:7ACF,peek:7AD0,peek:7AD1,peek:7AD2,peek:7AD3,peek:7AD4,peek:7AD5,peek:7AD6,peek:7AD7,peek:7AD8,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
 restore
-sync,peek:6bd1,peek:6BD2,peek:7ae1,peek:7AE2,peek:7ACD,peek:7ACE,peek:7ACF,peek:7AD0,peek:7AD1,peek:7AD2,peek:7AD3,peek:7AD4,peek:7AD5,peek:7AD6,peek:7AD7,peek:7AD8,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
 ```
 
 Boot and let the level settle (`wait:300`); keep the machine (`snapshot`); load the two-weight follow
@@ -123,7 +123,7 @@ returns once more and the final reads describe the snapshot itself.
 The run's output, decoded (`tools/harness-examples/episode.out` has the raw lines):
 
 ```
-prg deliverables/prg/minimal64/tony-body.prg: 47862 bytes
+prg src/kickass/tony-body.prg: 47874 bytes
 load $7410 +100 <- deliverables/brains/follow-two-weights.bin
 poke $7408 <- $01
 poke $6bc6 <- $88

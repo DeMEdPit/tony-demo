@@ -1,5 +1,5 @@
 --- src/kickass/tony-build.asm	2026-09-09 20:59:53.672436814 +0000
-+++ src/kickass/tony-body.asm	2026-09-09 22:25:11.218232484 +0000
++++ src/kickass/tony-body.asm	2026-09-09 22:43:37.095499540 +0000
 @@ -37,7 +37,7 @@
  .segmentdef Code [start=LDR_MAIN_START_ADDRESS]
  .segmentdef Movable [startAfter="Code"]
@@ -489,7 +489,7 @@
      lda buildCount
      ldx #0
      !:
-@@ -5995,45 +5695,1913 @@
+@@ -5995,45 +5695,1922 @@
      d2: .byte 0
  }
  
@@ -1124,8 +1124,7 @@
 +    lda #0
 +    sta cloneAniPhase
 +    rts
- }
--buildBlockedLeft: {
++}
 +
 +// the build verb for the clone: bit 5 lays or lifts, bit 6 steps up, each on its rising edge
 +// (his record is swapped in, so buildTarget reads his box and buildBuddyClear the player's)
@@ -1147,7 +1146,8 @@
 +    !:
 +    rts
 +    edges: .byte 0
-+}
+ }
+-buildBlockedLeft: {
 +
 +// the follow rule (cloneFollow, kind 0): the Chamber's follow rule as joystick bits. Walk towards the player when
 +// farther than BUDDY_GO_AT, stop when nearer than BUDDY_STOP_AT; press fire on the first
@@ -1260,7 +1260,9 @@
 +    rts
 +    mag:         .byte 0
 +    targetRight: .byte 0
-+}
+ }
+-buildColumnWall: {
+-    lda buddyY
 +
 +// the clone's sprites from his record (doEachFrameVisual, where the player's are written)
 +cloneDraw: {
@@ -1399,7 +1401,7 @@
 +brainMarker:    .text "BRAIN01"
 +                .byte 0
 +brainHeader:
-+brainKind:      .byte 0                 // +8
++brainKind:      .byte 0                 // +8  (--brain-kind)
 +brainLayout:    .byte 1                 // +9   the sense packing and the action vocabulary, version 1
 +brainInputCount: .byte SENSE_COUNT      // +10
 +brainHiddenCount: .byte 0               // +11  0: the perceptron
@@ -1481,9 +1483,7 @@
 +        inc brainThinks + 1
 +    !:
 +    rts
- }
--buildColumnWall: {
--    lda buddyY
++}
 +
 +// brainIn and brainWeights -> brainAcc and brainAction (the first largest). Interruptible: it reads
 +// nothing the interrupt writes.
@@ -1634,11 +1634,12 @@
 +
 +// the builder rule (kind 2): the senses in brainIn -> brainAction, hand-written over the vocabulary,
 +// so the decoder, the macro and the senses are exercised by a brain anyone can read. Toward the
-+// player: walk. Facing his way, a wall at the feet with the head clear is a step: jump it, that way; a
-+// wall at the head too is a climb: build a brick if the slot is free. The player above with a ladder
-+// in the box: climb. On a ladder: up or down after him, hang on when level. In the air: nothing, the
-+// physics finish the jump. Within sixteen pixels of him with nothing ahead and two bricks or more
-+// below him: build, the way he faces.
++// player when 48 px or more away: walk; nearer, stay beside him, out of the slot he builds in, unless
++// he is two bricks or more above. Facing his way, a wall at the feet with the head clear is a step:
++// jump it, that way; a wall at the head too is a climb: build a brick if the slot is free. The player
++// above with a ladder in the box: climb. On a ladder: up or down after him, hang on when level. In
++// the air: nothing, the physics finish the jump. Near and well below him with nothing ahead: build,
++// the way he faces.
 +builderThink: {
 +    .label sDx = brainIn + 1
 +    .label sDy = brainIn + 2
@@ -1704,6 +1705,22 @@
 +        inc wantRight
 +    haveDir:
 +    stx dir
++    lda dx                              // the distance, unsigned
++    bpl !+
++        eor #$ff
++        clc
++        adc #1
++    !:
++    sta adx
++    cmp #5
++    bcs act                             // 48 px or more away: go
++    lda dy                              // nearer: stay beside him (out of the slot he builds in) unless
++    bmi wait                            // he is two bricks or more above
++    cmp #2
++    bcs act
++    wait:
++    rts
++    act:
 +    lda sFacing                         // facing his way: what is ahead decides first
 +    beq facingLeft
 +        lda wantRight
@@ -1734,25 +1751,16 @@
 +        rts
 +    notFacing:
 +    nothingAhead:
-+    lda dx                              // the distance, unsigned
-+    bpl !+
-+        eor #$ff
-+        clc
-+        adc #1
-+    !:
-+    cmp #2
++    lda adx
++    cmp #5
 +    bcc near
-+        lda dir                         // sixteen pixels or more away: walk his way (turning if needed)
++        lda dir                         // 48 px or more away: walk his way (turning if needed)
 +        sta brainAction
 +        rts
 +    near:
-+    lda dy                              // within sixteen pixels: two bricks or more below him, build up
-+    bmi !+
-+    cmp #2
-+    bcc !+
-+    lda sBuildable
++    lda sBuildable                      // near and well below him with nothing ahead: build up, the way he faces
 +    beq !+
-+        ldx #8                          // build, the way he faces
++        ldx #8
 +        lda sFacing
 +        beq build
 +            inx
@@ -1762,6 +1770,7 @@
 +    rts
 +    dx:        .byte 0
 +    dy:        .byte 0
++    adx:       .byte 0
 +    dir:       .byte 0
 +    wantRight: .byte 0
 +}

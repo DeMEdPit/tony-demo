@@ -1,4 +1,4 @@
-tony-body.prg: 47862 bytes
+tony-body.prg: 47874 bytes
 senses (every nibble of the packed block against the twin, from the raw values of the same frame):
   ok   start: the clone near Tony: 20 of 20 nibbles agree
   ok   Tony walks right, the clone walking after him: 20 of 20 nibbles agree
@@ -30,14 +30,16 @@ forward sweep (the 6502 against a Python forward on random weights, moods and se
   ok   40 vectors, accumulators and the chosen action: 40 agree
 two weights (kind 1):
   ok   right when dx is positive, left when negative, idle within 16 px (a bucket of one ties the bias, and the first output wins a tie): he came to 178 beside Tony at 184
-  ok   and followed Tony to the pillar (Tony 286, the clone 282)
-  ok   a think every four frames: 54 thinks in 215 frames
+  ok   and followed Tony to the pillar (Tony 286, the clone 276)
+  ok   a think every four frames: 53 thinks in 215 frames
   ok   build left whenever a slot is free: a staircase of 9 in 200 frames, up at Y 78
   ok   and on: 9 bricks, Y 78
 the builder (kind 2):
   ok   Tony lays a brick between them and walks to 286; the follow rule leaves the clone at the brick, X 158
-  ok   kind 2: he jumps the brick and comes to Tony (X 280 after 100 frames, 280 after 200)
+  ok   kind 2: he jumps the brick and comes to within 48 px of Tony (X 248 after 100 frames, 248 after 200)
   ok   Tony builds five bricks under the ladder and climbs part of it (Y 72); the clone waits below at X 206, Y 206
   ok   kind 2: after 120 frames he is on the stairs (Y 134, X 270)
   ok   after 360 frames he is on the ladder beside Tony (Y 78 to Tony's 72, state 135), unaided
+  ok   the builder on while Tony builds: he stays out of the slots, all five bricks laid (count 5); he is at X 270, Y 142
+  ok   and when Tony climbs he follows up the stairs and the ladder to him (Y 78 to Tony's 72)
 ALL OK

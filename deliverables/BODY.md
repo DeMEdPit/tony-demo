@@ -10,10 +10,11 @@ here touches the frozen base (`tony-chamber.prg`, sha256 `67dc97bc1e306715...`) 
 | | |
 |---|---|
 | file | `deliverables/prg/minimal64/tony-body.prg` |
-| size | 47,862 bytes |
-| sha256 | `1e90e03e996276ad72f287f0077e8c3a721b015918d64e80829d12a9a27da86e` |
+| size | 47,874 bytes |
+| sha256 | `9a5e882b238bd079b501ddbac1bb16a9fce79835f3f789bd223872a1a3745acc` |
 | boots on | minimal64 (the benches in `tools/verify_body.py` and `tools/verify_brain.py`, all passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
 | built from | the building demo's generator with one more option: `tools/make_chamber.py --variant tony-body --build-demo --body`, then `tools/build_demo.sh tony-body` |
+| the builder file | `deliverables/prg/minimal64/tony-body-builder.prg`, the same program with the slot's kind byte assembled as 2 (`--brain-kind 2`), sha256 `44b757b2e514300d303c5260699de2f3d29e345e194074f34d2416581646d4c1`: the builder brain from the start, for play |
 | diff | `deliverables/build-demo/tony-body.diff`, the body's source against the building demo's (the clone's code is the bulk of it) |
 | bench output | `deliverables/build-demo/verify-body.txt` (the body), `verify-brain.txt` (the senses, the slot, the builder) |
 
@@ -216,17 +217,22 @@ you. The rule, in order:
 1. In the air: nothing. The physics finish the jump.
 2. On a ladder: up when the player is above, down when below, hang on when level.
 3. The player above and a ladder in his box: up.
-4. His way is toward the player, or the way he faces when level with him. Facing his way, a wall at
+4. Nearer than 48 pixels to the player and not two bricks or more below him: wait. This keeps him out
+   of the slot the player is building in (a first version walked up to within sixteen pixels and stood
+   in it, and the player's lays were refused).
+5. His way is toward the player, or the way he faces when level with him. Facing his way, a wall at
    his feet with his head clear is a step: jump it, that way. A wall at his head too is a climb: build a
    brick that way if the slot is free, else nothing.
-5. Sixteen pixels or more from the player: walk his way (which turns him if he faced away).
-6. Nearer, with nothing ahead, and two bricks or more below the player: build, the way he faces.
+6. Forty-eight pixels or more from the player: walk his way (which turns him if he faced away).
+7. Nearer, well below him, with nothing ahead: build, the way he faces.
 
-What it does in the bench: with a brick laid between them he jumps it and comes to Tony; with Tony's
-five-brick staircase under the ladder and Tony part way up it, he walks to the stairs, jumps each step
-(the jump from against a brick rises past its top and lands on it), reaches the top brick under the
-ladder, and climbs to Tony's height, where he hangs. Nothing in the follow rule could do either; the
-builder does both from the senses alone. The first thing a trained brain has to beat is this rule.
+What it does in the bench: with a brick laid between them he jumps it and comes to within 48 pixels
+of Tony; with Tony's five-brick staircase under the ladder and Tony part way up it, he walks to the
+stairs, jumps each step (the jump from against a brick rises past its top and lands on it), reaches
+the top brick under the ladder, and climbs to Tony's height, where he hangs. With the builder on
+while Tony builds, he waits beside the stairs, one step behind as Tony climbs, all five bricks get
+laid, and he follows up the ladder. Nothing in the follow rule could do any of it; the builder does
+it from the senses alone. The first thing a trained brain has to beat is this rule.
 
 ## Time, measured
 

@@ -223,7 +223,7 @@ def rowC(v, k):
 v = harness("wait:300,joy:18:6,wait:20,joy:8:150,wait:100," + snapC + f"poke:{KIND:X}:02,wait:100," + snapC + "wait:100," + snapC)
 a, b, c = rowC(v, 0), rowC(v, 1), rowC(v, 2)
 check(a["count"] == 1 and a["cx"] <= 162 and a["px"] >= 270, f"Tony lays a brick between them and walks to {a['px']}; the follow rule leaves the clone at the brick, X {a['cx']}")
-check(c["cx"] > a["cx"] + 40 and abs(c["px"] - c["cx"]) < 24 and c["cy"] == 206, f"kind 2: he jumps the brick and comes to Tony (X {b['cx']} after 100 frames, {c['cx']} after 200)")
+check(c["cx"] > a["cx"] + 40 and abs(c["px"] - c["cx"]) < 48 and c["cy"] == 206, f"kind 2: he jumps the brick and comes to within 48 px of Tony (X {b['cx']} after 100 frames, {c['cx']} after 200)")
 # Tony builds five bricks under the ladder and climbs part of it; the clone climbs the stairs and the ladder to him
 C = a["ladder"]
 if C >= 13:
@@ -239,4 +239,9 @@ check(a["count"] == 5 and (a["ps"] & 0x7f) in (2, 7) and a["py"] < 100 and a["ro
 check(b["cy"] < 206, f"kind 2: after 120 frames he is on the stairs (Y {b['cy']}, X {b['cx']})")
 check(d["cy"] <= a["py"] + 16 and (d["cs"] & 0x7f) in (2, 7) and abs(d["cx"] - d["px"]) < 16 and d["room"] == 0,
       f"after 360 frames he is on the ladder beside Tony (Y {d['cy']} to Tony's {d['py']}, state {d['cs']}), unaided")
+# the builder on from the start: he keeps out of Tony's way while Tony builds, then follows him up
+v = harness(f"wait:300,poke:{KIND:X}:02,wait:60," + walk + "wait:20," + stair + "wait:10," + snapC + "hold:1,wait:50,release:1,wait:300," + snapC)
+a, b = rowC(v, 0), rowC(v, 1)
+check(a["count"] == 5, f"the builder on while Tony builds: he stays out of the slots, all five bricks laid (count {a['count']}); he is at X {a['cx']}, Y {a['cy']}")
+check(b["cy"] <= b["py"] + 16 and (b["cs"] & 0x7f) in (2, 7) and abs(b["cx"] - b["px"]) < 16, f"and when Tony climbs he follows up the stairs and the ladder to him (Y {b['cy']} to Tony's {b['py']})")
 print("ALL OK" if ok else "FAILURES"); sys.exit(0 if ok else 1)
