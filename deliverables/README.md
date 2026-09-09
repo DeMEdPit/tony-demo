@@ -86,6 +86,8 @@ field report on the first play-test and what it changed.
   its status, what it produced and taught, what is open.
 - **`THUMBNAILS.md`** — the token thumbnail redesign (the retro layout):
   what is decided, what is open, sizes, how to regenerate the mock-ups.
+- **`BUILD-DEMO.md`** — the building demo: a separate PRG where down + fire
+  lays a brick and up + fire climbs it; controls, rules, bench, what it confirmed.
 - **`TRAINER.md`** — the trainer builds and the full ROM-free verification
   (on-target runs + static scan).
 - **`VAULT.md`** — the Idol Vault board: design, route, how it's made.

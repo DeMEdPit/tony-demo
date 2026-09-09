@@ -980,6 +980,16 @@ Measured 2026-09-08 on the live collection page: OpenSea runs the animation in t
 grid and in the profile picture, on the desktop and on the phone.
 The PRG, the vectors and the base's freeze are untouched.
 
+## E22 — The building demo: down + fire lays a brick · built (2026-09-09)
+
+A separate PRG (`prg/minimal64/tony-build.prg`, 42,303 bytes, sha256 `05ef5e3b4b2c8f54...`) from the
+frozen base: no bats, the Shadow as the second Tony, down + fire lays or lifts a 2 x 2 brick in the wall
+slot in front of Tony at his feet, up + fire steps him onto it. Placed bricks are four new screen codes
+with wall material, so the engine's own collision makes them floor and wall; the Shadow got a guard on
+his step so a brick stops him. Measured on the way: Tony's jump carries 48 px, too far to land on a
+single brick, hence the step-up. Bench of ten checks on minimal64 in `tools/verify_build.py`. Write-up:
+`BUILD-DEMO.md`. The base, the tokens and the freeze are untouched.
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the

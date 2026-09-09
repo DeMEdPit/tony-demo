@@ -60,6 +60,7 @@ import re as _re
 # Options: --music PATH   the level tune (a PSID assembled for $A000; default src/music/TonyLevelA000_V2.sid)
 #          --intro PATH   the Glitch's tune (a PSID assembled for $8000; default src/music/TonyIntro8000_reloc.sid)
 #          --variant NAME the .asm/.prg name (default tony-chamber)
+#          --build-demo   the building demo (see BUILD_DEMO below): no bats, no Glitch tune, down + fire lays a brick
 #          --glitch-ink N the colour of the block number's cells in the Glitch's blackout
 #                         (default 0, black on the dark grey stone, the owner's choice; 15 was light grey)
 # The base carries both tunes. Behaviour 7 (the Glitch) plays the intro tune; the seven play the
@@ -72,6 +73,7 @@ VARIANT = "tony-chamber"
 GLITCH_INK = 0
 GLITCH_DANCE_VOICE = 2
 DIM_NO_CANDLE = True       # a room without a candle has medium grey stone (the owner's choice, 2026-09-07); --lit-no-candle turns it off
+BUILD_DEMO = False         # --build-demo: a separate PRG for the owner to play; the base is untouched
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -81,6 +83,7 @@ while _args:
     elif _flag == "--glitch-ink": GLITCH_INK = int(_args.pop(0)); assert 0 <= GLITCH_INK <= 15
     elif _flag == "--dim-no-candle": DIM_NO_CANDLE = True
     elif _flag == "--lit-no-candle": DIM_NO_CANDLE = False
+    elif _flag == "--build-demo": BUILD_DEMO = True
     else: raise SystemExit("unknown option " + _flag)
 _sid = open(MUSIC, "rb").read()
 assert _sid[:4] == b"PSID" and _sid[124:126] == b"\x00\xa0", "the level tune must be a PSID assembled for $A000"
@@ -157,6 +160,642 @@ src = sub(src, 'loadNegated("demo-level-charset.bin")', 'loadNegated("chamber-ch
 os.makedirs("src/kickass/level/chamber", exist_ok=True)
 open("src/kickass/level/chamber/data.asm", "w").write(src)
 print("wrote src/kickass/level/chamber/data.asm")
+
+
+# ------------------------------------------------------------- the building demo
+BUILD_CODE_ASM = r"""
+// ===================================================================== the build demo
+// Down + fire lays a 2x2 brick in the wall slot in front of Tony at his foot level, or
+// lifts it again if it is one he laid. A placed brick is four screen codes of its own
+// ($40-$43, copies of the mural's brick glyphs) carrying wall material, so the engine's
+// own collision makes it floor and wall with no change to the physics. The mural's
+// seeded bricks stay decoration; a placed brick may cover them and they come back when
+// it is lifted (muralBits remembers where they were). The second Tony checks the column
+// ahead of every step against the same materials, so a placed brick is a wall to him.
+.label BUILD_CODE   = $40
+.label BUILD_COL0   = 5           // the wall's first column (slots at 5 + 2i, i = 0..14)
+.label BUILD_ROW_LO = 21          // the lowest level's top row: rows 21-22 sit on the floor at 23
+buildJoy:      .byte 0
+buildPrev:     .byte 0
+buildCount:    .byte 0
+buildRow:      .byte 0            // the target's top row
+buildCol:      .byte 0            // the target's left column
+buildTop:      .byte 0
+buildLeftCol:  .byte 0
+buildRightCol: .byte 0
+buildCell:     .byte 0
+buildK:        .byte 0
+buildI:        .byte 0
+buildBCol:     .byte 0
+buildTmp:      .word 0
+brickCodes:    .fill 4, 0         // the mural bricks' screen codes, TL TR BL BR (from the decoding table)
+muralBits:     .fill 19, 0        // 150 slots (15 x 10), bit set = a seeded brick
+
+// once the room's characters are translated: the codes, glyphs, materials, the bitmap, the count
+buildInit: {
+    ldx #0
+    !:
+        lda roomCharsDecodingBuffer + $B0, x
+        sta brickCodes, x
+        inx
+        cpx #4
+    bne !-
+    lda #BG_CLSN_WALL
+    sta roomMaterialsBuffer + BUILD_CODE
+    sta roomMaterialsBuffer + BUILD_CODE + 1
+    sta roomMaterialsBuffer + BUILD_CODE + 2
+    sta roomMaterialsBuffer + BUILD_CODE + 3
+    // glyphs: the four brick glyphs copied to the placed codes (the room's charset is at TEXT_CHARSET_MEM)
+    ldx #0
+    glyphLoop:
+        ldy brickCodes, x
+        lda targetCharset.lo, y
+        sta SOURCE_PTR
+        lda targetCharset.hi, y
+        sta SOURCE_PTR + 1
+        txa
+        clc
+        adc #BUILD_CODE
+        tay
+        lda targetCharset.lo, y
+        sta DEST_PTR
+        lda targetCharset.hi, y
+        sta DEST_PTR + 1
+        ldy #7
+        !:
+            lda (SOURCE_PTR), y
+            sta (DEST_PTR), y
+            dey
+        bpl !-
+        inx
+        cpx #4
+    bne glyphLoop
+    // the mural bitmap: slot (i, j) holds a brick when its top-left cell shows the brick's code
+    ldx #0
+    !:
+        lda #0
+        sta muralBits, x
+        inx
+        cpx #19
+    bne !-
+    lda #0
+    sta buildK
+    slotRows:
+        lda #0
+        sta buildI
+        slotCols:
+            lda buildK
+            asl
+            clc
+            adc #2
+            tay                     // row = 2 + 2j
+            lda buildI
+            asl
+            clc
+            adc #BUILD_COL0
+            tax                     // col = 5 + 2i
+            jsr buildReadCell
+            cmp brickCodes
+            bne notBrick
+                jsr buildSlotBit    // A = mask, X = byte
+                ora muralBits, x
+                sta muralBits, x
+            notBrick:
+            inc buildI
+            lda buildI
+            cmp #15
+        bne slotCols
+        inc buildK
+        lda buildK
+        cmp #10
+    bne slotRows
+    // the floor under the block number back to plain stone, then the count
+    ldx #0
+    !:
+        ldy floorPattern, x
+        lda roomCharsDecodingBuffer, y
+        sta SCREEN_MEM_0 + 23*40 + 27, x
+        inx
+        cpx #8
+    bne !-
+    lda #0
+    sta buildCount
+    sta buildPrev
+    jmp buildDrawCount
+    floorPattern: .byte $34, $35, $36, $25, $26, $27, $28, $29     // the floor course's map codes at columns 27-34
+}
+
+// A = the screen code at row Y, column X (X and Y kept)
+buildReadCell: {
+    lda chamberLines.lo, y
+    sta rd + 1
+    lda chamberLines.hi, y
+    sta rd + 2
+    rd: lda $ffff, x
+    rts
+}
+// A written at row Y, column X (X and Y kept)
+buildWriteCell: {
+    pha
+    lda chamberLines.lo, y
+    sta wr + 1
+    lda chamberLines.hi, y
+    sta wr + 2
+    pla
+    wr: sta $ffff, x
+    rts
+}
+// slot (buildI, buildK) -> X = byte index, A = bit mask; n = i + 15 j
+buildSlotBit: {
+    lda buildK
+    asl
+    asl
+    asl
+    asl                 // 16 j
+    sec
+    sbc buildK          // 15 j
+    clc
+    adc buildI          // n
+    pha
+    lsr
+    lsr
+    lsr
+    tax                 // n / 8
+    pla
+    and #7
+    tay
+    lda bitMask, y
+    rts
+    bitMask: .byte 1, 2, 4, 8, 16, 32, 64, 128
+}
+
+// every frame, before the joystick is dispatched (A = the raw joystick, kept). Two chords, each on
+// its press: down + fire lays or lifts, up + fire steps up onto the brick in front.
+buildVerb: {
+    sta buildJoy
+    eor #$1f
+    tax
+    and #%00010010
+    cmp #%00010010
+    beq layChord
+    txa
+    and #%00010001
+    cmp #%00010001
+    beq upChord
+        lda #0
+        sta buildPrev
+        jmp done
+    layChord:
+        lda buildPrev
+        bne done
+        lda #1
+        sta buildPrev
+        jsr buildAct
+        jmp done
+    upChord:
+        lda buildPrev
+        bne done
+        lda #2
+        sta buildPrev
+        jsr buildStepUp
+    done:
+    lda buildJoy
+    rts
+}
+
+// the slot in front of Tony at his foot level -> buildRow, buildCol; carry set when there is none
+buildTarget: {
+    // only with his feet on something: on the ground, walking or ducking
+    lda physPlayerState
+    and #%01111111
+    cmp #STATE_ON_GROUND_LEFT
+    beq ok
+    cmp #STATE_WALKING_LEFT
+    beq ok
+    cmp #STATE_DUCK_LEFT
+    beq ok
+    sec
+    rts
+    ok:
+    // his box, as the physics counts it: top row Y / 8 - 6, columns X / 8 - 2 and (X + 8) / 8 - 2
+    lda physPlayerY
+    lsr
+    lsr
+    lsr
+    sec
+    sbc #6
+    sta buildTop
+    _phys_div8_16(physPlayerX, 0, -2, buildLeftCol)
+    _phys_div8_16(physPlayerX, 8, -2, buildRightCol)
+    // the level: the brick's bottom row is the row above his feet, so k = (19 - top) / 2, a whole number
+    lda #19
+    sec
+    sbc buildTop
+    bmi no
+    cmp #19
+    bcs no
+    lsr
+    bcs no
+    sta buildK
+    asl
+    sta buildRow
+    lda #BUILD_ROW_LO
+    sec
+    sbc buildRow
+    sta buildRow                // top row = 21 - 2k
+    // the slot in front: past his right column when he faces right, before his left column when he faces left
+    lda physPlayerState
+    bmi right
+        lda buildLeftCol
+        sec
+        sbc #1                  // the slot's right column, made even (6, 8, ... 34)
+        and #%11111110
+        sec
+        sbc #1                  // its left column
+        jmp haveCol
+    right:
+        lda buildRightCol
+        clc
+        adc #1
+        ora #1                  // the slot's left column, made odd (5, 7, ... 33)
+    haveCol:
+    sta buildCol
+    cmp #BUILD_COL0
+    bcc no
+    cmp #(BUILD_COL0 + 29)
+    bcs no
+    clc
+    rts
+    no:
+    sec
+    rts
+}
+
+// down + fire: lay a brick in the slot in front, or lift the one he laid there
+buildAct: {
+    jsr buildTarget
+    bcc decide
+        rts
+    decide:
+    ldy buildRow
+    ldx buildCol
+    jsr buildReadCell
+    cmp #BUILD_CODE
+    beq lift
+    jsr buildFourFree
+    bcs no
+    jsr buildBuddyClear
+    bcs no
+    jmp lay
+    no:
+    rts
+    lay:
+    ldy buildRow
+    ldx buildCol
+    lda #BUILD_CODE
+    jsr buildWriteCell
+    inx
+    lda #BUILD_CODE + 1
+    jsr buildWriteCell
+    iny
+    lda #BUILD_CODE + 3
+    jsr buildWriteCell
+    dex
+    lda #BUILD_CODE + 2
+    jsr buildWriteCell
+    inc buildCount
+    jmp buildDrawCount
+    lift:
+    ldy buildRow
+    ldx buildCol
+    jsr buildRestoreCell
+    inx
+    jsr buildRestoreCell
+    iny
+    jsr buildRestoreCell
+    dex
+    jsr buildRestoreCell
+    dec buildCount
+    jmp buildDrawCount
+}
+
+// up + fire: step up onto the brick he laid in front, when the four rows above it are clear
+buildStepUp: {
+    jsr buildTarget
+    bcs no
+    ldy buildRow
+    ldx buildCol
+    jsr buildReadCell
+    cmp #BUILD_CODE
+    bne no
+    lda buildRow
+    sec
+    sbc #4
+    bcc no
+    tay
+    check:
+        ldx buildCol
+        jsr buildReadCell
+        tax
+        lda roomMaterialsBuffer, x
+        and #BG_CLSN_WALL
+        bne no
+        ldx buildCol
+        inx
+        jsr buildReadCell
+        tax
+        lda roomMaterialsBuffer, x
+        and #BG_CLSN_WALL
+        bne no
+        iny
+        cpy buildRow
+    bne check
+    // up he goes: his box on the brick's two columns (X = (col + 2) * 8 + 3), one brick higher
+    lda #0
+    sta buildTmp + 1
+    lda buildCol
+    asl
+    rol buildTmp + 1
+    asl
+    rol buildTmp + 1
+    asl
+    rol buildTmp + 1
+    clc
+    adc #19
+    sta physPlayerX
+    lda buildTmp + 1
+    adc #0
+    sta physPlayerX + 1
+    lda physPlayerY
+    sec
+    sbc #16
+    sta physPlayerY
+    jsr physResetActorPosition
+    lda physPlayerState
+    and #%10000000
+    jsr phys_forceTransitState      // on the ground, the way he faces
+    jsr onStateChange
+    jsr checkBGCollision
+    no:
+    rts
+}
+
+// carry clear when the four target cells are empty or mural bricks
+buildFourFree: {
+    ldy buildRow
+    ldx buildCol
+    jsr cellOk
+    bcs bad
+    inx
+    jsr cellOk
+    bcs bad
+    iny
+    jsr cellOk
+    bcs bad
+    dex
+    jsr cellOk
+    bad:
+    rts
+    cellOk: {
+        jsr buildReadCell
+        beq fine
+        cmp brickCodes
+        beq fine
+        cmp brickCodes + 1
+        beq fine
+        cmp brickCodes + 2
+        beq fine
+        cmp brickCodes + 3
+        beq fine
+        sec
+        rts
+        fine:
+        clc
+        rts
+    }
+}
+
+// carry set when the target 2x2 overlaps the second Tony's box
+buildBuddyClear: {
+    lda buddyY
+    lsr
+    lsr
+    lsr
+    sec
+    sbc #6
+    sta bTop
+    _phys_div8_16(buddyX, 0, -2, bLeft)
+    _phys_div8_16(buddyX, 8, -2, bRight)
+    lda buildCol
+    clc
+    adc #1
+    cmp bLeft
+    bcc clear               // the target ends before his left column
+    lda bRight
+    cmp buildCol
+    bcc clear               // his right column ends before the target
+    lda buildRow
+    clc
+    adc #1
+    cmp bTop
+    bcc clear               // the target ends above him
+    lda bTop
+    clc
+    adc #3
+    cmp buildRow
+    bcc clear               // he ends above the target
+    sec
+    rts
+    clear:
+    clc
+    rts
+    bTop: .byte 0
+    bLeft: .byte 0
+    bRight: .byte 0
+}
+
+// the cell at row Y, column X back to what the mural had there (X and Y kept)
+buildRestoreCell: {
+    sty rowSave
+    stx colSave
+    cpy #22
+    bcs empty               // row 22 and below: never a mural row
+    txa
+    sec
+    sbc #BUILD_COL0
+    lsr
+    sta buildI
+    tya
+    sec
+    sbc #2
+    lsr
+    sta buildK
+    jsr buildSlotBit
+    and muralBits, x
+    beq empty
+    lda rowSave             // which of the four: (row - 2) & 1 doubled, plus (col - 5) & 1
+    sec
+    sbc #2
+    and #1
+    asl
+    sta buildCell
+    lda colSave
+    sec
+    sbc #BUILD_COL0
+    and #1
+    ora buildCell
+    tax
+    lda brickCodes, x
+    jmp write
+    empty:
+    lda #0
+    write:
+    ldy rowSave
+    ldx colSave
+    jmp buildWriteCell
+    rowSave: .byte 0
+    colSave: .byte 0
+}
+
+// the count, three carved digits in the floor at columns 27-29
+buildDrawCount: {
+    lda buildCount
+    ldx #0
+    !:
+        cmp #100
+        bcc !+
+        sbc #100
+        inx
+        jmp !-
+    !:
+    stx d0
+    ldx #0
+    !:
+        cmp #10
+        bcc !+
+        sbc #10
+        inx
+        jmp !-
+    !:
+    stx d1
+    sta d2
+    ldx #0
+    !:
+        lda d0, x
+        clc
+        adc #MURAL_DIGIT_BASE
+        tay
+        lda roomCharsDecodingBuffer, y
+        sta SCREEN_MEM_0 + 23*40 + 27, x
+        inx
+        cpx #3
+    bne !-
+    rts
+    d0: .byte 0
+    d1: .byte 0
+    d2: .byte 0
+}
+
+// the second Tony's next step: carry set when a wall stands in the column ahead, from his top row to the floor
+buildBlockedRight: {
+    _phys_div8_16(buddyX, 9, -2, buildBCol)      // (X + 1 + 8) / 8 - 2: his right column after the step
+    jmp buildColumnWall
+}
+buildBlockedLeft: {
+    sec
+    lda buddyX
+    sbc #1
+    sta buildTmp
+    lda buddyX + 1
+    sbc #0
+    sta buildTmp + 1
+    _phys_div8_16(buildTmp, 0, -2, buildBCol)    // (X - 1) / 8 - 2: his left column after the step
+    jmp buildColumnWall
+}
+buildColumnWall: {
+    lda buddyY
+    lsr
+    lsr
+    lsr
+    sec
+    sbc #6
+    tay
+    rows:
+        ldx buildBCol
+        jsr buildReadCell
+        tax
+        lda roomMaterialsBuffer, x
+        and #BG_CLSN_WALL
+        bne wall
+        iny
+        cpy #23
+    bne rows
+    clc
+    rts
+    wall:
+    sec
+    rts
+}
+"""
+
+def build_demo(src):
+    """The building demo: the Chamber with no bats and no Glitch tune, plus the build verb."""
+    # no bats
+    src = sub(src, """    ldy muralBehaviour          // the blackout has no bats
+    cpy #7
+    bne !+
+        lda #0
+    !:
+    sta muralBats
+""", """    lda #0                      // the build demo: no bats
+    sta muralBats
+""")
+    # no Glitch tune in the image (5.8 KB): the demo never plays it
+    src = sub(src, "introData:\n    .fill intro.size, intro.getData(i)\n", "")
+    src = sub(src, """
+    c64lib_pushParamW(introData)        // the Glitch's tune, to $8000 (free at run time), after the level tune
+    c64lib_pushParamW(intro.location)   // whose source it would otherwise overwrite
+    c64lib_pushParamW(intro.size)
+    jsr copyLargeMemForward
+""", "")
+    # the verb, before the joystick is dispatched
+    src = sub(src, """    jsr io_scanJoy
+    ldx gameTitleScreen
+    bne !+
+        jsr dispatchPlayerCommand
+""", """    jsr io_scanJoy
+    ldx gameTitleScreen
+    bne !+
+        jsr buildVerb               // the build demo: down + fire lays or lifts a brick
+        jsr dispatchPlayerCommand
+""")
+    # the set-up, once the room's characters are translated
+    assert src.count("    jsr translateRoom\n") == 1
+    src = sub(src, "    jsr translateRoom\n", "    jsr translateRoom\n    jsr buildInit               // the build demo\n")
+    # the second Tony: a placed brick is a wall to him
+    src = sub(src, """        lda buddyFacing
+        beq stepLeft
+            inc buddyX
+""", """        lda buddyFacing
+        beq stepLeft
+            jsr buildBlockedRight   // the build demo: a placed brick is a wall to him
+            bcs noMove
+            inc buddyX
+""")
+    src = sub(src, """        stepLeft:
+            lda buddyX
+            bne !+
+                dec buddyX + 1
+""", """        stepLeft:
+            jsr buildBlockedLeft
+            bcs noMove
+            lda buddyX
+            bne !+
+                dec buddyX + 1
+""")
+    # the code, in the Code segment
+    src = sub(src, ".segment Movable\n", BUILD_CODE_ASM + "\n.segment Movable\n")
+    return src
 
 # ------------------------------------------------------------- game variant
 src = open("src/kickass/tony-buddy.asm").read()
@@ -1721,12 +2360,16 @@ echoAnim: .fill 256, ANIM_IDLING_RIGHT
 // skull, bat, deadman L/R, bat L/R, quick duck L/R
 echoPose: .byte 4, 5, 8, 9, 0, 1, 2, 12, 13, 2, 0, 1, 2, 2, 0, 1, 2, 2, 8, 9
 """)
+if BUILD_DEMO:
+    src = build_demo(src)
 open(f"src/kickass/{VARIANT}.asm", "w").write(src)
 print(f"wrote src/kickass/{VARIANT}.asm (level tune {os.path.basename(MUSIC)}, image ${SID_IMAGE:04X}; "
       f"the Glitch's tune {os.path.basename(INTRO)} at $8000, his Dance voice at ${INTRO_IMAGE:04X})")
 
 # ------------------------------------------------------------- build wiring
 g = open("build.gradle.kts").read()
+if BUILD_DEMO:
+    g = f"{VARIANT}.asm"          # the demo is assembled by hand (tools/build_demo.sh); no Gradle wiring
 if f"{VARIANT}.asm" not in g:
     g = sub(g, '        "src/kickass/tony-buddy.asm",\n', f'        "src/kickass/tony-buddy.asm",\n        "src/kickass/{VARIANT}.asm",\n')
     open("build.gradle.kts", "w").write(g)

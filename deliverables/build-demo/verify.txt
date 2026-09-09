@@ -1,0 +1,14 @@
+tony-build.prg: 42303 bytes
+stairs:
+  ok   boots into the room, Tony on the floor, no bricks
+  ok   down + fire lays one brick (four cells)
+  ok   up + fire steps him onto it, one brick higher, over its columns
+  ok   a second brick from up there and a second step up
+  ok   three bricks high
+  ok   a fourth laid from the top
+  ok   lifted again: the wall exactly as before it, mural bricks restored
+  ok   walking off the top drops him to the floor
+wall:
+  ok   a brick laid between Tony and the Shadow
+  ok   Tony walks to 286, the Shadow stops at the brick (X 159)
+ALL OK
