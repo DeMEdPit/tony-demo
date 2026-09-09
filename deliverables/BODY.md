@@ -10,12 +10,12 @@ here touches the frozen base (`tony-chamber.prg`, sha256 `67dc97bc1e306715...`) 
 | | |
 |---|---|
 | file | `deliverables/prg/minimal64/tony-body.prg` |
-| size | 44,422 bytes |
-| sha256 | `b20e222253c5e7d2c71c9b0df1904924907e5e051a7b1dc6038ec3caf3d2a972` |
+| size | 45,980 bytes |
+| sha256 | `9a3dc4394b687bfc4807d8b20d67ad6b09bdd8dc0ef47ce92ffb31f844b670af` |
 | boots on | minimal64 (the bench in `tools/verify_body.py`, thirty-three checks passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
 | built from | the building demo's generator with one more option: `tools/make_chamber.py --variant tony-body --build-demo --body`, then `tools/build_demo.sh tony-body` |
-| diff | `deliverables/build-demo/tony-body.diff`, the body's source against the building demo's (1,348 lines; the clone's code is the bulk of it) |
-| bench output | `deliverables/build-demo/verify-body.txt` |
+| diff | `deliverables/build-demo/tony-body.diff`, the body's source against the building demo's (the clone's code is the bulk of it) |
+| bench output | `deliverables/build-demo/verify-body.txt` (the body), `verify-brain.txt` (the senses) |
 
 ## What you see
 
@@ -86,6 +86,55 @@ cleared. That is the hook for a bench and for a trainer: poke a byte, he does it
 walk him to a spot, build a staircase of three, walk him off it, jump him, build five under the ladder
 and send him up it.
 
+## The sense block
+
+The contract the Python reference is built from. Twenty senses, one byte each at `cloneSenses`, the
+value in the low nibble and the high nibble zero. Every value is a signed nibble in two's complement
+(`-8` to `7`, so `F` is `-1`): a reader sign-extends the low four bits. Flags are `0` or `7`, buckets
+run `-7` to `7`, the bias is `7`, so every sense has the same reach against a nibble weight. The block
+carries the frame it describes in `cloneSensesFrame` (a 16-bit count of frames the physics have run
+since the level started, `bodyFrames`). "Ahead" is the column just past his collision box the way he
+faces; his box is columns `X/8 - 2` and `(X+8)/8 - 2`, rows `Y/8 - 6` (the top) to the top plus 3 (the
+feet), the far row one below the feet, as the engine counts them.
+
+| # | name | value |
+|---|---|---|
+| 0 | bias | always 7 |
+| 1 | dx | the player's X minus his: the sign, and a bucket of the distance in pixels. 0 under 8, 1 under 16, 2 under 24, 3 under 32, 4 under 48, 5 under 64, 6 under 128, 7 from 128; negative when the player is to his left |
+| 2 | dy | his Y minus the player's, in bricks: `min(7, (abs + 8) / 16)`, 7 from 120 pixels; positive when the player is above him |
+| 3 | facingRight | 7 when his state's bit 7 is set |
+| 4 | onGround | 7 in states 0, 1, 3 (standing, walking, ducking) |
+| 5 | inAir | 7 in states 4, 5, 6 (jumping sideways, jumping up, falling) |
+| 6 | onLadder | 7 in states 2, 7 (climbing, stopped on a ladder) |
+| 7 | ducking | 7 in state 3 |
+| 8 | floorBelow | 7 when the far row under him holds wall material (the engine's FLOOR_FAR flag) |
+| 9 | wallAheadFoot | 7 when the cell ahead at his feet row holds wall material |
+| 10 | wallAheadHead | 7 when the cell ahead at his top row holds wall material |
+| 11 | brickAheadFoot | 7 when the cell ahead at his feet row is a placed brick (screen codes $50 to $53) |
+| 12 | ladderHere | 7 when a ladder is in his box (the engine's LADDER flag) |
+| 13 | ladderBelow | 7 when a ladder is in the far row or its top is at his feet (LADDER_FAR or LADDER_TOP) |
+| 14 | buildable | 7 when the slot ahead can take a brick now by the verb's own rules: his feet on something (states 0, 1, 3), the level whole (`(19 - top)` even, 0 to 18), the slot's left column in 5 to 33 (past his right column made odd when facing right, before his left column made even less one when facing left), its four cells empty or a mural brick, and the player's box not touching it |
+| 15 | playerAir | 7 when the player's state is 4, 5 or 6 |
+| 16 | lastAction | the action applied to him this frame, read from the joystick byte: 0 idle, 1 left, 2 right, 3 up, 4 down, 5 jump, 6 jump left, 7 jump right, 8 build left, 9 build right (a lay or step-up bit, the way he faces); left before right, jump before the lines |
+| 17 | still | frames since he last moved, a bucket: 0 moved this frame, 1 under 4, 2 under 8, 3 under 16, 4 under 32, 5 under 64, 6 under 128, 7 from 128 |
+| 18 | playerDuck | 7 when the player's state is 3 |
+| 19 | playerOnLadder | 7 when the player's state is 2 or 7 |
+
+Cells off the screen (a row below 0 or above 24) read as empty. Rows and columns change only every
+eight pixels, which is why the collision self-test sweeps in steps of eight.
+
+**How it is produced, and what a reader may rely on.** At the end of his turn, while his record is
+swapped in, the raw values of that frame are copied whole to `senseRaw`: his X, Y, state, the two
+collision flag bytes, the player's X, Y, state, the joystick byte applied to him, his still counter, and
+the frame. The main loop packs them into `sensePack` (`bodySensePack`, once per frame, a pure function
+of the raw block and the map), and the next turn publishes `sensePack` as `cloneSenses` with the
+frame stamp. So the interrupt pays only for the copies, and a reader that samples between turns (the
+harness's `sync`, which stops in the top border) always sees a whole block, describing the frame stamped
+in it, normally one or two frames behind the physics. The bench (`tools/verify_brain.py`) recomputes
+every nibble in Python from `senseRaw`, the screen and the materials table at a dozen snapshots, and
+they agree nibble for nibble; the reference should be written from the table above and checked the
+same way.
+
 ## Time, measured
 
 Two Tonys on the physics did not fit the frame as the game schedules it, and the way it failed is worth
@@ -95,7 +144,7 @@ on some frames; the copper then arms the visual entry too late, the visual handl
 and the top entry is skipped the frame after that: both Tonys froze one frame in eight, which the bench
 saw as walks that came up short. Four things fixed it, all in the body's generator patches:
 
-- The top handler starts at line 8 instead of 40 (the upper border; nothing is drawn there).
+- The top handler starts at line 0 instead of 40 (the upper border; nothing is drawn there).
 - A collision check is ~30 raster lines and the game's loop runs two a frame regardless. Both Tonys now
   skip the first when the proposed position is the current one and the map has not changed since their
   flags were computed (`bodyCheckProposal`, a stale bit per Tony set by every routine that writes the
@@ -104,7 +153,9 @@ saw as walks that came up short. Four things fixed it, all in the body's generat
   check reads only the map and the position.
 - The check itself is rewritten (`checkBGCollision` in the body's code): the same scan in the same
   order (left column then right, five rows, the ladder columns noted as the game notes them) with a
-  row's address set once and a cell read once, at about half the cost. The game's own instance is kept
+  row's address set once, a cell read once, in line, and the ladder noted only where one is. It is
+  about a fifth cheaper than the game's, not the half first estimated: a check is about 24 raster
+  lines, and the saving that mattered was skipping the ones that cannot say anything new. The game's own instance is kept
   as `checkBGCollisionRef`, and **`bodySelfTest`** runs both over every distinct position (X and Y in
   steps of 8, X to 511, Y to 255: the columns and rows change no finer) and counts the positions where
   any of the four outputs differ. The bench runs it in the room below with five bricks laid and in the
@@ -112,18 +163,23 @@ saw as walks that came up short. Four things fixed it, all in the body's generat
 - The two bats' actors are gone from the body's level data (`level/body/data.asm`); the demo never
   showed them, and their path logic cost a few lines a frame.
 
-With that, in the bench's worst frame (the two landing from the same jump at once) the clone's turn
-ends on raster line 218, the top handler's part of the frame is 8 to 218, the visual handler runs from
-255 for about 36 lines, and the main loop has the rest. `bodyRasterMax` keeps the latest line a turn
-has ended on and `bodyOverruns` counts turns that ended on line 250 or later (the level's first two
-frames are not watched: the copper's first interrupt fires off-schedule on a stale raster flag, once).
-The bench asserts zero overruns and a maximum below 230. The swap is unrolled (320 cycles each way);
-the clone's whole turn is about 60 lines when he stands, 75 walking, 100 landing.
+With that, in the bench's worst frame (the two landing from the same jump at once, which every mirrored
+jump produces) the clone's turn ends on raster line 188, the top handler's part of the frame is 0 to
+188, the visual handler runs from 255 for about 36 lines, and the main loop has the rest, about 80
+lines a frame. `bodyRasterMax` keeps the latest line a turn has ended on, `bodyRasterFrame` the frame
+it happened in (`bodyFrames` counts the frames the physics have run), and `bodyOverruns` counts turns
+that ended on line 250 or later (the level's first two frames are not watched: the copper's first
+interrupt fires off-schedule on a stale raster flag, once). The bench asserts zero overruns and a
+maximum below 230. The swap is unrolled (320 cycles each way); the clone's whole turn is about 45
+lines when he stands, 70 walking, 100 landing, including the senses' raw copy.
 
-For a brain: what is left in the frame for thinking is about 30 raster lines inside the top handler
-(the space to 250 in the worst frame), or the main loop's time, about 60 lines a frame, where a slow
-think step can be spread over frames and just write `cloneJoy`; the body reads the byte at the start of
-every turn, so a brain that thinks every fourth frame works without any change here.
+The senses cost the interrupt about six lines (the raw copy and the publish); the packing itself runs
+in the main loop. A first version packed everything in the turn and cost twenty lines, which put the
+worst frame at 244: the interrupt's budget is the scarce one, and nothing else should go into it.
+
+For a brain: the main loop's time, about 80 lines a frame, is where a think step runs, spread over
+frames, writing `cloneJoy` when it finishes; the body reads the byte at the start of every turn, so a
+brain that thinks every fourth frame works without any change here.
 
 ## Bench (`tools/verify_body.py`, output in `deliverables/build-demo/verify-body.txt`)
 

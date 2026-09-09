@@ -8,13 +8,13 @@
  *   ./m64run GAME.PRG "wait:120,shot:a.ppm,joy:16:25,key:43:5,peek:2d"
  *   ./m64run GAME.PRG @script.txt          (the same commands from a file; newlines count as commas)
  *
- * commands: wait:N        run N PAL frames
+ * commands: wait:N        run exactly N PAL frames, stopping at raster line 0 (the frame boundary)
  *           shot:FILE     dump the pixel buffer as binary PPM
  *           joy:MASK:N    hold joystick-2 lines MASK for N frames (then release, +5 frames)
  *           hold:MASK     press joystick-2 lines MASK and leave them pressed
  *           release:MASK  release joystick-2 lines MASK (no frames run: pair with wait:N)
- *           sync          run on (at most a frame) until the raster is in the top border, lines 8-30,
- *                         where neither interrupt handler is running: a peek then sees whole frames
+ *           sync          run on to the next raster line 0 unless already there (wait leaves the machine
+ *                         there): a peek then sees whole frames, and a poke lands before the frame's handlers
  *           key:CODE:N    hold key CODE (keyboard.h codes) for N frames
  *           peek:HEX      print one byte of CPU-visible memory
  */
@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "m64.h"
+#include "vic/vic.h"
 
 extern void m64_init(int32_t model, int32_t sidModel);
 extern void m64_injectAndRunPrg(uint8_t *data, uint32_t len, uint32_t delay);
@@ -73,10 +75,26 @@ static void wavClose(void) {
     printf("wav: %u samples (%.1f s)\n", wavSamples, wavSamples / 44100.0);
 }
 extern uint32_t harness_getPC(void);
-extern int32_t vic_rasterY;
+extern void clock_step(m64clock_t *clock);
+extern void sid_update(void);
 
+/* run until the raster wraps to line 0: exactly one frame from the last such point, and a place where
+   neither interrupt handler is running (the top handler is about to start), so peeks see whole frames
+   and pokes land before the frame's handlers. The pixel buffer is refreshed there for shot. */
+static int atFrameStart = 0;
+static void runToFrameStart(void) {
+    int32_t was = vic_rasterY;
+    for (;;) {
+        clock_step(&m64_clock);
+        sid_update();
+        if (vic_rasterY == 0 && was != 0) break;
+        was = vic_rasterY;
+    }
+    memcpy(vic_pixelBuffer, vic_pixels, sizeof(uint32_t) * VIC_PIXELS_LENGTH);
+    atFrameStart = 1;
+}
 static void frames(int n) {
-    for (int i = 0; i < n; i++) { m64_update(20); wavDrain(); } /* ~1 PAL frame per call */
+    for (int i = 0; i < n; i++) { runToFrameStart(); wavDrain(); }
 }
 
 static void shot(const char *path) {
@@ -151,8 +169,8 @@ int main(int argc, char **argv) {
             if (wav) { uint8_t zero[44] = {0}; fwrite(zero, 1, 44, wav); }
         } else if (!strcmp(cmd, "audio-stop")) {
             wavClose();
-        } else if (!strcmp(cmd, "sync")) {         /* the update steps are ~16 raster lines: the window cannot be skipped */
-            for (int k = 0; k < 64 && (vic_rasterY < 8 || vic_rasterY > 30); k++) m64_update(1);
+        } else if (!strcmp(cmd, "sync")) {
+            if (!atFrameStart) runToFrameStart();
             printf("sync raster %d\n", vic_rasterY);
         } else if (!strcmp(cmd, "pc")) {
             printf("pc ~ $%04x\n", harness_getPC());

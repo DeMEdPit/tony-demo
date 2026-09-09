@@ -1097,7 +1097,7 @@ BODY_CODE_ASM = r"""
 // Time: a collision check is ~30 raster lines and the game's loop runs two a frame; here
 // (for both Tonys) a check runs only when it can say something new: the proposed position or
 // the map changed (bodyCheckProposal), the movement was blocked or adjusted
-// (bodyBlockMovement). The top handler is moved to line 8 so both turns end before the visual
+// (bodyBlockMovement). The top handler is moved to line 0 so both turns end before the visual
 // handler's line, 255; bodyRasterMax / bodyOverruns watch that they do.
 //
 // The joystick byte, cloneJoy: bit 0 up, 1 down, 2 left, 3 right, 4 fire, 5 lay a brick,
@@ -1138,7 +1138,9 @@ cloneAniCounter:    .byte 1
 cloneWalking:       .byte 0       // the follow rule's hysteresis
 clonePlayerAir:     .byte 0       // the player was jumping last frame: his jump is mirrored on its first frame
 bodyStale:          .byte 3       // bit 0: the map changed since the player's flags were computed; bit 1: the clone's
+bodyFrames:         .word 0       // frames the physics have run since the level started
 bodyRasterMax:      .byte 0       // the latest raster line the clone's turn has ended on (the bench reads it)
+bodyRasterFrame:    .word 0       // the frame it happened in
 bodyOverruns:       .byte 0       // turns that ended on line 250 or later: must stay 0
 bodyWarm:           .byte 0       // the level's frames so far, up to 2: the watch starts at the third
 
@@ -1170,6 +1172,17 @@ cloneInit: {
     sta bodyWarm
     sta bodyRasterMax
     sta bodyOverruns
+    sta bodyFrames
+    sta bodyFrames + 1
+    sta senseStill
+    sta sensePrevY
+    sta sensePrevX
+    sta sensePrevX + 1
+    sta sensePacked
+    sta sensePackFrame
+    sta sensePackFrame + 1
+    sta rawFrame
+    sta rawFrame + 1
     lda #120
     sta cloneX
     sta cloneNextX
@@ -1196,6 +1209,10 @@ cloneInit: {
 
 // the clone's turn, after the player's (doEachFrameTop)
 cloneUpdate: {
+    inc bodyFrames                  // the frame counter, for the bench and the rig (every frame the physics ran)
+    bne !+
+        inc bodyFrames + 1
+    !:
     lda currentChamberNumber        // he waits in his room while the player is away
     beq !+
         rts
@@ -1232,6 +1249,7 @@ cloneUpdate: {
     jsr bodyCheckProposal
     jsr bodyBlockMovement
     jsr cloneOnStateChange
+    jsr cloneSenseSnap              // the senses: the raw values of this frame, the last block published
     jsr cloneSwap
     lda #0
     sta bodyTurn
@@ -1253,6 +1271,10 @@ cloneUpdate: {
     cmp bodyRasterMax
     bcc !+
         sta bodyRasterMax
+        ldx bodyFrames
+        stx bodyRasterFrame
+        ldx bodyFrames + 1
+        stx bodyRasterFrame + 1
     !:
     rts
     late:
@@ -1261,8 +1283,8 @@ cloneUpdate: {
 }
 
 // checkBGCollision: the flags the game's phys_checkBGCollisionExt2 computes, the same for every
-// position (bodySelfTest proves it against the game's own, kept as checkBGCollisionRef), at half
-// the cost: a row's address is set once, a cell read once, and no chain of subroutines. The scan
+// position (bodySelfTest proves it against the game's own, kept as checkBGCollisionRef), cheaper:
+// a row's address is set once, a cell read once, in line, and no chain of subroutines. The scan
 // is the game's: the left column then the right, rows top .. top + 4 (three box rows, the near
 // row at the feet, the far row under them), and the ladder columns noted in that order.
 checkBGCollision: {
@@ -1315,8 +1337,14 @@ checkBGCollision: {
             bne !+
                 rts                     // below it: the column is done
             !:
-            jsr setRow
-            jsr readCell
+            tay
+            lda chamberLines.lo, y
+            sta boxCell
+            lda chamberLines.hi, y
+            sta boxCell + 1
+            lda boxCell:$ffff, x
+            tay
+            lda roomMaterialsBuffer, y
             sta m
             and #BG_CLSN_BOX_MASK
             ora physPlayerBGCollision
@@ -1336,8 +1364,16 @@ checkBGCollision: {
         bne !+
             rts
         !:
-        jsr setRow
-        jsr readCell
+        tay
+        lda chamberLines.lo, y
+        sta nearCell
+        sta nearNext
+        lda chamberLines.hi, y
+        sta nearCell + 1
+        sta nearNext + 1
+        lda nearCell:$ffff, x
+        tay
+        lda roomMaterialsBuffer, y
         sta m
         and #BG_CLSN_FLOOR_MASK
         beq !+
@@ -1358,10 +1394,18 @@ checkBGCollision: {
             sta physPlayerBGCollisionExt
         !:
         lda m                           // the ladder in this column and the next
-        jsr noteLadder
+        and #BG_CLSN_LADDER
+        beq !+
+            jsr noteLadder
+        !:
         inx
-        jsr readCell
-        jsr noteLadder
+        lda nearNext:$ffff, x
+        tay
+        lda roomMaterialsBuffer, y
+        and #BG_CLSN_LADDER
+        beq !+
+            jsr noteLadder
+        !:
         dex
         lda m                           // and the box flags without the killing one
         and #BG_CLSN_BOX_NK_MASK
@@ -1375,11 +1419,23 @@ checkBGCollision: {
         inc row
         // the far row: what is under the feet
         lda row
-        bmi done
+        bpl !+
+            rts
+        !:
         cmp #25
-        beq done
-        jsr setRow
-        jsr readCell
+        bne !+
+            rts
+        !:
+        tay
+        lda chamberLines.lo, y
+        sta farCell
+        sta farNext
+        lda chamberLines.hi, y
+        sta farCell + 1
+        sta farNext + 1
+        lda farCell:$ffff, x
+        tay
+        lda roomMaterialsBuffer, y
         sta m
         and #BG_CLSN_LADDER
         beq !+
@@ -1395,34 +1451,24 @@ checkBGCollision: {
             sta physPlayerBGCollisionExt
         !:
         lda m
-        jsr noteLadder
+        and #BG_CLSN_LADDER
+        beq !+
+            jsr noteLadder
+        !:
         inx
-        jsr readCell
-        jsr noteLadder
+        lda farNext:$ffff, x
+        tay
+        lda roomMaterialsBuffer, y
+        and #BG_CLSN_LADDER
+        beq !+
+            jsr noteLadder
+        !:
         dex
         done:
         rts
     }
-    // IN: A - the row: the screen line's address into readCell (X and A kept)
-    setRow: {
-        tay
-        lda chamberLines.lo, y
-        sta readCell.address
-        lda chamberLines.hi, y
-        sta readCell.address + 1
-        rts
-    }
-    // IN: X - the column; OUT: A - the material of the cell there (Y - the cell)
-    readCell: {
-        lda address:$ffff, x
-        tay
-        lda roomMaterialsBuffer, y
-        rts
-    }
-    // IN: A - a material, X - its column: the first two ladder sightings' columns, in scan order
+    // IN: X - the column of a cell with a ladder: the first two sightings' columns, in scan order
     noteLadder: {
-        and #BG_CLSN_LADDER
-        beq no
         lda ladder0
         cmp #$ff
         bne !+
@@ -1899,16 +1945,575 @@ cloneFramesBGhi: .byte >walkLeftAnimationBG, >walkRightAnimationBG, >duckLeftAni
                  .byte >jumpRightAnimationBG, >ladderAnimationBG, >deathLeftAnimationBG, >deathRightAnimationBG
                  .fill 6, >idlingRightAnimationBG
                  .byte >duckLeftAnimationQuickBG, >duckRightAnimationQuickBG
+
+// ===================================================================== the senses
+// Twenty signed nibbles, one per byte in its low half (the high half zero): the contract the reference
+// reads (BODY.md, "The sense block"). Flags are 0 or 7, buckets -7..7, the bias 7; two's complement in
+// four bits, so the reference sign-extends the low nibble. Three steps, so that the interrupt pays only
+// for copies: at the end of his turn, while his record is swapped in, the raw values are copied to
+// senseRaw (one frame's, whole); the main loop packs them (bodySensePack) into sensePack; the next turn
+// publishes sensePack as cloneSenses with the frame it describes in cloneSensesFrame. A reader that
+// samples between turns (the harness's sync) always sees a whole block.
+.label SENSE_COUNT = 20
+cloneSenses:      .fill SENSE_COUNT, 0   // the published block
+cloneSensesFrame: .word 0               // the frame it describes (bodyFrames then)
+senseRaw:                               // the raw values of one frame, copied in his turn:
+rawX:      .word 0                      //   his position
+rawY:      .byte 0
+rawState:  .byte 0                      //   his state (bit 7 the facing)
+rawBG:     .byte 0                      //   his collision flags and their extension
+rawExt:    .byte 0
+rawPX:     .word 0                      //   the player's position and state
+rawPY:     .byte 0
+rawPS:     .byte 0
+rawJoy:    .byte 0                      //   the joystick byte applied to him this frame
+rawStill:  .byte 0                      //   frames since he last moved, capped at 255
+rawFrame:  .word 0                      //   the frame
+.label SENSE_RAW_SIZE = * - senseRaw
+sensePack:        .fill SENSE_COUNT, 0   // the packer's output, waiting to be published
+sensePackFrame:   .word 0
+sensePacked:      .byte 0               // 1: sensePack holds a block not yet published
+senseLocal:       .fill SENSE_RAW_SIZE, 0   // the packer's own copy of the raw values
+senseStill:       .byte 0
+sensePrevX:       .word 0
+sensePrevY:       .byte 0
+
+// in his turn, swapped in: the raw values of this frame, and the publish of the last packed block
+cloneSenseSnap: {
+    lda physPlayerX
+    cmp sensePrevX
+    bne moved
+    lda physPlayerX + 1
+    cmp sensePrevX + 1
+    bne moved
+    lda physPlayerY
+    cmp sensePrevY
+    bne moved
+        lda senseStill
+        cmp #255
+        beq counted
+        inc senseStill
+        jmp counted
+    moved:
+        lda #0
+        sta senseStill
+        lda physPlayerX
+        sta sensePrevX
+        lda physPlayerX + 1
+        sta sensePrevX + 1
+        lda physPlayerY
+        sta sensePrevY
+    counted:
+    lda physPlayerX
+    sta rawX
+    lda physPlayerX + 1
+    sta rawX + 1
+    lda physPlayerY
+    sta rawY
+    lda physPlayerState
+    sta rawState
+    lda physPlayerBGCollision
+    sta rawBG
+    lda physPlayerBGCollisionExt
+    sta rawExt
+    lda cloneX                      // the record holds the player during his turn
+    sta rawPX
+    lda cloneX + 1
+    sta rawPX + 1
+    lda cloneY
+    sta rawPY
+    lda cloneState
+    sta rawPS
+    lda cloneJoy
+    sta rawJoy
+    lda senseStill
+    sta rawStill
+    lda bodyFrames
+    sta rawFrame
+    lda bodyFrames + 1
+    sta rawFrame + 1
+    lda sensePacked
+    bne !+
+        rts
+    !:
+    .for (var i = 0; i < 20; i++) {
+        lda sensePack + i
+        sta cloneSenses + i
+    }
+    lda sensePackFrame
+    sta cloneSensesFrame
+    lda sensePackFrame + 1
+    sta cloneSensesFrame + 1
+    lda #0
+    sta sensePacked
+    rts
+}
+
+// in the main loop: pack the raw values of the newest frame, once per frame, when the last block is out
+bodySensePack: {
+    lda sensePacked
+    bne done                        // the last block waits to be published
+    lda rawFrame
+    cmp sensePackFrame
+    bne go
+    lda rawFrame + 1
+    cmp sensePackFrame + 1
+    beq done                        // nothing new
+    go:
+    sei                             // one frame's values, whole
+    .for (var i = 0; i < 14; i++) {
+        lda senseRaw + i
+        sta senseLocal + i
+    }
+    cli
+    jsr senseCompute
+    lda senseLocal + 12
+    sta sensePackFrame
+    lda senseLocal + 13
+    sta sensePackFrame + 1
+    lda #1
+    sta sensePacked
+    done:
+    rts
+}
+
+// senseLocal (the raw values) and the map -> sensePack (the twenty nibbles)
+senseCompute: {
+    .label lX     = senseLocal + 0
+    .label lY     = senseLocal + 2
+    .label lState = senseLocal + 3
+    .label lBG    = senseLocal + 4
+    .label lExt   = senseLocal + 5
+    .label lPX    = senseLocal + 6
+    .label lPY    = senseLocal + 8
+    .label lPS    = senseLocal + 9
+    .label lJoy   = senseLocal + 10
+    .label lStill = senseLocal + 11
+    // 0: the bias, always 7
+    lda #7
+    sta sensePack + 0
+    // 1: the player's X minus his: the sign, and a bucket of the distance
+    //    0: under 8 px, 1: under 16, 2: under 24, 3: under 32, 4: under 48, 5: under 64, 6: under 128, 7: 128 and more
+    sec
+    lda lPX
+    sbc lX
+    sta d
+    lda lPX + 1
+    sbc lX + 1
+    sta d + 1
+    jsr magnitude
+    lda #7
+    ldx d + 1
+    bne dxHave                  // 256 px and more
+    ldx #0
+    dxLoop:
+        cpx #7
+        beq dxDone
+        lda d
+        cmp dxSteps, x
+        bcc dxDone
+        inx
+        jmp dxLoop
+    dxDone:
+    txa
+    dxHave:
+    jsr signed
+    sta sensePack + 1
+    // 2: his Y minus the player's, in bricks (16 px, rounded), positive when the player is above
+    sec
+    lda lY
+    sbc lPY
+    sta d
+    lda #0
+    sbc #0
+    sta d + 1
+    jsr magnitude
+    lda d
+    cmp #120
+    bcc !+
+        lda #7
+        jmp dyHave
+    !:
+    clc
+    adc #8
+    lsr
+    lsr
+    lsr
+    lsr
+    dyHave:
+    jsr signed
+    sta sensePack + 2
+    // 3: facing right
+    ldx #0
+    lda lState
+    bpl !+
+        ldx #7
+    !:
+    stx sensePack + 3
+    // 4 on the ground (standing, walking, ducking), 5 in the air, 6 on a ladder, 7 ducking: his state
+    lda lState
+    and #%00001111
+    tax
+    lda groundTab, x
+    sta sensePack + 4
+    lda airTab, x
+    sta sensePack + 5
+    lda ladderTab, x
+    sta sensePack + 6
+    lda duckTab, x
+    sta sensePack + 7
+    // 8: floor under his feet (the far row)
+    ldx #0
+    lda lExt
+    and #BG_CLSE_FLOOR_FAR
+    beq !+
+        ldx #7
+    !:
+    stx sensePack + 8
+    // 9 a wall ahead at his feet, 10 a wall ahead at his head, 11 a placed brick ahead at his feet:
+    // the column past his box the way he faces, his feet row (top + 3) and his top row
+    lda lY
+    lsr
+    lsr
+    lsr
+    sec
+    sbc #6
+    sta top
+    _phys_div8_16(lX, 0, -2, leftCol)
+    _phys_div8_16(lX, 8, -2, rightCol)
+    lda lState
+    bmi aheadRight
+        lda leftCol
+        sec
+        sbc #1
+        jmp aheadKnown
+    aheadRight:
+        lda rightCol
+        clc
+        adc #1
+    aheadKnown:
+    sta ahead
+    lda #0
+    sta sensePack + 9
+    sta sensePack + 10
+    sta sensePack + 11
+    lda top
+    clc
+    adc #3
+    jsr cellAhead               // A = the code, Y = the material (both 0 off the screen)
+    tax
+    tya
+    and #BG_CLSN_WALL
+    beq !+
+        lda #7
+        sta sensePack + 9
+    !:
+    txa
+    sec
+    sbc #BUILD_CODE
+    cmp #4
+    bcs !+
+        lda #7
+        sta sensePack + 11
+    !:
+    lda top
+    jsr cellAhead
+    tya
+    and #BG_CLSN_WALL
+    beq !+
+        lda #7
+        sta sensePack + 10
+    !:
+    // 12 a ladder in his box, 13 a ladder under him (the far row, or its top at his feet)
+    ldx #0
+    lda lBG
+    and #BG_CLSN_LADDER
+    beq !+
+        ldx #7
+    !:
+    stx sensePack + 12
+    ldx #0
+    lda lExt
+    and #(BG_CLSE_LADDER_FAR + BG_CLSE_LADDER_TOP)
+    beq !+
+        ldx #7
+    !:
+    stx sensePack + 13
+    // 14: the slot ahead can take a brick now, by the verb's own rules (buildTarget, buildFourFree,
+    //     buildBuddyClear), computed here from the raw values: his feet on something, the slot's level
+    //     whole, its columns in range, its four cells empty or mural, the player's box not in it
+    lda #0
+    sta sensePack + 14
+    jsr slotFree
+    bcs !+
+        lda #7
+        sta sensePack + 14
+    !:
+    // 15 the player in the air, 18 the player ducking, 19 the player on a ladder: his state
+    lda lPS
+    and #%00001111
+    tax
+    lda airTab, x
+    sta sensePack + 15
+    lda duckTab, x
+    sta sensePack + 18
+    lda ladderTab, x
+    sta sensePack + 19
+    // 16: the action applied this frame, from the joystick byte (0 idle, 1 left, 2 right, 3 up, 4 down,
+    //     5 jump, 6 jump left, 7 jump right, 8 build left, 9 build right: a lay or step-up bit, the way he faces)
+    lda lJoy
+    and #%01100000
+    beq notBuild
+        ldx #8
+        lda lState
+        bpl !+
+            inx
+        !:
+        jmp actionKnown
+    notBuild:
+    lda lJoy
+    and #%00010000
+    beq notFire
+        ldx #6
+        lda lJoy
+        and #%00000100
+        bne actionKnown
+        ldx #7
+        lda lJoy
+        and #%00001000
+        bne actionKnown
+        ldx #5
+        jmp actionKnown
+    notFire:
+    ldx #1
+    lda lJoy
+    and #%00000100
+    bne actionKnown
+    ldx #2
+    lda lJoy
+    and #%00001000
+    bne actionKnown
+    ldx #3
+    lda lJoy
+    and #%00000001
+    bne actionKnown
+    ldx #4
+    lda lJoy
+    and #%00000010
+    bne actionKnown
+    ldx #0
+    actionKnown:
+    stx sensePack + 16
+    // 17: frames since he last moved, a bucket: 0 moved this frame, 1 under 4, 2 under 8, 3 under 16,
+    //     4 under 32, 5 under 64, 6 under 128, 7 128 and more
+    ldx #0
+    stillLoop:
+        cpx #7
+        beq stillDone
+        lda lStill
+        cmp stillSteps, x
+        bcc stillDone
+        inx
+        jmp stillLoop
+    stillDone:
+    stx sensePack + 17
+    rts
+
+    // d = |d| (16-bit), neg = 1 when it was negative
+    magnitude: {
+        lda #0
+        sta neg
+        lda d + 1
+        bpl !+
+            inc neg
+            sec
+            lda #0
+            sbc d
+            sta d
+            lda #0
+            sbc d + 1
+            sta d + 1
+        !:
+        rts
+    }
+    // A = the bucket, made negative (two's complement in four bits) when neg
+    signed: {
+        ldx neg
+        beq !+
+            eor #$ff
+            clc
+            adc #1
+            and #$0f
+        !:
+        rts
+    }
+    // IN: A - a row. OUT: A - the code of the cell at (ahead, row), Y - its material; both 0 off the screen
+    cellAhead: {
+        bmi off
+        cmp #25
+        bcs off
+        tay
+        ldx ahead
+        jsr buildReadCell
+        sta code
+        tay
+        lda roomMaterialsBuffer, y
+        tay
+        lda code
+        rts
+        off:
+        lda #0
+        tay
+        rts
+        code: .byte 0
+    }
+    // carry clear when the slot ahead can take a brick now (the verb's rules, from the raw values)
+    slotFree: {
+        lda lState
+        and #%00001111
+        tax
+        lda groundTab, x
+        beq no
+        lda #19
+        sec
+        sbc top
+        bmi no
+        cmp #19
+        bcs no
+        lsr
+        bcs no                  // an odd level: his feet are not on a brick's level
+        asl
+        sta slotRow
+        lda #BUILD_ROW_LO
+        sec
+        sbc slotRow
+        sta slotRow             // 21 - 2k
+        lda lState
+        bmi right
+            lda leftCol
+            sec
+            sbc #1
+            and #%11111110
+            sec
+            sbc #1
+            jmp known
+        right:
+            lda rightCol
+            clc
+            adc #1
+            ora #1
+        known:
+        sta slotCol
+        cmp #BUILD_COL0
+        bcc no
+        cmp #(BUILD_COL0 + 29)
+        bcs no
+        jmp cells
+        no:
+        sec
+        rts
+        cells:
+        ldy slotRow
+        ldx slotCol
+        jsr cellFree
+        bcs taken
+        inx
+        jsr cellFree
+        bcs taken
+        iny
+        jsr cellFree
+        bcs taken
+        dex
+        jsr cellFree
+        bcs taken
+        jmp playerBox
+        taken:
+        sec
+        rts
+        // the player's box against the slot
+        playerBox:
+        lda lPY
+        lsr
+        lsr
+        lsr
+        sec
+        sbc #6
+        sta pTop
+        _phys_div8_16(lPX, 0, -2, pLeft)
+        _phys_div8_16(lPX, 8, -2, pRight)
+        lda slotCol
+        clc
+        adc #1
+        cmp pLeft
+        bcc free                // the slot ends before his left column
+        lda pRight
+        cmp slotCol
+        bcc free                // his right column ends before the slot
+        lda slotRow
+        clc
+        adc #1
+        cmp pTop
+        bcc free                // the slot ends above him
+        lda pTop
+        clc
+        adc #3
+        cmp slotRow
+        bcs inIt                // he reaches the slot
+        free:
+        clc
+        rts
+        inIt:
+        sec
+        rts
+    }
+    // IN: X - a column, Y - a row (kept). Carry set unless the cell is empty or a mural brick
+    cellFree: {
+        jsr buildReadCell
+        beq fine
+        cmp brickCodes
+        beq fine
+        cmp brickCodes + 1
+        beq fine
+        cmp brickCodes + 2
+        beq fine
+        cmp brickCodes + 3
+        beq fine
+        sec
+        rts
+        fine:
+        clc
+        rts
+    }
+    d:        .word 0
+    neg:      .byte 0
+    top:      .byte 0
+    ahead:    .byte 0
+    leftCol:  .byte 0
+    rightCol: .byte 0
+    slotRow:  .byte 0
+    slotCol:  .byte 0
+    pTop:     .byte 0
+    pLeft:    .byte 0
+    pRight:   .byte 0
+    dxSteps:    .byte 8, 16, 24, 32, 48, 64, 128
+    stillSteps: .byte 1, 4, 8, 16, 32, 64, 128
+    // his state (bit 7 off) -> the flags: 0 on the ground, 1 walking, 2 on a ladder, 3 ducking,
+    // 4 jumping sideways, 5 jumping up, 6 falling, 7 stopped on a ladder, 8 dead
+    groundTab:  .byte 7, 7, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    airTab:     .byte 0, 0, 0, 0, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ladderTab:  .byte 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0
+    duckTab:    .byte 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+}
 """
 
 
 def body(src):
     """The clone's body: the Shadow runs the player's physics from his own record (see BODY_CODE_ASM)."""
-    # two Tonys' physics take about 200 raster lines; the top handler starts in the upper border (line 8
+    # two Tonys' physics take about 200 raster lines; the top handler starts in the upper border (line 0
     # instead of 40, nothing is drawn there) so its turn ends before the visual handler's line, 255: a
     # handler still running when the copper's next line passes makes the list skip a frame
     src = sub(src, "    c64lib_copperEntry(40, c64lib.IRQH_JSR, <doEachFrameTop, >doEachFrameTop)\n",
-              "    c64lib_copperEntry(8, c64lib.IRQH_JSR, <doEachFrameTop, >doEachFrameTop)     // the body: line 8, not 40 (see cloneUpdate)\n")
+              "    c64lib_copperEntry(0, c64lib.IRQH_JSR, <doEachFrameTop, >doEachFrameTop)     // the body: line 0, not 40 (see cloneUpdate)\n")
     # his record, once the room is drawn
     src = sub(src, "    jsr buddyInit\n    jsr ani_init\n", "    jsr buddyInit\n    jsr cloneInit               // the body: the clone's record\n    jsr ani_init\n")
     # his turn through the physics, after the player's and the actors
@@ -1935,7 +2540,7 @@ def body(src):
     src = sub(src, "checkBGCollision: phys_checkBGCollisionExt2(roomMaterialsBuffer, chamberLines)\n",
               "checkBGCollisionRef: phys_checkBGCollisionExt2(roomMaterialsBuffer, chamberLines)    // the body: the game's own, the reference for bodySelfTest\n")
     src = sub(src, "        jsr changeRoomIfNeeded\n        lda objCollisionDetected\n",
-              "        jsr changeRoomIfNeeded\n        jsr bodySelfTest            // the body: the collision sweep, when the bench asks for it\n        lda objCollisionDetected\n")
+              "        jsr changeRoomIfNeeded\n        jsr bodySelfTest            // the body: the collision sweep, when the bench asks for it\n        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n        lda objCollisionDetected\n")
     src = sub(src, '#import "level/build/data.asm"', '#import "level/body/data.asm"')
     # the joystick's debounce is the player's alone; a forced state change goes to whoever's turn it is
     src = sub(src, "    jsr joyHandlingForBorg\n", "    jsr bodyBorg                // the body: the player's joystick debounced, the clone's clean\n")

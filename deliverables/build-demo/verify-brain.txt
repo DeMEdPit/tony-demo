@@ -1,0 +1,29 @@
+tony-body.prg: 45980 bytes
+senses (every nibble of the packed block against the twin, from the raw values of the same frame):
+  ok   start: the clone near Tony: 20 of 20 nibbles agree
+  ok   Tony walks right, the clone walking after him: 20 of 20 nibbles agree
+  ok   Tony at the pillar, the clone standing: 20 of 20 nibbles agree
+  ok   Tony ducks: 20 of 20 nibbles agree
+  ok   Tony jumps, both in the air: 20 of 20 nibbles agree
+  ok   Tony walks left past him: 20 of 20 nibbles agree
+  ok   the clone held still; Tony walks on, turns to face him and lays a brick between them: 20 of 20 nibbles agree
+  ok   the clone let go: he walks into the brick: 20 of 20 nibbles agree
+  ok   the byte: the clone turns right, a slot free ahead: 20 of 20 nibbles agree
+  ok   the frame of the lay: 20 of 20 nibbles agree
+  ok   the clone steps up: 20 of 20 nibbles agree
+  ok   the clone walks right off it: 20 of 20 nibbles agree
+  ok   the clone jumps: 20 of 20 nibbles agree
+  ok   the byte back: 20 of 20 nibbles agree
+  ok   walking after Tony: still 0, last action right
+  ok   Tony ducking: playerDuck and ducking set
+  ok   the jump: playerAir and inAir set
+  ok   blocked by a placed brick: wallAheadFoot and brickAheadFoot set
+  ok   turned away from it: a free slot ahead, buildable set
+  ok   the frame of the lay: last action build right
+  ok   after the step up: on the ground, floor below
+slot:
+Traceback (most recent call last):
+  File "/home/user/tony-demo/tools/verify_brain.py", line 155, in <module>
+    MARK, KIND, W, MOOD = SYM["brainMarker"], SYM["brainKind"], SYM["brainWeights"], SYM["brainMood"]
+                          ~~~^^^^^^^^^^^^^^^
+KeyError: 'brainMarker'

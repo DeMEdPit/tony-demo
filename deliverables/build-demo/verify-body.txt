@@ -1,4 +1,4 @@
-tony-body.prg: 44422 bytes
+tony-body.prg: 45980 bytes
 follow:
   ok   boots into the room: the clone walked from 120 to 146, on the floor, near Tony at 184
   ok   his sprites are where his record says
@@ -21,7 +21,7 @@ drive (the bench holds his joystick byte):
   ok   bit 6 steps him onto it (Y 190, X 171)
   ok   a second brick and step
   ok   three bricks high
-  ok   walking left off the top drops him down the stairs to the floor (X 111)
+  ok   walking left off the top drops him down the stairs to the floor (X 113)
   ok   bit 4 makes him jump (Y 183)
   ok   and he lands
   ok   the brain again: he walks towards Tony until his own stairs stop him (X 159); the follow rule does not jump
@@ -39,5 +39,5 @@ rooms (Tony climbs into the room above):
   ok   and the check agrees with the game's own in the room above too (0 differ)
 time:
   ok   no turn of the clone ended on raster line 250 or later (38 snapshots)
-  ok   the latest a turn ended: raster line 218 (the visual handler's line is 255)
+  ok   the latest a turn ended: raster line 187 (the visual handler's line is 255)
 ALL OK
