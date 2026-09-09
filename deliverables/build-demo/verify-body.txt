@@ -1,0 +1,43 @@
+tony-body.prg: 44422 bytes
+follow:
+  ok   boots into the room: the clone walked from 120 to 146, on the floor, near Tony at 184
+  ok   his sprites are where his record says
+  ok   Tony at the right pillar (286), the clone followed to 248
+  ok   Tony back left (56), the clone followed to 94
+  ok   Tony ducks, the clone ducks
+  ok   and stands again
+jump:
+  ok   the clone jumps in the same frame as Tony: both at Y 184
+  ok   still together in the air at Y 185
+  ok   both back on the floor
+wall:
+  ok   a brick laid between Tony and the clone
+  ok   Tony walks to 286; the clone walks into the brick and stays at X 158 (his physics, not a rule)
+drive (the bench holds his joystick byte):
+  ok   Tony at 286, the clone at 248
+  ok   bit 2 for fifty frames: a hundred pixels left, to 148, two a frame
+  ok   bit 3 for one frame: two pixels right, facing right
+  ok   bit 5 lays a brick in front of him
+  ok   bit 6 steps him onto it (Y 190, X 171)
+  ok   a second brick and step
+  ok   three bricks high
+  ok   walking left off the top drops him down the stairs to the floor (X 111)
+  ok   bit 4 makes him jump (Y 183)
+  ok   and he lands
+  ok   the brain again: he walks towards Tony until his own stairs stop him (X 159); the follow rule does not jump
+ladder (the bench builds him up to it):
+  the ladder hangs at columns 33-34 (seeded); the clone starts from X 146
+  ok   five bricks laid and climbed, the ladder in reach (Y 126, count 5)
+  ok   he climbs the ladder and hangs at the north stop (Y 56, state 135), in his room, in view
+  ok   and climbs down onto the bricks (Y 126)
+rooms (Tony climbs into the room above):
+  ok   Tony builds five bricks under the ladder (count 5)
+  ok   the faster collision check agrees with the game's own at every position of the room below, bricks laid (0 differ)
+  ok   Tony in the room above (room 1); the clone's sprites off
+  ok   the clone waits: his record unchanged a hundred frames later (X 206, Y 206)
+  ok   Tony back below: the clone is there, on the floor, following again (X 206, state 129)
+  ok   and the check agrees with the game's own in the room above too (0 differ)
+time:
+  ok   no turn of the clone ended on raster line 250 or later (38 snapshots)
+  ok   the latest a turn ended: raster line 218 (the visual handler's line is 255)
+ALL OK

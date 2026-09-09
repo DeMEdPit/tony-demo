@@ -4,6 +4,8 @@ A standalone program for the owner to play: the Chamber's room with one verb add
 since 2026-09-09 a second room above it, reached by a ladder that hangs from the ceiling.
 It is a branch of the frozen base, not a change to it: the base (`tony-chamber.prg`, sha256
 `67dc97bc1e306715...`) is byte for byte what it was, and nothing here is on chain or in a token.
+Its next step, the second Tony on the player's own physics, is a further PRG (`tony-body.prg`), written
+up in `BODY.md`; this file describes the building demo as it is.
 
 | | |
 |---|---|
@@ -111,4 +113,5 @@ count still five, the Shadow back). Screenshots: `deliverables/screenshots/build
 - The placed brick's look is four glyphs copied at start (the floor brick's ends, map codes $31 $36 /
   $37 $3C); any other 2 x 2 look is a change to that list.
 - The Shadow's guard is the first piece of a second Tony that knows the map; the next is making him an
-  actor on the player's physics, which is where any trained policy would have to sit.
+  actor on the player's physics, which is where any trained policy would have to sit. Done, 2026-09-09,
+  as `tony-body.prg`: see `BODY.md`.

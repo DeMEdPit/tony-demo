@@ -61,6 +61,8 @@ import re as _re
 #          --intro PATH   the Glitch's tune (a PSID assembled for $8000; default src/music/TonyIntro8000_reloc.sid)
 #          --variant NAME the .asm/.prg name (default tony-chamber)
 #          --build-demo   the building demo (see BUILD_DEMO below): no bats, no Glitch tune, down + fire lays a brick
+#          --body         with --build-demo: the clone's body (see BODY below): the Shadow runs the player's physics,
+#                         driven by a joystick byte a brain writes; the follow rule is the first brain
 #          --glitch-ink N the colour of the block number's cells in the Glitch's blackout
 #                         (default 0, black on the dark grey stone, the owner's choice; 15 was light grey)
 # The base carries both tunes. Behaviour 7 (the Glitch) plays the intro tune; the seven play the
@@ -74,6 +76,7 @@ GLITCH_INK = 0
 GLITCH_DANCE_VOICE = 2
 DIM_NO_CANDLE = True       # a room without a candle has medium grey stone (the owner's choice, 2026-09-07); --lit-no-candle turns it off
 BUILD_DEMO = False         # --build-demo: a separate PRG for the owner to play; the base is untouched
+BODY = False               # --body: the clone's body on top of the build demo (tony-body.prg)
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -84,7 +87,9 @@ while _args:
     elif _flag == "--dim-no-candle": DIM_NO_CANDLE = True
     elif _flag == "--lit-no-candle": DIM_NO_CANDLE = False
     elif _flag == "--build-demo": BUILD_DEMO = True
+    elif _flag == "--body": BODY = True
     else: raise SystemExit("unknown option " + _flag)
+assert BUILD_DEMO or not BODY, "--body needs --build-demo"
 _sid = open(MUSIC, "rb").read()
 assert _sid[:4] == b"PSID" and _sid[124:126] == b"\x00\xa0", "the level tune must be a PSID assembled for $A000"
 _m = _re.search(rb"\xBD(..)\x9D\x00\xD4", _sid[124 + 2:], _re.S)      # LDA image,X / STA $D400,X
@@ -186,6 +191,23 @@ chamberAbove: // 1
     os.makedirs("src/kickass/level/build", exist_ok=True)
     open("src/kickass/level/build/data.asm", "w").write(src)
     print("wrote src/kickass/level/build/data.asm and src/level-custom/build-room.bin")
+    if BODY:
+        # the body's rooms carry no bats at all: the demo never showed them, and their actors cost frame time
+        body_src = sub(src, """    _level_pack("build-room.bin", 1, NO, NO, NO, List().add(      // the build demo: the ladder in the ceiling leads up
+        objectExt(SO_BAT, 0, 5, 3, 0),
+        objectExt(SO_BAT, 0, 27, 4, 1)
+    ))
+""", """    _level_pack("build-room.bin", 1, NO, NO, NO, List())         // the body: the ladder in the ceiling leads up; no bats
+""")
+        body_src = sub(body_src, """    _level_pack("build-room.bin", NO, NO, 0, NO, List().add(
+        objectExt(SO_BAT, 0, 5, 3, 0),
+        objectExt(SO_BAT, 0, 27, 4, 1)
+    ))
+""", """    _level_pack("build-room.bin", NO, NO, 0, NO, List())
+""")
+        os.makedirs("src/kickass/level/body", exist_ok=True)
+        open("src/kickass/level/body/data.asm", "w").write(body_src)
+        print("wrote src/kickass/level/body/data.asm")
 
 
 # ------------------------------------------------------------- the building demo
@@ -1058,6 +1080,880 @@ def build_demo(src):
     # the code, in the Code segment
     src = sub(src, ".segment Movable\n", BUILD_CODE_ASM + "\n.segment Movable\n")
     return src
+
+# ------------------------------------------------------------- the clone's body (--body)
+BODY_CODE_ASM = r"""
+// ===================================================================== the body
+// The clone is a second Tony run through the player's own physics. The physics keep their
+// state in twenty bytes (physPlayerX .. _phys_stateChange, one block in physics-tall.asm);
+// the clone keeps his own twenty in cloneRec, laid out the same. Once a frame, after the
+// player's turn, cloneUpdate swaps the record in, runs the same routines on it with his
+// joystick byte (dispatchPlayerCommand, phys_transitState, phys_executeState,
+// checkBGCollision, phys_blockMovement, checkBGCollision when the movement was blocked or
+// adjusted, with the state changes routed to his own animation slot), and swaps it out
+// again. The steps that are the player's alone are not run for him: no room change, no
+// death, no collectibles. cloneDraw puts sprites 5, 6 and 7 (his backdrop) where the record
+// says, with the player's own animation tables.
+// Time: a collision check is ~30 raster lines and the game's loop runs two a frame; here
+// (for both Tonys) a check runs only when it can say something new: the proposed position or
+// the map changed (bodyCheckProposal), the movement was blocked or adjusted
+// (bodyBlockMovement). The top handler is moved to line 8 so both turns end before the visual
+// handler's line, 255; bodyRasterMax / bodyOverruns watch that they do.
+//
+// The joystick byte, cloneJoy: bit 0 up, 1 down, 2 left, 3 right, 4 fire, 5 lay a brick,
+// 6 step up onto it; a set bit is a pressed line. A brain writes it every frame
+// (cloneThink: the follow rule, for now). cloneJoyOverride with bit 7 set replaces the
+// brain's byte with its low seven bits (the bench and a trainer drive him with it).
+.label CLONE_REC_SIZE  = _phys_stateChange - physPlayerX + 1
+.label CLONE_NORTH_STOP = 56      // he climbs no higher: the room's north exit is the player's alone
+.assert "the physics state is one block of twenty bytes", CLONE_REC_SIZE, 20
+.assert "physPlayerY follows physPlayerX", physPlayerY - physPlayerX, 2
+.assert "physPlayerState at 7", physPlayerState - physPlayerX, 7
+.assert "actorPlayerNextX at 10", actorPlayerNextX - physPlayerX, 10
+.assert "_phys_jumpPhase at 17", _phys_jumpPhase - physPlayerX, 17
+
+cloneRec:           .fill CLONE_REC_SIZE, 0
+.label cloneX               = cloneRec + (physPlayerX - physPlayerX)
+.label cloneY               = cloneRec + (physPlayerY - physPlayerX)
+.label cloneBGCollision     = cloneRec + (physPlayerBGCollision - physPlayerX)
+.label cloneBGCollisionExt  = cloneRec + (physPlayerBGCollisionExt - physPlayerX)
+.label cloneAnimation       = cloneRec + (physPlayerAnimation - physPlayerX)
+.label cloneState           = cloneRec + (physPlayerState - physPlayerX)
+.label cloneStateAllowed    = cloneRec + (physPlayerStateAllowed - physPlayerX)
+.label cloneNextX           = cloneRec + (actorPlayerNextX - physPlayerX)
+.label cloneNextY           = cloneRec + (actorPlayerNextY - physPlayerX)
+.label cloneLadderAdjustedX = cloneRec + (actorLadderAdjustedX - physPlayerX)
+.label cloneJumpPhase       = cloneRec + (_phys_jumpPhase - physPlayerX)
+
+bodyTurn:           .byte 0       // 0 the player's turn, 1 the clone's (his record is swapped in)
+cloneJoy:           .byte 0       // the joystick byte the brain wrote this frame
+cloneJoyOverride:   .byte 0       // bit 7 set: bits 0-6 replace the brain's byte
+cloneJoyPrev:       .byte 0       // the lay and step-up bits act on their rising edge
+cloneAnim:          .byte ANIM_IDLING_RIGHT   // the animation on his sprites and its run, as
+cloneAniPhase:      .byte 0       // ani_animatePlayer keeps them for the player
+cloneAniDelay:      .byte 0
+cloneAniLength:     .byte 0
+cloneAniMode:       .byte 0
+cloneAniCounter:    .byte 1
+cloneWalking:       .byte 0       // the follow rule's hysteresis
+clonePlayerAir:     .byte 0       // the player was jumping last frame: his jump is mirrored on its first frame
+bodyStale:          .byte 3       // bit 0: the map changed since the player's flags were computed; bit 1: the clone's
+bodyRasterMax:      .byte 0       // the latest raster line the clone's turn has ended on (the bench reads it)
+bodyOverruns:       .byte 0       // turns that ended on line 250 or later: must stay 0
+bodyWarm:           .byte 0       // the level's frames so far, up to 2: the watch starts at the third
+
+// the record and the physics block change places (the same call swaps them back)
+cloneSwap: {
+    .for (var i = 0; i < 20; i++) {  // unrolled: 320 cycles a swap, twice a frame
+        lda physPlayerX + i
+        ldx cloneRec + i
+        sta cloneRec + i
+        stx physPlayerX + i
+    }
+    rts
+}
+
+// at the start of the level, after the room is drawn: on the floor, facing right
+cloneInit: {
+    ldx #(CLONE_REC_SIZE - 1)
+    lda #0
+    !:
+        sta cloneRec, x
+        dex
+    bpl !-
+    sta cloneJoy
+    sta cloneJoyOverride
+    sta cloneJoyPrev
+    sta cloneWalking
+    sta clonePlayerAir
+    sta bodyTurn
+    sta bodyWarm
+    sta bodyRasterMax
+    sta bodyOverruns
+    lda #120
+    sta cloneX
+    sta cloneNextX
+    lda #BUDDY_FLOOR_Y
+    sta cloneY
+    sta cloneNextY
+    lda #STATE_ON_GROUND_RIGHT
+    sta cloneState
+    sta cloneStateAllowed
+    lda #ANIM_IDLING_RIGHT
+    sta cloneAnimation
+    tax
+    jsr cloneSetAnimation
+    lda #$ff
+    sta cloneLadderAdjustedX
+    sta cloneJumpPhase
+    jsr cloneSwap                   // his collision flags, as startLevel does the player's
+    jsr checkBGCollision
+    jsr cloneSwap
+    lda #3
+    sta bodyStale
+    rts
+}
+
+// the clone's turn, after the player's (doEachFrameTop)
+cloneUpdate: {
+    lda currentChamberNumber        // he waits in his room while the player is away
+    beq !+
+        rts
+    !:
+    jsr cloneThink                  // the brain writes cloneJoy
+    lda cloneJoyOverride
+    bpl !+
+        and #%01111111
+        sta cloneJoy
+    !:
+    lda cloneY                      // no higher than the north stop: up is masked from there on
+    cmp #(CLONE_NORTH_STOP + 1)
+    bcs !+
+        lda cloneJoy
+        and #%11111110
+        sta cloneJoy
+    !:
+    lda #1
+    sta bodyTurn
+    jsr cloneSwap
+    jsr cloneVerb                   // lay or step up, on the rising edge of bits 5 and 6
+    lda io_oldJoy                   // dispatchPlayerCommand keeps the player's last command there
+    pha
+    lda cloneJoy
+    and #%00011111
+    eor #%00011111                  // the port's sense: a low line is a pressed one
+    jsr dispatchPlayerCommand
+    pla
+    sta io_oldJoy
+    jsr phys_transitState
+    jsr cloneOnStateChange
+    jsr phys_executeState
+    jsr cloneOnStateChange
+    jsr bodyCheckProposal
+    jsr bodyBlockMovement
+    jsr cloneOnStateChange
+    jsr cloneSwap
+    lda #0
+    sta bodyTurn
+    // the watch: the turn must be over before the raster reaches the visual handler's line (255), or
+    // the copper misses that line and the next frame's physics with it. Lines 250 and up count as late.
+    // The level's first two frames are not watched: the copper's first interrupt fires when it is
+    // started, wherever the raster is (a stale raster flag), and that handler runs off-schedule once.
+    lda bodyWarm
+    cmp #2
+    bcs !+
+        inc bodyWarm
+        rts
+    !:
+    lda c64lib.CONTROL_1
+    bmi late                        // bit 7 is raster bit 8: line 256 and up
+    lda c64lib.RASTER
+    cmp #250
+    bcs late
+    cmp bodyRasterMax
+    bcc !+
+        sta bodyRasterMax
+    !:
+    rts
+    late:
+    inc bodyOverruns
+    rts
+}
+
+// checkBGCollision: the flags the game's phys_checkBGCollisionExt2 computes, the same for every
+// position (bodySelfTest proves it against the game's own, kept as checkBGCollisionRef), at half
+// the cost: a row's address is set once, a cell read once, and no chain of subroutines. The scan
+// is the game's: the left column then the right, rows top .. top + 4 (three box rows, the near
+// row at the feet, the far row under them), and the ladder columns noted in that order.
+checkBGCollision: {
+    lda #$ff
+    sta actorLadderAdjustedX
+    sta ladder0
+    sta ladder1
+    lda #0
+    sta physPlayerBGCollision
+    sta physPlayerBGCollisionExt
+    sta physPlayerBGCollisionObj
+    _phys_div8_16(actorPlayerNextX, 0, -2, leftCol)
+    _phys_div8_16(actorPlayerNextX, 8, -2, rightCol)
+    _phys_div8_8(actorPlayerNextY, 0, -6, top)
+    ldx leftCol
+    jsr column
+    ldx rightCol
+    jsr column
+    // the ladder under him, as the game reads it
+    lda ladder0
+    cmp rightCol
+    bne !+
+        sta actorLadderAdjustedX    // |-
+        inc actorLadderAdjustedX
+        rts
+    !:
+    cmp leftCol
+    bne end
+        lda ladder1
+        cmp rightCol
+        bne !+
+            sta actorLadderAdjustedX    // |--|
+            rts
+        !:
+        lda ladder0                     // -|
+        sta actorLadderAdjustedX
+    end:
+    rts
+
+    // IN: X - the column
+    column: {
+        lda top
+        sta row
+        lda #3
+        sta count
+        boxRows:
+            lda row
+            bmi skipBox                 // above the screen: nothing there
+            cmp #25
+            bne !+
+                rts                     // below it: the column is done
+            !:
+            jsr setRow
+            jsr readCell
+            sta m
+            and #BG_CLSN_BOX_MASK
+            ora physPlayerBGCollision
+            sta physPlayerBGCollision
+            lda m
+            and #BG_CLSN_OBJ_MASK
+            ora physPlayerBGCollisionObj
+            sta physPlayerBGCollisionObj
+        skipBox:
+            inc row
+            dec count
+        bne boxRows
+        // the near row: the feet
+        lda row
+        bmi skipNear
+        cmp #25
+        bne !+
+            rts
+        !:
+        jsr setRow
+        jsr readCell
+        sta m
+        and #BG_CLSN_FLOOR_MASK
+        beq !+
+            ora physPlayerBGCollision
+            sta physPlayerBGCollision
+            lda #(BG_CLSE_FLOOR_NEAR + BG_CLSE_WALL_LEFT + BG_CLSE_WALL_RIGHT)   // the game's bug #101, kept
+            ora physPlayerBGCollisionExt
+            sta physPlayerBGCollisionExt
+        !:
+        lda m
+        and #BG_CLSN_LADDER
+        beq !+
+            lda physPlayerBGCollision
+            and #BG_CLSN_LADDER
+            bne !+
+            lda #BG_CLSE_LADDER_TOP
+            ora physPlayerBGCollisionExt
+            sta physPlayerBGCollisionExt
+        !:
+        lda m                           // the ladder in this column and the next
+        jsr noteLadder
+        inx
+        jsr readCell
+        jsr noteLadder
+        dex
+        lda m                           // and the box flags without the killing one
+        and #BG_CLSN_BOX_NK_MASK
+        ora physPlayerBGCollision
+        sta physPlayerBGCollision
+        lda m
+        and #BG_CLSN_OBJ_MASK
+        ora physPlayerBGCollisionObj
+        sta physPlayerBGCollisionObj
+        skipNear:
+        inc row
+        // the far row: what is under the feet
+        lda row
+        bmi done
+        cmp #25
+        beq done
+        jsr setRow
+        jsr readCell
+        sta m
+        and #BG_CLSN_LADDER
+        beq !+
+            lda #BG_CLSE_LADDER_FAR
+            ora physPlayerBGCollisionExt
+            sta physPlayerBGCollisionExt
+        !:
+        lda m
+        and #BG_CLSN_WALL
+        beq !+
+            lda #BG_CLSE_FLOOR_FAR
+            ora physPlayerBGCollisionExt
+            sta physPlayerBGCollisionExt
+        !:
+        lda m
+        jsr noteLadder
+        inx
+        jsr readCell
+        jsr noteLadder
+        dex
+        done:
+        rts
+    }
+    // IN: A - the row: the screen line's address into readCell (X and A kept)
+    setRow: {
+        tay
+        lda chamberLines.lo, y
+        sta readCell.address
+        lda chamberLines.hi, y
+        sta readCell.address + 1
+        rts
+    }
+    // IN: X - the column; OUT: A - the material of the cell there (Y - the cell)
+    readCell: {
+        lda address:$ffff, x
+        tay
+        lda roomMaterialsBuffer, y
+        rts
+    }
+    // IN: A - a material, X - its column: the first two ladder sightings' columns, in scan order
+    noteLadder: {
+        and #BG_CLSN_LADDER
+        beq no
+        lda ladder0
+        cmp #$ff
+        bne !+
+            stx ladder0
+            rts
+        !:
+        lda ladder1
+        cmp #$ff
+        bne no
+            stx ladder1
+        no:
+        rts
+    }
+    leftCol:  .byte 0
+    rightCol: .byte 0
+    top:      .byte 0
+    row:      .byte 0
+    count:    .byte 0
+    m:        .byte 0
+    ladder0:  .byte 0
+    ladder1:  .byte 0
+}
+
+// the proof of the check above: the game's own and this one over every distinct position (X and
+// Y in steps of 8, the columns and rows change no finer, X to 511, Y to 255) must agree in all
+// four outputs. The bench pokes bodySelfTestRun; the main loop runs the sweep with the interrupts
+// off, keeps the player's physics block aside, counts the positions that differed in
+// bodySelfTestBad (the first in bodySelfTestBadX/Y), counts up bodySelfTestDone and clears the
+// request.
+bodySelfTestRun:  .byte 0
+bodySelfTestBad:  .word 0
+bodySelfTestBadX: .word 0
+bodySelfTestBadY: .byte 0
+bodySelfTestDone: .byte 0
+bodySelfTest: {
+    lda bodySelfTestRun
+    bne go
+    rts
+    go:
+    sei
+    ldx #19
+    !:
+        lda physPlayerX, x
+        sta keep, x
+        dex
+    bpl !-
+    lda #0
+    sta bodySelfTestBad
+    sta bodySelfTestBad + 1
+    sta actorPlayerNextY
+    rowLoop:
+        lda #0
+        sta actorPlayerNextX
+        sta actorPlayerNextX + 1
+        colLoop:
+            jsr checkBGCollisionRef
+            lda physPlayerBGCollision
+            sta ref
+            lda physPlayerBGCollisionExt
+            sta ref + 1
+            lda physPlayerBGCollisionObj
+            sta ref + 2
+            lda actorLadderAdjustedX
+            sta ref + 3
+            jsr checkBGCollision
+            lda physPlayerBGCollision
+            cmp ref
+            bne bad
+            lda physPlayerBGCollisionExt
+            cmp ref + 1
+            bne bad
+            lda physPlayerBGCollisionObj
+            cmp ref + 2
+            bne bad
+            lda actorLadderAdjustedX
+            cmp ref + 3
+            beq good
+            bad:
+                inc bodySelfTestBad
+                bne !+
+                    inc bodySelfTestBad + 1
+                !:
+                lda bodySelfTestBad + 1
+                bne good
+                lda bodySelfTestBad
+                cmp #1
+                bne good
+                    lda actorPlayerNextX        // the first one
+                    sta bodySelfTestBadX
+                    lda actorPlayerNextX + 1
+                    sta bodySelfTestBadX + 1
+                    lda actorPlayerNextY
+                    sta bodySelfTestBadY
+            good:
+            clc
+            lda actorPlayerNextX
+            adc #8
+            sta actorPlayerNextX
+            bcc more
+            inc actorPlayerNextX + 1
+            lda actorPlayerNextX + 1
+            cmp #2
+            beq rowDone
+            more:
+            jmp colLoop
+        rowDone:
+        clc
+        lda actorPlayerNextY
+        adc #8
+        sta actorPlayerNextY
+        bcs sweepDone
+        jmp rowLoop
+    sweepDone:
+    ldx #19
+    !:
+        lda keep, x
+        sta physPlayerX, x
+        dex
+    bpl !-
+    inc bodySelfTestDone
+    lda #0
+    sta bodySelfTestRun
+    sta bodyWarm                    // the handlers come back off-schedule: the watch waits again
+    cli
+    rts
+    keep: .fill 20, 0
+    ref:  .fill 4, 0
+}
+
+// checkBGCollision at the position the state proposes, unless that is the current position and
+// the map has not changed since this Tony's flags were computed: the flags are the same then.
+// A check is ~30 raster lines; a Tony standing still costs none, one walking costs one.
+bodyCheckProposal: {
+    ldx bodyTurn
+    lda staleBits, x
+    and bodyStale
+    bne check
+    lda actorPlayerNextX
+    cmp physPlayerX
+    bne check
+    lda actorPlayerNextX + 1
+    cmp physPlayerX + 1
+    bne check
+    lda actorPlayerNextY
+    cmp physPlayerY
+    beq same
+    check:
+    jsr checkBGCollision
+    ldx bodyTurn
+    lda staleBits, x
+    eor #$ff
+    and bodyStale
+    sta bodyStale
+    same:
+    rts
+    staleBits: .byte 1, 2           // bit 0 the player's flags, bit 1 the clone's
+}
+
+// phys_blockMovement, then checkBGCollision when it settled him elsewhere than proposed
+// (blocked, landed, adjusted to the floor): the flags for the new position
+bodyBlockMovement: {
+    lda actorPlayerNextX
+    sta proposedX
+    lda actorPlayerNextX + 1
+    sta proposedX + 1
+    lda actorPlayerNextY
+    sta proposedY
+    jsr phys_blockMovement
+    lda physPlayerX
+    cmp proposedX
+    bne moved
+    lda physPlayerX + 1
+    cmp proposedX + 1
+    bne moved
+    lda physPlayerY
+    cmp proposedY
+    beq settled
+    moved:
+    jsr checkBGCollision
+    settled:
+    rts
+    proposedX: .word 0
+    proposedY: .byte 0
+}
+
+// the joystick's debounce is the player's; the clone's byte is clean (A kept)
+bodyBorg: {
+    pha
+    lda bodyTurn
+    beq player
+        pla
+        rts
+    player:
+    pla
+    jmp joyHandlingForBorg
+}
+
+// a state change goes to whoever's turn it is (buildStepUp forces one)
+bodyStateChange: {
+    lda bodyTurn
+    bne !+
+        jmp onStateChange
+    !:
+    jmp cloneOnStateChange
+}
+
+// as onStateChange, into the clone's animation slot (his record is swapped in)
+cloneOnStateChange: {
+    lda _phys_stateChange
+    beq !+
+        ldx physPlayerAnimation
+        jsr cloneSetAnimation
+        lda #0
+        sta _phys_stateChange
+    !:
+    rts
+}
+
+// IN: X - animation code; as ani_setAnimation, for the clone's slot
+cloneSetAnimation: {
+    stx cloneAnim
+    lda animationLength, x
+    sta cloneAniLength
+    lda animationDelay, x
+    sta cloneAniDelay
+    lda animationMode, x
+    sta cloneAniMode
+    lda #1
+    sta cloneAniCounter
+    lda #0
+    sta cloneAniPhase
+    rts
+}
+
+// the build verb for the clone: bit 5 lays or lifts, bit 6 steps up, each on its rising edge
+// (his record is swapped in, so buildTarget reads his box and buildBuddyClear the player's)
+cloneVerb: {
+    lda cloneJoy
+    tax
+    eor cloneJoyPrev
+    and cloneJoy
+    sta edges
+    stx cloneJoyPrev
+    and #%00100000
+    beq !+
+        jsr buildAct
+    !:
+    lda edges
+    and #%01000000
+    beq !+
+        jsr buildStepUp
+    !:
+    rts
+    edges: .byte 0
+}
+
+// the first brain: the Chamber's follow rule as joystick bits. Walk towards the player when
+// farther than BUDDY_GO_AT, stop when nearer than BUDDY_STOP_AT; press fire on the first
+// frame of the player's jump; press down while he ducks, and let go for a frame to stand
+// up again. Runs before the swap: the physics block is the player's, the record is the clone's.
+cloneThink: {
+    lda #0
+    sta cloneJoy
+    // signed 16-bit distance to the player -> mag + targetRight
+    sec
+    lda physPlayerX
+    sbc cloneX
+    sta mag
+    lda physPlayerX + 1
+    sbc cloneX + 1
+    bpl playerRight
+        ldy #0
+        sty targetRight
+        cmp #$ff
+        bne farAway
+        sec
+        lda #0
+        sbc mag
+        sta mag
+        jmp haveMag
+    playerRight:
+        ldy #1
+        sty targetRight
+        cmp #0
+        beq haveMag
+    farAway:
+        lda #$ff
+        sta mag
+    haveMag:
+    lda mag
+    cmp #BUDDY_GO_AT
+    bcc !+
+        lda #1
+        sta cloneWalking
+    !:
+    lda mag
+    cmp #BUDDY_STOP_AT
+    bcs !+
+        lda #0
+        sta cloneWalking
+    !:
+    lda cloneWalking
+    beq standing
+        lda targetRight
+        beq left
+            lda #%00001000
+            jmp !+
+        left:
+            lda #%00000100
+        !:
+        sta cloneJoy
+    standing:
+    // the player's jump, mirrored on its first frame (a jump, not a fall: his drop into the
+    // room at the start, or off a brick, is not answered)
+    lda physPlayerState
+    and #%01111111
+    cmp #STATE_JUMPING_LEFT
+    beq air
+    cmp #STATE_JUMPING_UP_FACING_LEFT
+    beq air
+        lda #0
+        sta clonePlayerAir
+        jmp crouch
+    air:
+        lda clonePlayerAir
+        bne crouch
+        inc clonePlayerAir
+        lda cloneJoy
+        ora #%00010000
+        sta cloneJoy
+    crouch:
+    // and his crouch
+    lda physPlayerState
+    and #%01111111
+    cmp #STATE_DUCK_LEFT
+    bne standUp
+        lda cloneJoy
+        ora #%00000010
+        sta cloneJoy
+        rts
+    standUp:
+    // a duck ends only with the stick released (the physics allow no walk out of it): let go
+    // for a frame when he is still down and the player is not
+    lda cloneState
+    and #%01111111
+    cmp #STATE_DUCK_LEFT
+    bne !+
+        lda #0
+        sta cloneJoy
+    !:
+    rts
+    mag:         .byte 0
+    targetRight: .byte 0
+}
+
+// the clone's sprites from his record (doEachFrameVisual, where the player's are written)
+cloneDraw: {
+    lda currentChamberNumber        // the clone stays in the room below
+    beq !+
+        lda c64lib.SPRITE_ENABLE
+        and #%00011111
+        sta c64lib.SPRITE_ENABLE
+        rts
+    !:
+    lda c64lib.SPRITE_ENABLE
+    ora #%11100000                  // 5+6 the clone, 7 his backdrop
+    sta c64lib.SPRITE_ENABLE
+    lda c64lib.SPRITE_EXPAND_Y
+    ora #%10000000                  // the backdrop is Y-expanded, like the player's
+    sta c64lib.SPRITE_EXPAND_Y
+    lda c64lib.SPRITE_2_COLOR       // and wears the player's backdrop colour
+    sta c64lib.SPRITE_7_COLOR
+    lda muralColour                 // the clone's colour: the parameter block's
+    sta buddyColourNow
+    sta c64lib.SPRITE_5_COLOR
+    sta c64lib.SPRITE_6_COLOR
+    // the position, as updatePlayerPosition writes the player's
+    clc
+    lda cloneX
+    adc #SPRITE_CORRECTION_X
+    sta c64lib.SPRITE_5_X
+    sta c64lib.SPRITE_6_X
+    sta c64lib.SPRITE_7_X
+    lda cloneX + 1
+    adc #0
+    beq msbClear
+        lda c64lib.SPRITE_MSB_X
+        ora #%11100000
+        jmp !+
+    msbClear:
+        lda c64lib.SPRITE_MSB_X
+        and #%00011111
+    !:
+    sta c64lib.SPRITE_MSB_X
+    clc
+    lda cloneY
+    adc #SPRITE_CORRECTION_Y
+    sta c64lib.SPRITE_5_Y
+    sta c64lib.SPRITE_7_Y
+    clc
+    adc #21
+    sta c64lib.SPRITE_6_Y
+    // the frames, as ani_animatePlayer runs the player's
+    dec cloneAniCounter
+    bne show
+        lda cloneAniDelay
+        sta cloneAniCounter
+        inc cloneAniPhase
+        lda cloneAniPhase
+        cmp cloneAniLength
+        bne show
+            lda cloneAniMode
+            cmp #ANI_MODE_ONESHOT
+            beq oneShot
+                lda #0
+                sta cloneAniPhase
+                jmp show
+            oneShot:
+                dec cloneAniPhase
+    show:
+    ldx cloneAnim
+    lda cloneFramesTLlo, x
+    sta tl
+    lda cloneFramesTLhi, x
+    sta tl + 1
+    lda cloneFramesBLlo, x
+    sta bl
+    lda cloneFramesBLhi, x
+    sta bl + 1
+    lda cloneFramesBGlo, x
+    sta bg
+    lda cloneFramesBGhi, x
+    sta bg + 1
+    ldy cloneAniPhase
+    lda tl:$ffff, y
+    sta SCREEN_MEM_0 + 1016 + 5
+    lda bl:$ffff, y
+    sta SCREEN_MEM_0 + 1016 + 6
+    lda bg:$ffff, y
+    sta SCREEN_MEM_0 + 1016 + 7
+    rts
+}
+
+// the player's frame tables by animation code, in animationLo's order: walk L/R, duck L/R,
+// idle L/R, ladder, jump L/R, ladder stop, death L/R, six enemy codes (never his: idle),
+// quick duck L/R
+cloneFramesTLlo: .byte <walkLeftAnimationTL, <walkRightAnimationTL, <duckLeftAnimationTL, <duckRightAnimationTL
+                 .byte <idlingLeftAnimationTL, <idlingRightAnimationTL, <ladderAnimationTL, <jumpLeftAnimationTL
+                 .byte <jumpRightAnimationTL, <ladderAnimationTL, <deathLeftAnimationTL, <deathRightAnimationTL
+                 .fill 6, <idlingRightAnimationTL
+                 .byte <duckLeftAnimationQuickTL, <duckRightAnimationQuickTL
+cloneFramesTLhi: .byte >walkLeftAnimationTL, >walkRightAnimationTL, >duckLeftAnimationTL, >duckRightAnimationTL
+                 .byte >idlingLeftAnimationTL, >idlingRightAnimationTL, >ladderAnimationTL, >jumpLeftAnimationTL
+                 .byte >jumpRightAnimationTL, >ladderAnimationTL, >deathLeftAnimationTL, >deathRightAnimationTL
+                 .fill 6, >idlingRightAnimationTL
+                 .byte >duckLeftAnimationQuickTL, >duckRightAnimationQuickTL
+cloneFramesBLlo: .byte <walkLeftAnimationBL, <walkRightAnimationBL, <duckLeftAnimationBL, <duckRightAnimationBL
+                 .byte <idlingLeftAnimationBL, <idlingRightAnimationBL, <ladderAnimationBL, <jumpLeftAnimationBL
+                 .byte <jumpRightAnimationBL, <ladderAnimationBL, <deathLeftAnimationBL, <deathRightAnimationBL
+                 .fill 6, <idlingRightAnimationBL
+                 .byte <duckLeftAnimationQuickBL, <duckRightAnimationQuickBL
+cloneFramesBLhi: .byte >walkLeftAnimationBL, >walkRightAnimationBL, >duckLeftAnimationBL, >duckRightAnimationBL
+                 .byte >idlingLeftAnimationBL, >idlingRightAnimationBL, >ladderAnimationBL, >jumpLeftAnimationBL
+                 .byte >jumpRightAnimationBL, >ladderAnimationBL, >deathLeftAnimationBL, >deathRightAnimationBL
+                 .fill 6, >idlingRightAnimationBL
+                 .byte >duckLeftAnimationQuickBL, >duckRightAnimationQuickBL
+cloneFramesBGlo: .byte <walkLeftAnimationBG, <walkRightAnimationBG, <duckLeftAnimationBG, <duckRightAnimationBG
+                 .byte <idlingLeftAnimationBG, <idlingRightAnimationBG, <ladderAnimationBG, <jumpLeftAnimationBG
+                 .byte <jumpRightAnimationBG, <ladderAnimationBG, <deathLeftAnimationBG, <deathRightAnimationBG
+                 .fill 6, <idlingRightAnimationBG
+                 .byte <duckLeftAnimationQuickBG, <duckRightAnimationQuickBG
+cloneFramesBGhi: .byte >walkLeftAnimationBG, >walkRightAnimationBG, >duckLeftAnimationBG, >duckRightAnimationBG
+                 .byte >idlingLeftAnimationBG, >idlingRightAnimationBG, >ladderAnimationBG, >jumpLeftAnimationBG
+                 .byte >jumpRightAnimationBG, >ladderAnimationBG, >deathLeftAnimationBG, >deathRightAnimationBG
+                 .fill 6, >idlingRightAnimationBG
+                 .byte >duckLeftAnimationQuickBG, >duckRightAnimationQuickBG
+"""
+
+
+def body(src):
+    """The clone's body: the Shadow runs the player's physics from his own record (see BODY_CODE_ASM)."""
+    # two Tonys' physics take about 200 raster lines; the top handler starts in the upper border (line 8
+    # instead of 40, nothing is drawn there) so its turn ends before the visual handler's line, 255: a
+    # handler still running when the copper's next line passes makes the list skip a frame
+    src = sub(src, "    c64lib_copperEntry(40, c64lib.IRQH_JSR, <doEachFrameTop, >doEachFrameTop)\n",
+              "    c64lib_copperEntry(8, c64lib.IRQH_JSR, <doEachFrameTop, >doEachFrameTop)     // the body: line 8, not 40 (see cloneUpdate)\n")
+    # his record, once the room is drawn
+    src = sub(src, "    jsr buddyInit\n    jsr ani_init\n", "    jsr buddyInit\n    jsr cloneInit               // the body: the clone's record\n    jsr ani_init\n")
+    # his turn through the physics, after the player's and the actors
+    src = sub(src, "    // update enemy actors\n    jsr runActors\n",
+              "    // update enemy actors\n    jsr runActors\n\n    jsr cloneUpdate             // the body: the clone's turn through the same physics\n")
+    # his sprites from the record; the hand-moved buddy is gone
+    src = sub(src, "    jsr buddyUpdate\n", "    jsr cloneDraw               // the body: the clone's sprites from his record\n")
+    i = src.index("buddyUpdate: {")
+    j = src.index("\n}\n", i) + 3
+    assert "buildBlockedLeft" in src[i:j] and "setPose:" in src[i:j], "the buddy's update routine is not the block it was"
+    src = src[:i] + src[j:]
+    # the player's collision checks, only when they can say something new (see bodyCheckProposal): the
+    # frame has room for two Tonys only if each check that can be skipped is
+    src = sub(src, "        jsr checkBGCollision // TODO big problem this must be run twice per a loop\n",
+              "        jsr bodyCheckProposal       // the body: checkBGCollision, unless the position and the map are as they were\n")
+    src = sub(src, "        jsr phys_blockMovement\n        jsr checkBGCollision\n    !:\n    jsr onStateChange // and block movement transits state\n",
+              "        jsr bodyBlockMovement       // the body: phys_blockMovement, then checkBGCollision if it moved him\n    !:\n    jsr onStateChange // and block movement transits state\n")
+    # whatever writes the map marks both Tonys' flags stale
+    src = sub(src, "    jsr translateRoom\n    jsr buildInit               // the build demo\n",
+              "    jsr translateRoom\n    jsr buildInit               // the build demo\n    lda #3\n    sta bodyStale               // the body: a new map, both Tonys' flags stale\n")
+    for routine in ("buildLayCells: {\n", "buildRestoreCell: {\n", "buildDrawCount: {\n"):
+        src = sub(src, routine, routine + "    lda #3\n    sta bodyStale               // the body: the map changes here\n")
+    # the collision check: the game's own kept as the reference for the self-test, the faster one in its place
+    src = sub(src, "checkBGCollision: phys_checkBGCollisionExt2(roomMaterialsBuffer, chamberLines)\n",
+              "checkBGCollisionRef: phys_checkBGCollisionExt2(roomMaterialsBuffer, chamberLines)    // the body: the game's own, the reference for bodySelfTest\n")
+    src = sub(src, "        jsr changeRoomIfNeeded\n        lda objCollisionDetected\n",
+              "        jsr changeRoomIfNeeded\n        jsr bodySelfTest            // the body: the collision sweep, when the bench asks for it\n        lda objCollisionDetected\n")
+    src = sub(src, '#import "level/build/data.asm"', '#import "level/body/data.asm"')
+    # the joystick's debounce is the player's alone; a forced state change goes to whoever's turn it is
+    src = sub(src, "    jsr joyHandlingForBorg\n", "    jsr bodyBorg                // the body: the player's joystick debounced, the clone's clean\n")
+    src = sub(src, "    jsr phys_forceTransitState      // on the ground, the way he faces\n    jsr onStateChange\n",
+              "    jsr phys_forceTransitState      // on the ground, the way he faces\n    jsr bodyStateChange             // the body: the player's or the clone's animation\n")
+    # the other Tony's box: the record holds whoever is not having his turn
+    src = sub(src, "// carry set when the target 2x2 overlaps the second Tony's box\nbuildBuddyClear: {\n    lda buddyY\n",
+              "// carry set when the target 2x2 overlaps the other Tony's box (the body: the record holds the one\n"
+              "// whose turn it is not: the clone during the player's, the player during the clone's)\nbuildBuddyClear: {\n    lda cloneY\n")
+    src = sub(src, "    _phys_div8_16(buddyX, 0, -2, bLeft)\n    _phys_div8_16(buddyX, 8, -2, bRight)\n",
+              "    _phys_div8_16(cloneX, 0, -2, bLeft)\n    _phys_div8_16(cloneX, 8, -2, bRight)\n")
+    # the hand-moved buddy's wall test is not needed: the physics stop him
+    i = src.index("// the second Tony's next step: carry set when a wall stands in the column ahead")
+    j = src.index("\n}\n", src.index("buildColumnWall: {", i)) + 3
+    src = src[:i] + src[j:]
+    src = sub(src, ".segment Movable\n", BODY_CODE_ASM + "\n.segment Movable\n")
+    return src
+
 
 # ------------------------------------------------------------- game variant
 src = open("src/kickass/tony-buddy.asm").read()
@@ -2624,6 +3520,8 @@ echoPose: .byte 4, 5, 8, 9, 0, 1, 2, 12, 13, 2, 0, 1, 2, 2, 0, 1, 2, 2, 8, 9
 """)
 if BUILD_DEMO:
     src = build_demo(src)
+if BODY:
+    src = body(src)
 open(f"src/kickass/{VARIANT}.asm", "w").write(src)
 print(f"wrote src/kickass/{VARIANT}.asm (level tune {os.path.basename(MUSIC)}, image ${SID_IMAGE:04X}; "
       f"the Glitch's tune {os.path.basename(INTRO)} at $8000, his Dance voice at ${INTRO_IMAGE:04X})")

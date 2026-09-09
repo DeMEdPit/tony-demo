@@ -50,6 +50,13 @@ Chamber base with:
 
 ## 3. The body: the clone on Tony's physics
 
+**Built, 2026-09-09: `deliverables/prg/minimal64/tony-body.prg`, write-up `BODY.md`.** What follows
+was the plan; the differences found on the way: the physics state is twenty bytes, one block, and the
+record mirrors it by derived labels; the engine's animator writes the player's sprite pointers by fixed
+address, so the clone has a small animator of his own over the same frame tables; and two Tonys did
+not fit the frame as the game schedules it until the collision checks were made conditional and
+cheaper (measured and proved in `BODY.md`, "Time, measured"). The guards listed below are all in.
+
 The engine's physics (`physics-tall.asm`) is written for one player against one set of variables:
 position, next position, state, facing, jump phase, ladder adjustment, the collision flags, the animation
 number. About thirty bytes. The proposal is not a second physics but the same one run twice a frame:
@@ -71,6 +78,11 @@ number). Each is a small guard, but they have to be found. Estimate: days, not h
 the test bed, and the first thing to watch is him climbing the staircase you built.
 
 ## 4. The joystick: the contract between brain and body
+
+**As built:** `cloneJoy`, bit 0 up, 1 down, 2 left, 3 right, 4 fire, 5 lay or lift, 6 step up, a set bit
+is a pressed line; bits 0 to 4 go through the game's own dispatch, 5 and 6 act on their rising edge.
+`cloneJoyOverride` with bit 7 set replaces the brain's byte (the bench's and a trainer's hook). The body
+reads the byte at the start of the clone's turn every frame, so a brain may write it whenever it likes.
 
 Everything the player can do is five lines a frame, up down left right fire, and in this demo two
 chords. So the brain's output is one byte a frame: the five lines, plus "lay" and "step up" as two more
@@ -133,7 +145,8 @@ token.
 ## 7. The order
 
 1. The body (section 3), with the follow rule as its first brain, on the two-room demo. Watch him climb
-   the stairs you built.
+   the stairs you built. **Done** (`BODY.md`): on the bench's byte he builds stairs and climbs the ladder;
+   the follow rule alone does neither.
 2. A hand-written builder brain: lay when blocked, step up, repeat toward you. Watch him build.
 3. Record your play; train the first network in the emulator; run it on the 6502.
 4. The save-to-token piece with the contracts session.
@@ -204,6 +217,10 @@ it starts at zero every render.
 ### What this session delivers, in order
 
 1. The body: the physics as a second pass, on the two-room demo, with the follow rule as the first brain.
+   **Delivered:** `tony-body.prg` (44,422 bytes, sha256 `b20e222253c5e7d2...`), the bench
+   `tools/verify_body.py` (thirty-three checks), `BODY.md`. Frame time left for a brain: about 30 raster
+   lines inside the top handler, or the main loop's ~60 lines a frame (a think step every fourth frame
+   fits there without any change to the body).
 2. The hand-written builder brain, using the joystick contract, so the senses and the reflex layer get
    exercised before any training.
 3. The think step on the 6502 with the header above, its Python twin, a bench that runs both on recorded

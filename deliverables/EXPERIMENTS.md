@@ -992,6 +992,23 @@ hangs from the ceiling and needs five bricks to reach; each room keeps its own b
 below. Bench of seventeen checks on minimal64 in `tools/verify_build.py`. Write-up:
 `BUILD-DEMO.md`. The base, the tokens and the freeze are untouched.
 
+## E23 — The body: the clone on Tony's own physics · built (2026-09-09)
+
+A PRG from the building demo (`prg/minimal64/tony-body.prg`, 44,422 bytes, sha256 `b20e222253c5e7d2...`):
+the second Tony runs the player's physics a second time each frame from a twenty-byte record of his own
+(the physics block's layout, swapped in and out), fed a one-byte joystick a brain writes (five lines, lay,
+step up; an override byte for a bench or a trainer). The first brain is the follow rule as bits. He walks,
+stops at a laid brick by the physics, falls, jumps in the same frame as the player, ducks, climbs the
+ladder (to a north stop, never out of the room), lays bricks and steps up them on the bench's byte, waits
+in his room while the player is above. Measured on the way: two Tonys did not fit the game's frame (the
+top handler ran past the visual handler's raster line and the copper skipped a physics frame one in
+eight); fixed by starting the top handler at line 8, running each collision check only when it can say
+something new, rewriting the check at half the cost (proved equal to the game's own over every position
+by a sweep in the build, `bodySelfTest`), and dropping the bats' actors. Worst frame now ends on line 218
+of 255. Bench of thirty-three checks in `tools/verify_body.py`; the harness got a `sync` command so a
+peek never lands mid-swap. Write-up: `BODY.md`. The base, the building demo, the tokens and the freeze
+are untouched.
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the

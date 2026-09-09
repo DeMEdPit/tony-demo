@@ -13,6 +13,8 @@
  *           joy:MASK:N    hold joystick-2 lines MASK for N frames (then release, +5 frames)
  *           hold:MASK     press joystick-2 lines MASK and leave them pressed
  *           release:MASK  release joystick-2 lines MASK (no frames run: pair with wait:N)
+ *           sync          run on (at most a frame) until the raster is in the top border, lines 8-30,
+ *                         where neither interrupt handler is running: a peek then sees whole frames
  *           key:CODE:N    hold key CODE (keyboard.h codes) for N frames
  *           peek:HEX      print one byte of CPU-visible memory
  */
@@ -71,6 +73,7 @@ static void wavClose(void) {
     printf("wav: %u samples (%.1f s)\n", wavSamples, wavSamples / 44100.0);
 }
 extern uint32_t harness_getPC(void);
+extern int32_t vic_rasterY;
 
 static void frames(int n) {
     for (int i = 0; i < n; i++) { m64_update(20); wavDrain(); } /* ~1 PAL frame per call */
@@ -148,6 +151,9 @@ int main(int argc, char **argv) {
             if (wav) { uint8_t zero[44] = {0}; fwrite(zero, 1, 44, wav); }
         } else if (!strcmp(cmd, "audio-stop")) {
             wavClose();
+        } else if (!strcmp(cmd, "sync")) {         /* the update steps are ~16 raster lines: the window cannot be skipped */
+            for (int k = 0; k < 64 && (vic_rasterY < 8 || vic_rasterY > 30); k++) m64_update(1);
+            printf("sync raster %d\n", vic_rasterY);
         } else if (!strcmp(cmd, "pc")) {
             printf("pc ~ $%04x\n", harness_getPC());
         } else if (!strncmp(cmd, "peek:", 5)) {
