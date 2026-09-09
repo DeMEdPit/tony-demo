@@ -14,7 +14,7 @@ any emulator (verified in VICE as well).
 |---|---|---|
 | `tony-buddy.prg` | 37,310 | the tall pillar chamber: no menu, no dashboard, loads straight in — your Tony plus the green mimic Tony (follows, faces you, hops when you jump, idles like the real one), two bats up high |
 | `tony-build.prg` | 43,434 | the building demo (2026-09-09, `BUILD-DEMO.md`): the Chamber's room twice, one above the other, no bats; down + fire lays a stone brick in front of Tony, up + fire steps him onto it, a seeded ladder hangs from the ceiling five bricks up; the Shadow stays below |
-| `tony-body.prg` | 44,422 | the body (2026-09-09, `BODY.md`): the building demo with the second Tony run through the player's own physics from a record of his own, on a one-byte joystick a brain writes (the follow rule for now); he walks, stops at your bricks, falls, jumps with you, ducks, and on the bench's byte builds and climbs; an override byte for a trainer |
+| `tony-body.prg` | 47,862 | the body (2026-09-09, `BODY.md`): the building demo with the second Tony run through the player's own physics from a record of his own, on a one-byte joystick a brain writes; a sense block and a brain slot (`BRAIN01`: header, nibble weights, mood) as the contracts a trained brain is built to; kind 0 the follow rule, kind 1 a perceptron, kind 2 a hand-written builder who jumps your bricks and climbs the ladder to you; an override byte for teaching and a trainer |
 | `tony-chamber.prg` | 46,877 | the Chamber, **frozen 2026-09-07** (re-frozen the same day for the dim room; the commit is in `contract/base-record.json`, sha256 `67dc97bc…`): one base for all eight tokens, both tunes inside; a room without a candle is dim, medium grey stone and Tony (`screenshots/chamber-dim-no-candle-m64.png`) (the level tune at $A000 for the seven, the intro tune at $8000 for the Glitch): the tall pillar room with a brick ceiling and plain pillars, Tony, the buddy and two bats; its back wall (bricks and density — fewer bricks common, the near-full wall the rare roll), one candle that appears three times in four somewhere on the upper or middle wall, the block number carved into the floor's right end, and the two bats (which of eight flight paths each flies, where it starts, whether it is there: no bats one render in sixteen, one bat one in four) are drawn from the 42-byte parameter block in the file (`tools/stamp_mural.py`: 32 seed bytes, 8 block digits, the buddy's behaviour byte and colour byte; a contract writes them at render time). Default block: block 25850267, behaviour 0 Follow, colour 5 green |
 | `tony-chamber-block-25850271.prg` | 46,877 | same build, seed "block 25850271": eighth wall (the most common roll), no candle, so the dim room: medium grey stone and Tony |
 | `tony-chamber-block-25850251.prg` | 46,877 | same build, seed "block 25850251": eighth wall, candle low right |
@@ -93,8 +93,11 @@ field report on the first play-test and what it changed.
 - **`HANDOFF-CLONE.md`** — for the brain session: what the two-room demo is,
   what the engine taught, and how a body, a joystick contract and a brain would fit.
 - **`BODY.md`** — the body: the second Tony on the player's own physics, the
-  joystick byte and its override, the frame time measured and made to fit, the
-  collision self-test, the bench of thirty-three checks.
+  joystick byte and its override, the sense block and the brain slot as the
+  contracts the reference is built from, the frame time measured and made to
+  fit, the collision self-test, the benches.
+- **`HARNESS.md`** — the headless minimal64 harness as an API: every command,
+  the symbol file, the marker blocks, the sweep pattern, one worked episode.
 - **`TRAINER.md`** — the trainer builds and the full ROM-free verification
   (on-target runs + static scan).
 - **`VAULT.md`** — the Idol Vault board: design, route, how it's made.

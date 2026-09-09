@@ -1,4 +1,4 @@
-tony-body.prg: 45980 bytes
+tony-body.prg: 47862 bytes
 senses (every nibble of the packed block against the twin, from the raw values of the same frame):
   ok   start: the clone near Tony: 20 of 20 nibbles agree
   ok   Tony walks right, the clone walking after him: 20 of 20 nibbles agree
@@ -22,8 +22,22 @@ senses (every nibble of the packed block against the twin, from the raw values o
   ok   the frame of the lay: last action build right
   ok   after the step up: on the ground, floor below
 slot:
-Traceback (most recent call last):
-  File "/home/user/tony-demo/tools/verify_brain.py", line 155, in <module>
-    MARK, KIND, W, MOOD = SYM["brainMarker"], SYM["brainKind"], SYM["brainWeights"], SYM["brainMood"]
-                          ~~~^^^^^^^^^^^^^^^
-KeyError: 'brainMarker'
+  ok   the block is page-aligned (at $7400)
+  ok   the marker reads BRAIN01: b'BRAIN01'
+  ok   the header: kind 0, layout 1, inputs 20, hidden 0, outputs 10, period 4
+  ok   the weights at +16, the mood at +272
+forward sweep (the 6502 against a Python forward on random weights, moods and senses):
+  ok   40 vectors, accumulators and the chosen action: 40 agree
+two weights (kind 1):
+  ok   right when dx is positive, left when negative, idle within 16 px (a bucket of one ties the bias, and the first output wins a tie): he came to 178 beside Tony at 184
+  ok   and followed Tony to the pillar (Tony 286, the clone 282)
+  ok   a think every four frames: 54 thinks in 215 frames
+  ok   build left whenever a slot is free: a staircase of 9 in 200 frames, up at Y 78
+  ok   and on: 9 bricks, Y 78
+the builder (kind 2):
+  ok   Tony lays a brick between them and walks to 286; the follow rule leaves the clone at the brick, X 158
+  ok   kind 2: he jumps the brick and comes to Tony (X 280 after 100 frames, 280 after 200)
+  ok   Tony builds five bricks under the ladder and climbs part of it (Y 72); the clone waits below at X 206, Y 206
+  ok   kind 2: after 120 frames he is on the stairs (Y 134, X 270)
+  ok   after 360 frames he is on the ladder beside Tony (Y 78 to Tony's 72, state 135), unaided
+ALL OK

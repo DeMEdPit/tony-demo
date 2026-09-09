@@ -1009,6 +1009,22 @@ of 255. Bench of thirty-three checks in `tools/verify_body.py`; the harness got 
 peek never lands mid-swap. Write-up: `BODY.md`. The base, the building demo, the tokens and the freeze
 are untouched.
 
+## E24 — The senses, the brain slot and the builder · built (2026-09-09)
+
+On the body: the sense block (twenty signed nibbles from a raw snapshot of his turn, packed in the main
+loop, published with its frame; the packing written as the contract in `BODY.md` and checked against a
+Python twin at a dozen snapshots), the brain slot (`BRAIN01`, page-aligned: an 8-byte header whose kind
+says "no brain yet", 256 bytes of nibble weights, the mood; a forward pass with 16-bit accumulators
+and the first-largest rule, proved equal to a Python reference on forty random vectors; a ten-action
+decoder that owns the build macro and the crouch's release frame; a think every fourth frame in the
+main loop, running under teaching), and the builder, a hand-written brain over the same senses and
+actions that jumps a brick and climbs the player's stairs and the ladder to him. Two-weight brains as
+proofs: one follows, one builds a staircase of nine. The harness got exact frames (stopping at raster
+0), snapshot and restore by forking, load from a file, comments in scripts, and a page, `HARNESS.md`,
+with one worked episode. Frame time: a first packing in the interrupt put the worst frame at 244,
+measured against the real cost of a collision check (~24 lines); the fix was to keep the interrupt for
+copies only. Write-ups: `BODY.md`, `HARNESS.md`; brains in `deliverables/brains/`.
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the

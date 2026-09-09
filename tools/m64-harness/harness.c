@@ -15,6 +15,12 @@
  *           release:MASK  release joystick-2 lines MASK (no frames run: pair with wait:N)
  *           sync          run on to the next raster line 0 unless already there (wait leaves the machine
  *                         there): a peek then sees whole frames, and a poke lands before the frame's handlers
+ *           snapshot      keep the machine as it is now; every later restore returns to it (the process
+ *                         forks: the commands up to the next restore run in a child, then the parent goes
+ *                         on from the snapshot with the commands after that restore)
+ *           restore       back to the snapshot (ends the child); the commands after it start from the snapshot
+ *           load:ADDRHEX:FILE   write a file's bytes into memory at the address (weights in one line)
+ *   In a script file (@FILE) each line is a command and a line starting with # is a comment.
  *           key:CODE:N    hold key CODE (keyboard.h codes) for N frames
  *           peek:HEX      print one byte of CPU-visible memory
  */
@@ -22,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <sys/wait.h>
 #include "m64.h"
 #include "vic/vic.h"
 
@@ -135,11 +143,57 @@ int main(int argc, char **argv) {
         slen = fread(script, 1, slen, sf);
         script[slen] = 0;
         fclose(sf);
+        /* a line whose first character is # is a comment */
+        { char *w = script; int lineStart = 1;
+          for (char *c = script; *c; c++) {
+              if (lineStart && *c == '#') { while (*c && *c != '\n') c++; if (!*c) break; }
+              lineStart = (*c == '\n');
+              *w++ = *c;
+          }
+          *w = 0; }
         for (char *c = script; *c; c++) if (*c == '\n' || *c == '\r') *c = ',';
     } else {
         script = strdup(argv[2]);
     }
-    for (char *cmd = strtok(script, ","); cmd; cmd = strtok(NULL, ",")) {
+    /* the script as a list of commands, so snapshot can skip ahead */
+    int ncmd = 0; char **cmds = malloc(sizeof(char *) * (strlen(script) / 2 + 2));
+    for (char *cmd = strtok(script, ","); cmd; cmd = strtok(NULL, ",")) cmds[ncmd++] = cmd;
+    int inChild = 0;
+    for (int ci = 0; ci < ncmd; ci++) {
+        char *cmd = cmds[ci];
+        if (!strcmp(cmd, "snapshot")) {          /* fork: the child runs on to the matching restore, the parent waits */
+            fflush(stdout);
+            int next = ci + 1;
+            for (;;) {
+                pid_t pid = fork();
+                if (pid == 0) { inChild = 1; ci = next - 1; break; }          /* the child continues after the snapshot */
+                int st; waitpid(pid, &st, 0);
+                /* find the restore the child stopped at */
+                while (next < ncmd && strcmp(cmds[next], "restore")) next++;
+                if (next >= ncmd) { ci = ncmd; break; }                       /* no restore left: done */
+                next++;                                                        /* the commands after that restore */
+                if (next >= ncmd) { ci = ncmd; break; }
+                /* another restore ahead? then fork again for the next episode; otherwise run the tail here */
+                int more = 0; for (int k = next; k < ncmd; k++) if (!strcmp(cmds[k], "restore")) { more = 1; break; }
+                if (!more) { ci = next - 1; break; }
+            }
+            if (inChild) continue;
+            continue;
+        } else if (!strcmp(cmd, "restore")) {
+            fflush(stdout);
+            if (inChild) { wavClose(); _exit(0); }
+            continue;                                /* a restore without a snapshot: nothing to return to */
+        } else if (!strncmp(cmd, "load:", 5)) {      /* load:ADDRHEX:FILE */
+            uint16_t a = (uint16_t)strtoul(cmd + 5, NULL, 16);
+            char *path = strchr(cmd + 5, ':');
+            FILE *lf = path ? fopen(path + 1, "rb") : NULL;
+            if (!lf) { printf("load: cannot open %s\n", path ? path + 1 : "?"); continue; }
+            int c, n = 0;
+            while ((c = fgetc(lf)) != EOF) { m64_cpuWrite((uint16_t)(a + n), (uint8_t)c); n++; }
+            fclose(lf);
+            printf("load $%04x +%d <- %s\n", a, n, path + 1);
+            continue;
+        }
         if (!strncmp(cmd, "wait:", 5)) {
             frames(atoi(cmd + 5));
         } else if (!strncmp(cmd, "shot:", 5)) {

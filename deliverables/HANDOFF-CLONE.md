@@ -84,6 +84,14 @@ is a pressed line; bits 0 to 4 go through the game's own dispatch, 5 and 6 act o
 `cloneJoyOverride` with bit 7 set replaces the brain's byte (the bench's and a trainer's hook). The body
 reads the byte at the start of the clone's turn every frame, so a brain may write it whenever it likes.
 
+**The three asks of 2026-09-09, done** (all in `BODY.md`): the sense block, twenty signed nibbles with
+the packing written nibble by nibble as the contract, checked against a Python twin in the bench; the
+brain slot, `BRAIN01` page-aligned with the header (kind 0 says "no brain yet"), 256 bytes of nibble
+weights, the mood, the forward pass proved against a Python reference on random vectors, the ten-action
+decoder with the build macro and the release frame, a think every fourth frame in the main loop that
+runs under teaching; and the harness page, `HARNESS.md`, with snapshot, restore and load and one worked
+episode. Example weight files in `deliverables/brains/`.
+
 Everything the player can do is five lines a frame, up down left right fire, and in this demo two
 chords. So the brain's output is one byte a frame: the five lines, plus "lay" and "step up" as two more
 bits the body turns into the chords. Nothing else. A scripted brain, a hand-written builder and a trained

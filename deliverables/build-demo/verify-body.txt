@@ -1,4 +1,4 @@
-tony-body.prg: 45980 bytes
+tony-body.prg: 47862 bytes
 follow:
   ok   boots into the room: the clone walked from 120 to 146, on the floor, near Tony at 184
   ok   his sprites are where his record says

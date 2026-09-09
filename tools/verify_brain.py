@@ -197,7 +197,7 @@ for k, (acc, act) in enumerate(cases):
 check(bad == 0, f"{len(cases)} vectors, accumulators and the chosen action: {len(cases) - bad} agree")
 
 print("two weights (kind 1):")
-follow = [[0] * N for _ in range(10)]; follow[2][1] = 7; follow[1][1] = -7; follow[0][0] = 2
+follow = [[0] * N for _ in range(10)]; follow[2][1] = 7; follow[1][1] = -7; follow[0][0] = 1
 def wbytes(w): return bytes((w[o][i] & 15) | ((w[o][i + 1] & 15) << 4) for o in range(10) for i in range(0, N, 2))
 snapB = "sync," + peeks(SYM["physPlayerX"], 2) + peeks(SYM["cloneX"], 2) + peeks(SYM["cloneY"], 1) + peeks(THINKS, 2) + peeks(ACTION, 1) + peeks(COUNT, 1) + peeks(SYM["bodyFrames"], 2)
 v = harness("wait:300," + pokes(W, wbytes(follow)) + f"poke:{KIND:X}:01,wait:150," + snapB + "joy:8:60,wait:150," + snapB)
@@ -205,12 +205,38 @@ def rowB(v, k):
     d = v[k * 11:(k + 1) * 11]
     return dict(px=d[0] | d[1] << 8, cx=d[2] | d[3] << 8, cy=d[4], thinks=d[5] | d[6] << 8, action=d[7], count=d[8], frames=d[9] | d[10] << 8)
 a, b = rowB(v, 0), rowB(v, 1)
-check(abs(a["px"] - a["cx"]) < 8 and a["cy"] == 206, f"right when dx is positive, left when negative, idle within 8 px: he came to {a['cx']} beside Tony at {a['px']}")
-check(abs(b["px"] - b["cx"]) < 8 and b["px"] > 270, f"and followed Tony to the pillar (Tony {b['px']}, the clone {b['cx']})")
+check(abs(a["px"] - a["cx"]) < 16 and a["cy"] == 206, f"right when dx is positive, left when negative, idle within 16 px (a bucket of one ties the bias, and the first output wins a tie): he came to {a['cx']} beside Tony at {a['px']}")
+check(abs(b["px"] - b["cx"]) < 16 and b["px"] > 270, f"and followed Tony to the pillar (Tony {b['px']}, the clone {b['cx']})")
 check(b["thinks"] - a["thinks"] >= (b["frames"] - a["frames"]) // 4 - 2, f"a think every four frames: {b['thinks'] - a['thinks']} thinks in {b['frames'] - a['frames']} frames")
 build = [[0] * N for _ in range(10)]; build[8][14] = 7; build[0][0] = 2
 v = harness("wait:300,joy:8:60,wait:100," + pokes(W, wbytes(build)) + f"poke:{KIND:X}:01,wait:200," + snapB + "wait:100," + snapB)
 a, b = rowB(v, 0), rowB(v, 1)
 check(a["count"] >= 3 and a["cy"] <= 158, f"build left whenever a slot is free: a staircase of {a['count']} in 200 frames, up at Y {a['cy']}")
 check(b["count"] >= a["count"] and b["cy"] <= a["cy"], f"and on: {b['count']} bricks, Y {b['cy']}")
+
+print("the builder (kind 2):")
+snapC = "sync," + peeks(SYM["physPlayerX"], 2) + peeks(SYM["physPlayerY"], 1) + peeks(SYM["physPlayerState"], 1) + peeks(SYM["cloneX"], 2) + peeks(SYM["cloneY"], 1) + peeks(SYM["cloneState"], 1) + peeks(COUNT, 1) + peeks(SYM["currentChamberNumber"], 1) + peeks(SYM["buildLadderCol"], 1)
+def rowC(v, k):
+    d = v[k * 11:(k + 1) * 11]
+    return dict(px=d[0] | d[1] << 8, py=d[2], ps=d[3], cx=d[4] | d[5] << 8, cy=d[6], cs=d[7], count=d[8], room=d[9], ladder=d[10])
+# a brick between them: he jumps it and comes to Tony
+v = harness("wait:300,joy:18:6,wait:20,joy:8:150,wait:100," + snapC + f"poke:{KIND:X}:02,wait:100," + snapC + "wait:100," + snapC)
+a, b, c = rowC(v, 0), rowC(v, 1), rowC(v, 2)
+check(a["count"] == 1 and a["cx"] <= 162 and a["px"] >= 270, f"Tony lays a brick between them and walks to {a['px']}; the follow rule leaves the clone at the brick, X {a['cx']}")
+check(c["cx"] > a["cx"] + 40 and abs(c["px"] - c["cx"]) < 24 and c["cy"] == 206, f"kind 2: he jumps the brick and comes to Tony (X {b['cx']} after 100 frames, {c['cx']} after 200)")
+# Tony builds five bricks under the ladder and climbs part of it; the clone climbs the stairs and the ladder to him
+C = a["ladder"]
+if C >= 13:
+    t = 8 * C - 60
+    walk = f"joy:8:{(t - 184) // 2}," if t > 184 else f"joy:4:{(246 - 8 * C) // 2},joy:8:1,"
+else:
+    t = 8 * C + 99
+    walk = f"joy:4:{(184 - t) // 2}," if t < 184 else f"joy:8:{(t - 184) // 2},joy:4:1,"
+stair = "".join("joy:18:6,wait:20,joy:17:6,wait:30," for _ in range(5))
+v = harness("wait:300," + walk + "wait:20," + stair + "wait:10,hold:1,wait:50,release:1,wait:10," + snapC + f"poke:{KIND:X}:02,wait:120," + snapC + "wait:120," + snapC + "wait:120," + snapC)
+a, b, c, d = rowC(v, 0), rowC(v, 1), rowC(v, 2), rowC(v, 3)
+check(a["count"] == 5 and (a["ps"] & 0x7f) in (2, 7) and a["py"] < 100 and a["room"] == 0, f"Tony builds five bricks under the ladder and climbs part of it (Y {a['py']}); the clone waits below at X {a['cx']}, Y {a['cy']}")
+check(b["cy"] < 206, f"kind 2: after 120 frames he is on the stairs (Y {b['cy']}, X {b['cx']})")
+check(d["cy"] <= a["py"] + 16 and (d["cs"] & 0x7f) in (2, 7) and abs(d["cx"] - d["px"]) < 16 and d["room"] == 0,
+      f"after 360 frames he is on the ladder beside Tony (Y {d['cy']} to Tony's {d['py']}, state {d['cs']}), unaided")
 print("ALL OK" if ok else "FAILURES"); sys.exit(0 if ok else 1)

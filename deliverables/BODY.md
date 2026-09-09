@@ -10,12 +10,12 @@ here touches the frozen base (`tony-chamber.prg`, sha256 `67dc97bc1e306715...`) 
 | | |
 |---|---|
 | file | `deliverables/prg/minimal64/tony-body.prg` |
-| size | 45,980 bytes |
-| sha256 | `9a3dc4394b687bfc4807d8b20d67ad6b09bdd8dc0ef47ce92ffb31f844b670af` |
-| boots on | minimal64 (the bench in `tools/verify_body.py`, thirty-three checks passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
+| size | 47,862 bytes |
+| sha256 | `1e90e03e996276ad72f287f0077e8c3a721b015918d64e80829d12a9a27da86e` |
+| boots on | minimal64 (the benches in `tools/verify_body.py` and `tools/verify_brain.py`, all passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
 | built from | the building demo's generator with one more option: `tools/make_chamber.py --variant tony-body --build-demo --body`, then `tools/build_demo.sh tony-body` |
 | diff | `deliverables/build-demo/tony-body.diff`, the body's source against the building demo's (the clone's code is the bulk of it) |
-| bench output | `deliverables/build-demo/verify-body.txt` (the body), `verify-brain.txt` (the senses) |
+| bench output | `deliverables/build-demo/verify-body.txt` (the body), `verify-brain.txt` (the senses, the slot, the builder) |
 
 ## What you see
 
@@ -134,6 +134,99 @@ in it, normally one or two frames behind the physics. The bench (`tools/verify_b
 every nibble in Python from `senseRaw`, the screen and the materials table at a dozen snapshots, and
 they agree nibble for nibble; the reference should be written from the table above and checked the
 same way.
+
+## The brain slot
+
+A page-aligned block found by its marker, the way the Chamber's `MURAL02` block is found: a hex
+editor finds `BRAIN01` in every exported program, and the symbol file names it (`brainMarker`, at
+$7400 in this build) until a freeze fixes it. A contract stamps the header, the weights and the mood at
+render; `prg(id)` carries them to a real C64.
+
+| offset | bytes | field |
+|---|---|---|
+| 0 | 8 | the marker, `BRAIN01` and a zero |
+| 8 | 1 | kind: 0 no network, the follow rule drives and the weights are ignored (the page says "no brain yet"); 1 a perceptron over this layout; 2 the builder rule, hand-written, no weights |
+| 9 | 1 | layout: 1, the sense packing above and the action vocabulary below |
+| 10 | 1 | inputs, 20 |
+| 11 | 1 | hidden, 0 for the perceptron |
+| 12 | 1 | outputs, 10 |
+| 13 | 1 | period, frames between thinks, 4 |
+| 14 | 2 | reserved, zero |
+| 16 | 256 | the weights. Kind 1 uses the first 100: output `o`'s twenty weights are nibbles `o * 20` to `o * 20 + 19`, two per byte, the first of each pair in the low nibble, so `w[o][i]` is byte `16 + o * 10 + i / 2`, low nibble for even `i`, high for odd. Signed, two's complement |
+| 272 | 8 | the mood: ten signed nibbles in the same packing (five bytes used), `m[o]`. A render's nudge, never part of a saved brain |
+
+**The forward pass, exactly.** For each output `o`, `acc[o]` is a 16-bit two's complement sum of
+`w[o][i] * x[i]` over the twenty senses, each product a signed byte from the 256-entry table indexed by
+the two nibbles, plus `m[o] * 16`. The bound is 20 × 64 + 128 = 1408 in magnitude, so 16 bits never
+overflow; the bench's sweep includes the extremes. The action is the first output with the largest
+accumulator (ties go to the lowest index). The accumulators are left in `brainAcc` (low byte, high
+byte, per output) and the action in `brainAction`, which the decoder reads every frame. The Python
+reference is three lines: `acc[o] = sum(w[o][i] * x[i]) + m[o] * 16`, `action = max(range(10), key=lambda
+o: (acc[o], -o))`, with every nibble sign-extended. The bench (`verify_brain.py`, "forward sweep") pokes
+random weights, moods and senses into the test hook and compares all ten accumulators and the action
+over forty vectors, the all-zero and the two extreme cases among them.
+
+**The think.** In the main loop, every `period` frames (counted in `bodyFrames`), for kinds 1 and 2:
+the published sense block is copied whole with the interrupts off, the forward pass runs (about two
+frames of main-loop time, interruptible, reading nothing the interrupt writes), and `brainThinks`
+counts. Kind 0 thinks nowhere: the follow rule runs in his turn as before. The think runs whether or
+not the override holds his joystick, so teaching sees what he would have done.
+
+**The test hook.** Poke the twenty senses into `brainTestIn`, the weights and mood into the slot, and 1
+into `brainTestRun`: the next main-loop pass runs the forward pass on them, leaves the accumulators in
+`brainTestAcc` and the action in `brainTestAction`, restores the live action and clears the flag. Two
+frames of waiting are enough.
+
+**The action vocabulary and the decoder.** Ten actions, one output each:
+
+| # | action | the joystick byte |
+|---|---|---|
+| 0 | idle | 0 |
+| 1 | left | bit 2 |
+| 2 | right | bit 3 |
+| 3 | up | bit 0 |
+| 4 | down | bit 1 (a duck on the floor, a climb down on a ladder) |
+| 5 | jump | bit 4 |
+| 6 | jump left | bits 4 and 2 |
+| 7 | jump right | bits 4 and 3 |
+| 8 | build left | the macro, leftward |
+| 9 | build right | the macro, rightward |
+
+The decoder (`cloneDecode`) runs in his turn every frame for kinds 1 and 2 and turns `brainAction`
+into `cloneJoy`. It owns two things the network must not: the **build macro**, five frames at most
+(a frame of the direction if he is not facing that way, the lay bit, a frame of nothing that checks the
+brick count rose and abandons the macro if the lay was refused, the step-up bit, a frame of nothing),
+during which the think's choices are ignored; and the **release frame**: a byte without down after
+one with it is preceded by a frame of nothing, because the physics allow no walk out of the duck
+state. What the decoder emitted last is `cloneJoyOut`; the override still wins after it.
+
+**Two weights, as a proof.** With `w[right][dx] = 7`, `w[left][dx] = -7` and `w[idle][bias] = 2` he
+walks to within sixteen pixels of Tony and stops (a bucket of one is outweighed by the bias), and
+follows him across the room. With `w[build left][buildable] = 7` and the same bias he builds a
+staircase of nine bricks in two hundred frames, turning left first because the macro faces the way it
+was told. Both are in the bench.
+
+## The builder, a brain anyone can read (kind 2)
+
+Kind 2 is a hand-written rule over the same senses and the same ten actions, so the decoder, the
+macro and the senses were exercised by something legible before any weights existed, and so the
+owner's two observations have their answer: he jumps a brick on his own, and he climbs the ladder to
+you. The rule, in order:
+
+1. In the air: nothing. The physics finish the jump.
+2. On a ladder: up when the player is above, down when below, hang on when level.
+3. The player above and a ladder in his box: up.
+4. His way is toward the player, or the way he faces when level with him. Facing his way, a wall at
+   his feet with his head clear is a step: jump it, that way. A wall at his head too is a climb: build a
+   brick that way if the slot is free, else nothing.
+5. Sixteen pixels or more from the player: walk his way (which turns him if he faced away).
+6. Nearer, with nothing ahead, and two bricks or more below the player: build, the way he faces.
+
+What it does in the bench: with a brick laid between them he jumps it and comes to Tony; with Tony's
+five-brick staircase under the ladder and Tony part way up it, he walks to the stairs, jumps each step
+(the jump from against a brick rises past its top and lands on it), reaches the top brick under the
+ladder, and climbs to Tony's height, where he hangs. Nothing in the follow rule could do either; the
+builder does both from the senses alone. The first thing a trained brain has to beat is this rule.
 
 ## Time, measured
 

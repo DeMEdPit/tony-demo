@@ -1,5 +1,5 @@
 --- src/kickass/tony-build.asm	2026-09-09 20:59:53.672436814 +0000
-+++ src/kickass/tony-body.asm	2026-09-09 22:14:34.682000610 +0000
++++ src/kickass/tony-body.asm	2026-09-09 22:25:11.218232484 +0000
 @@ -37,7 +37,7 @@
  .segmentdef Code [start=LDR_MAIN_START_ADDRESS]
  .segmentdef Movable [startAfter="Code"]
@@ -26,16 +26,17 @@
      jsr ani_init
      jsr updatePlayerPosition
      jsr phys_init
-@@ -382,6 +383,8 @@
+@@ -382,6 +383,9 @@
          cld
          jsr turnOneSnake
          jsr changeRoomIfNeeded
 +        jsr bodySelfTest            // the body: the collision sweep, when the bench asks for it
 +        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values
++        jsr bodyThink               // the body: the brain's think, every few frames
          lda objCollisionDetected
          cmp #$ff
          beq !+
-@@ -562,7 +565,7 @@
+@@ -562,7 +566,7 @@
  
      lda playerDying
      bne noAction1
@@ -44,7 +45,7 @@
  
          lda physPlayerBGCollision
          and #BG_CLSN_KILLING
-@@ -642,8 +645,7 @@
+@@ -642,8 +646,7 @@
      // was in frame bottom
      lda playerDying
      bne !+
@@ -54,7 +55,7 @@
      !:
      jsr onStateChange // and block movement transits state
  
-@@ -671,6 +673,8 @@
+@@ -671,6 +674,8 @@
      // update enemy actors
      jsr runActors
  
@@ -63,7 +64,7 @@
      c64lib_debugBorderEnd()
      rts
  }
-@@ -716,7 +720,7 @@
+@@ -716,7 +721,7 @@
      c64lib_debugBorderEnd()
      jsr playEffects
      jsr moveActors
@@ -72,7 +73,7 @@
      jsr actor_checkCollision
  
      c64lib_debugBorderEnd()
-@@ -1858,320 +1862,6 @@
+@@ -1858,320 +1863,6 @@
      rts
  }
  
@@ -393,7 +394,7 @@
  
  buddyX:       .word 120
  buddyY:       .byte BUDDY_FLOOR_Y
-@@ -4077,6 +3767,8 @@
+@@ -4077,6 +3768,8 @@
      jsr muralStamp   // the back wall, from the seed
      jsr translateRoom
      jsr buildInit               // the build demo
@@ -402,7 +403,7 @@
      lda currentChamberNumber
      // TODO: currently rooms with stones are hardcoded in this place!
      cmp #22
-@@ -5055,7 +4747,7 @@
+@@ -5055,7 +4748,7 @@
      !:
      and #%00011111
      eor #%00011111
@@ -411,7 +412,7 @@
      cmp #%00001000 // right
      beq joyRight
      cmp #%00000100 // left
-@@ -5222,7 +4914,7 @@
+@@ -5222,7 +4915,7 @@
  #import "actors.asm"
  #import "aux-screens.asm"
  
@@ -420,7 +421,7 @@
  
  startCopper: c64lib_startCopper(COPPER_LIST_ADDR, COPPER_LIST_PTR, List().add(c64lib.IRQH_JSR, c64lib.IRQH_DASHBOARD_CUTOFF).lock())
  stopCopper: c64lib_stopCopper()
-@@ -5333,7 +5025,7 @@
+@@ -5333,7 +5026,7 @@
  
  // temporarily...
  levelDataStart:
@@ -429,7 +430,7 @@
  levelDataEnd:
  
  endOfNonMovable:
-@@ -5543,6 +5235,8 @@
+@@ -5543,6 +5236,8 @@
  
  // the four placed codes at buildRow, buildCol
  buildLayCells: {
@@ -438,7 +439,7 @@
      ldy buildRow
      ldx buildCol
      lda #BUILD_CODE
-@@ -5833,7 +5527,7 @@
+@@ -5833,7 +5528,7 @@
      lda physPlayerState
      and #%10000000
      jsr phys_forceTransitState      // on the ground, the way he faces
@@ -447,7 +448,7 @@
      jsr checkBGCollision
      no:
      rts
-@@ -5874,17 +5568,18 @@
+@@ -5874,17 +5569,18 @@
      }
  }
  
@@ -470,7 +471,7 @@
      lda buildCol
      clc
      adc #1
-@@ -5915,6 +5610,8 @@
+@@ -5915,6 +5611,8 @@
  
  // the cell at row Y, column X back to what the mural had there (X and Y kept)
  buildRestoreCell: {
@@ -479,7 +480,7 @@
      sty rowSave
      stx colSave
      cpy #22
-@@ -5958,6 +5655,8 @@
+@@ -5958,6 +5656,8 @@
  
  // the count, three carved digits in the floor at columns 1-3
  buildDrawCount: {
@@ -488,7 +489,7 @@
      lda buildCount
      ldx #0
      !:
-@@ -5995,45 +5694,1428 @@
+@@ -5995,45 +5695,1913 @@
      d2: .byte 0
  }
  
@@ -598,6 +599,13 @@
 +    sta sensePackFrame + 1
 +    sta rawFrame
 +    sta rawFrame + 1
++    sta brainAction
++    sta brainThinkFrame
++    sta brainThinks
++    sta brainThinks + 1
++    sta brainTestRun
++    sta macroStep
++    sta cloneJoyOut
 +    lda #120
 +    sta cloneX
 +    sta cloneNextX
@@ -1011,8 +1019,7 @@
 +    rts
 +    keep: .fill 20, 0
 +    ref:  .fill 4, 0
- }
--buildBlockedLeft: {
++}
 +
 +// checkBGCollision at the position the state proposes, unless that is the current position and
 +// the map has not changed since this Tony's flags were computed: the flags are the same then.
@@ -1117,7 +1124,8 @@
 +    lda #0
 +    sta cloneAniPhase
 +    rts
-+}
+ }
+-buildBlockedLeft: {
 +
 +// the build verb for the clone: bit 5 lays or lifts, bit 6 steps up, each on its rising edge
 +// (his record is swapped in, so buildTarget reads his box and buildBuddyClear the player's)
@@ -1141,11 +1149,17 @@
 +    edges: .byte 0
 +}
 +
-+// the first brain: the Chamber's follow rule as joystick bits. Walk towards the player when
++// the follow rule (cloneFollow, kind 0): the Chamber's follow rule as joystick bits. Walk towards the player when
 +// farther than BUDDY_GO_AT, stop when nearer than BUDDY_STOP_AT; press fire on the first
 +// frame of the player's jump; press down while he ducks, and let go for a frame to stand
 +// up again. Runs before the swap: the physics block is the player's, the record is the clone's.
 +cloneThink: {
++    lda brainKind
++    beq cloneFollow
++    jmp cloneDecode
++}
++// the follow rule, kind 0: the Chamber's follow rule as joystick bits (see below)
++cloneFollow: {
 +    lda #0
 +    sta cloneJoy
 +    // signed 16-bit distance to the player -> mag + targetRight
@@ -1246,9 +1260,7 @@
 +    rts
 +    mag:         .byte 0
 +    targetRight: .byte 0
- }
--buildColumnWall: {
--    lda buddyY
++}
 +
 +// the clone's sprites from his record (doEachFrameVisual, where the player's are written)
 +cloneDraw: {
@@ -1371,6 +1383,480 @@
 +                 .byte >jumpRightAnimationBG, >ladderAnimationBG, >deathLeftAnimationBG, >deathRightAnimationBG
 +                 .fill 6, >idlingRightAnimationBG
 +                 .byte >duckLeftAnimationQuickBG, >duckRightAnimationQuickBG
++
++// ===================================================================== the brain slot
++// A page-aligned block found by its marker, the way the Chamber's MURAL block is found: the marker,
++// an 8-byte header, 256 bytes of weights, and the mood. A contract stamps the header, the weights
++// (the saved mind) and the mood (the block's nudge) at render; prg(id) carries them to a real C64;
++// the page reads the header's kind to say "no brain yet" honestly (BODY.md, "The brain slot").
++//   kind 0: no network. The follow rule drives (cloneThink, in his turn), the weights are ignored.
++//   kind 1: a perceptron over this layout: ten outputs, one per action, each a signed nibble weight per
++//           sense, w[o][i] at nibble o * 20 + i (two per byte, the first in the low nibble); the
++//           accumulators are 16-bit sums of the products, plus the mood's nibble times sixteen; the
++//           action is the first largest. A think every brainPeriod frames, in the main loop.
++//   kind 2: the builder rule, hand-written over the same senses and actions, no weights.
++.align 256
++brainMarker:    .text "BRAIN01"
++                .byte 0
++brainHeader:
++brainKind:      .byte 0                 // +8
++brainLayout:    .byte 1                 // +9   the sense packing and the action vocabulary, version 1
++brainInputCount: .byte SENSE_COUNT      // +10
++brainHiddenCount: .byte 0               // +11  0: the perceptron
++brainOutputCount: .byte 10              // +12
++brainPeriod:    .byte 4                 // +13  frames between thinks
++brainReserved:  .byte 0, 0              // +14, +15
++brainWeights:   .fill 256, 0            // +16  kind 1 uses the first 100: output o's twenty nibbles at bytes o*10 .. o*10+9
++brainMood:      .fill 8, 0              // +272 ten signed nibbles, m[o] at nibble o: added as m * 16; a render's nudge, never saved
++.label BRAIN_BLOCK_SIZE = * - brainMarker
++
++// the live state (not stamped)
++brainAction:    .byte 0                 // the action the last think chose (0..9), read by the decoder every frame
++brainThinkFrame: .byte 0                // the frame the last think ran in (low byte)
++brainThinks:    .word 0                 // thinks done since the level started (the bench reads it)
++brainIn:        .fill 20, 0             // the think's copy of the senses (SENSE_COUNT, defined below)
++brainAcc:       .fill 20, 0             // the ten accumulators, low byte then high, acc[o] at 2o
++brainTestRun:   .byte 0                 // 1: run the network once on brainTestIn, leave brainTestAcc and brainTestAction, clear this
++brainTestIn:    .fill 20, 0
++brainTestAcc:   .fill 20, 0
++brainTestAction: .byte 0
++evenHi:         .fill 10, 0             // the senses expanded for the table: evenHi[k] = x[2k] << 4, oddLo[k] = x[2k+1]
++oddLo:          .fill 10, 0
++// the multiply table: index (a << 4) | b, both signed nibbles; the entry their product as a signed byte
++brainMul:       .fill 256, ((((i >> 4) >= 8) ? (i >> 4) - 16 : (i >> 4)) * (((i & 15) >= 8) ? (i & 15) - 16 : (i & 15))) & 255
++
++// in the main loop: the think, every brainPeriod frames, for kinds 1 and 2; the test hook
++bodyThink: {
++    lda brainTestRun
++    bne test
++    jmp noTest
++    test:
++        .for (var i = 0; i < 20; i++) {
++            lda brainTestIn + i
++            sta brainIn + i
++        }
++        lda brainAction
++        pha
++        jsr brainForward
++        .for (var i = 0; i < 20; i++) {
++            lda brainAcc + i
++            sta brainTestAcc + i
++        }
++        lda brainAction
++        sta brainTestAction
++        pla
++        sta brainAction
++        lda #0
++        sta brainTestRun
++    noTest:
++    lda brainKind
++    bne !+
++        rts                             // kind 0: the follow rule, in his turn
++    !:
++    lda bodyFrames
++    sec
++    sbc brainThinkFrame
++    cmp brainPeriod
++    bcs !+
++        rts                             // not yet
++    !:
++    lda bodyFrames
++    sta brainThinkFrame
++    sei                                 // the published senses, whole
++    .for (var i = 0; i < 20; i++) {
++        lda cloneSenses + i
++        sta brainIn + i
++    }
++    cli
++    lda brainKind
++    cmp #2
++    bne !+
++        jsr builderThink
++        jmp thought
++    !:
++    jsr brainForward
++    thought:
++    inc brainThinks
++    bne !+
++        inc brainThinks + 1
++    !:
++    rts
+ }
+-buildColumnWall: {
+-    lda buddyY
++
++// brainIn and brainWeights -> brainAcc and brainAction (the first largest). Interruptible: it reads
++// nothing the interrupt writes.
++brainForward: {
++    ldx #9                              // the senses expanded: evenHi[k] = x[2k] << 4, oddLo[k] = x[2k+1]
++    !:
++        txa
++        asl
++        tay
++        lda brainIn, y
++        and #$0f
++        asl
++        asl
++        asl
++        asl
++        sta evenHi, x
++        lda brainIn + 1, y
++        and #$0f
++        sta oddLo, x
++        dex
++    bpl !-
++    lda #<brainWeights
++    sta wrow
++    sta wrow2
++    lda #>brainWeights
++    sta wrow + 1
++    sta wrow2 + 1
++    lda #0
++    sta o
++    outputs:
++        lda #0
++        sta acc
++        sta acc + 1
++        ldy #0
++        pairs:
++            lda wrow:brainWeights, y    // the low nibble: the even sense's weight
++            and #$0f
++            ora evenHi, y
++            tax
++            lda brainMul, x
++            bpl !+
++                dec acc + 1
++            !:
++            clc
++            adc acc
++            sta acc
++            bcc !+
++                inc acc + 1
++            !:
++            lda wrow2:brainWeights, y   // the high nibble: the odd sense's weight
++            and #$f0
++            ora oddLo, y
++            tax
++            lda brainMul, x
++            bpl !+
++                dec acc + 1
++            !:
++            clc
++            adc acc
++            sta acc
++            bcc !+
++                inc acc + 1
++            !:
++            iny
++            cpy #10
++        bne pairs
++        // the mood: m[o] * 16, the nibble moved up as a signed byte
++        lda o
++        lsr
++        tay
++        lda brainMood, y
++        bcc !+
++            and #$f0                    // the odd output: the high nibble is already in place
++            jmp moodHave
++        !:
++        asl
++        asl
++        asl
++        asl
++        moodHave:
++        bpl !+
++            dec acc + 1
++        !:
++        clc
++        adc acc
++        sta acc
++        bcc !+
++            inc acc + 1
++        !:
++        lda o
++        asl
++        tax
++        lda acc
++        sta brainAcc, x
++        lda acc + 1
++        sta brainAcc + 1, x
++        clc                             // the next output's row
++        lda wrow
++        adc #10
++        sta wrow
++        sta wrow2
++        bcc !+
++            inc wrow + 1
++            inc wrow2 + 1
++        !:
++        inc o
++        lda o
++        cmp #10
++        beq chosen
++        jmp outputs
++    chosen:
++    // the first largest, signed
++    lda #0
++    sta best
++    ldx #2
++    compare:
++        sec                             // acc[x] - acc[best], the sign with overflow in mind
++        lda brainAcc, x
++        ldy best
++        sbc brainAcc, y
++        lda brainAcc + 1, x
++        sbc brainAcc + 1, y
++        bvc !+
++            eor #$80
++        !:
++        bmi !+                          // acc[x] < acc[best]: keep it
++        beq check                       // the high bytes agree: equal or larger?
++        jmp larger
++        check:
++        lda brainAcc, x
++        cmp brainAcc, y
++        beq !+                          // equal: the first keeps
++        larger:
++        stx best
++        !:
++        inx
++        inx
++        cpx #20
++    bne compare
++    lda best
++    lsr
++    sta brainAction
++    rts
++    o:    .byte 0
++    acc:  .word 0
++    best: .byte 0
++}
++
++// the builder rule (kind 2): the senses in brainIn -> brainAction, hand-written over the vocabulary,
++// so the decoder, the macro and the senses are exercised by a brain anyone can read. Toward the
++// player: walk. Facing his way, a wall at the feet with the head clear is a step: jump it, that way; a
++// wall at the head too is a climb: build a brick if the slot is free. The player above with a ladder
++// in the box: climb. On a ladder: up or down after him, hang on when level. In the air: nothing, the
++// physics finish the jump. Within sixteen pixels of him with nothing ahead and two bricks or more
++// below him: build, the way he faces.
++builderThink: {
++    .label sDx = brainIn + 1
++    .label sDy = brainIn + 2
++    .label sFacing = brainIn + 3
++    .label sAir = brainIn + 5
++    .label sLadder = brainIn + 6
++    .label sWallFoot = brainIn + 9
++    .label sWallHead = brainIn + 10
++    .label sLadderHere = brainIn + 12
++    .label sBuildable = brainIn + 14
++    lda #0
++    sta brainAction
++    lda sAir
++    beq !+
++        rts                             // in the air: let it finish
++    !:
++    lda sDx                             // the nibbles as signed bytes
++    cmp #8
++    bcc !+
++        ora #$f0
++    !:
++    sta dx
++    lda sDy
++    cmp #8
++    bcc !+
++        ora #$f0
++    !:
++    sta dy
++    lda sLadder
++    beq onFoot
++        lda dy                          // on a ladder: after him
++        bne !+
++            rts                         // level with him: hang on
++        !:
++        bmi ladderDown
++            lda #3                      // up
++            sta brainAction
++            rts
++        ladderDown:
++            lda #4                      // down
++            sta brainAction
++            rts
++    onFoot:
++    lda dy                              // the player above and a ladder in the box: climb
++    bmi notAbove
++    beq notAbove
++        lda sLadderHere
++        beq notAbove
++            lda #3
++            sta brainAction
++            rts
++    notAbove:
++    ldx #1                              // his way: 1 left, 2 right; the way he faces when level with him
++    lda #0
++    sta wantRight
++    lda dx
++    bmi haveDir
++    bne goRight
++        lda sFacing
++        beq haveDir
++    goRight:
++        ldx #2
++        inc wantRight
++    haveDir:
++    stx dir
++    lda sFacing                         // facing his way: what is ahead decides first
++    beq facingLeft
++        lda wantRight
++        beq notFacing
++        jmp faced
++    facingLeft:
++        lda wantRight
++        bne notFacing
++    faced:
++    lda sWallFoot
++    beq nothingAhead
++    lda sWallHead
++    bne climb
++        lda dir                         // a step: jump it, that way (1 -> 6, 2 -> 7)
++        clc
++        adc #5
++        sta brainAction
++        rts
++    climb:
++        lda sBuildable
++        bne !+
++            rts                         // a wall two high with no room for a brick: nothing to do
++        !:
++        lda dir                         // a climb: a brick, that way (1 -> 8, 2 -> 9)
++        clc
++        adc #7
++        sta brainAction
++        rts
++    notFacing:
++    nothingAhead:
++    lda dx                              // the distance, unsigned
++    bpl !+
++        eor #$ff
++        clc
++        adc #1
++    !:
++    cmp #2
++    bcc near
++        lda dir                         // sixteen pixels or more away: walk his way (turning if needed)
++        sta brainAction
++        rts
++    near:
++    lda dy                              // within sixteen pixels: two bricks or more below him, build up
++    bmi !+
++    cmp #2
++    bcc !+
++    lda sBuildable
++    beq !+
++        ldx #8                          // build, the way he faces
++        lda sFacing
++        beq build
++            inx
++        build:
++        stx brainAction
++    !:
++    rts
++    dx:        .byte 0
++    dy:        .byte 0
++    dir:       .byte 0
++    wantRight: .byte 0
++}
++
++// the decoder: the action the think chose -> the joystick byte, every frame, in his turn (cloneThink
++// for kinds 1 and 2). It owns the build macro (face the way, lay, let go, step up, let go; abandoned
++// when the lay was refused) and the release frame after a crouch (the physics allow no walk out of
++// the duck state: a byte without down after one with it is preceded by a frame of nothing).
++cloneDecode: {
++    lda macroStep
++    bne macro
++    ldx brainAction
++    cpx #8
++    bcs build
++        lda actionBytes, x
++        jmp emit
++    build:
++        txa                             // 8 build left, 9 build right
++        sec
++        sbc #8
++        sta macroDir
++        lda buildCount
++        sta macroCount
++        lda #1
++        sta macroStep
++    macro:
++    lda macroStep
++    cmp #1
++    bne !+
++        inc macroStep
++        lda cloneState                  // his record: not swapped in yet
++        and #%10000000
++        beq facingLeft
++            lda macroDir
++            bne step2                   // facing right already
++            lda #%00000100              // a frame of left
++            jmp emit
++        facingLeft:
++            lda macroDir
++            beq step2                   // facing left already
++            lda #%00001000              // a frame of right
++            jmp emit
++    !:
++    cmp #2
++    bne !+
++        step2:
++        lda #3
++        sta macroStep
++        lda #%00100000                  // the lay
++        jmp emit
++    !:
++    cmp #3
++    bne !+
++        lda buildCount                  // laid? (a lift would also change it: the brain asked for a build on a brick, its own fault)
++        cmp macroCount
++        beq refused
++            lda #4
++            sta macroStep
++            lda #0
++            jmp emit
++        refused:
++            lda #0
++            sta macroStep
++            jmp emit
++    !:
++    cmp #4
++    bne !+
++        lda #5
++        sta macroStep
++        lda #%01000000                  // the step up
++        jmp emit
++    !:
++    lda #0                              // step 5: let go, done
++    sta macroStep
++    emit:
++    tax
++    and #%00000010
++    bne store                           // down is in it
++    lda cloneJoyOut
++    and #%00000010
++    beq store
++        lda #0                          // a frame of nothing after a crouch
++        sta cloneJoyOut
++        sta cloneJoy
++        rts
++    store:
++    stx cloneJoyOut
++    stx cloneJoy
++    rts
++    actionBytes: .byte 0, %00000100, %00001000, %00000001, %00000010, %00010000, %00010100, %00011000
++}
++macroStep:   .byte 0                    // 0 idle, 1 face, 2 lay, 3 let go and check, 4 step up, 5 let go
++macroDir:    .byte 0
++macroCount:  .byte 0
++cloneJoyOut: .byte 0                    // the byte the decoder emitted last frame
 +
 +// ===================================================================== the senses
 +// Twenty signed nibbles, one per byte in its low half (the high half zero): the contract the reference
