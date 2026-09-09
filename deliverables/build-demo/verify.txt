@@ -1,4 +1,4 @@
-tony-build.prg: 42311 bytes
+tony-build.prg: 43423 bytes
 stairs:
   ok   boots into the room, Tony on the floor, no bricks
   ok   down + fire lays one brick (four cells)
@@ -11,4 +11,13 @@ stairs:
 wall:
   ok   a brick laid between Tony and the Shadow
   ok   Tony walks to 286, the Shadow stops at the brick (X 159)
+ladder:
+  the ladder hangs at columns 33-34 (seeded)
+  ok   five bricks laid and climbed, the ladder in reach (Y 122, count 5)
+  ok   holding up on the ladder takes Tony into the room above (room 1, Y 207)
+  ok   the Shadow is not in the room above (his sprites off)
+  ok   the room above has no bricks
+  ok   climbing down brings him back to the room below with its five bricks (room 0, count 5)
+  ok   the Shadow is there again
+  ok   he dropped off the ladder's end onto his bricks (Y 126)
 ALL OK

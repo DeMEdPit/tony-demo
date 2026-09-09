@@ -1673,7 +1673,7 @@ checkForRoomChange: {
     cmp physPlayerY
     bcs transitN
     lda physPlayerY
-    cmp #ROOM_SOUTH_LIMIT
+    cmp #224                    // the build demo: only the ladder down the floor reaches this
     bcs transitS
     lda physPlayerX + 1
     bne checkE
@@ -1859,6 +1859,13 @@ buddyInit: {
 }
 
 buddyUpdate: {
+    lda currentChamberNumber        // the build demo: the Shadow stays in the room below
+    beq !+
+        lda c64lib.SPRITE_ENABLE
+        and #%00011111
+        sta c64lib.SPRITE_ENABLE
+        rts
+    !:
     // keep the clone enabled and green (self-healing every frame)
     lda c64lib.SPRITE_ENABLE
     ora #%11100000              // 5+6 the buddy, 7 his backdrop
@@ -3258,6 +3265,84 @@ muralStamp: {
             cpx #8
             bne inkLoop
     digitsInked:
+    // the build demo: the ladder. Its slot k from the seed (byte 30, bits 2-5), moved off the candle's
+    // niche; the room below hangs it from the ceiling down to row LADDER_BOTTOM, the room above has it
+    // as the hole in its floor, rows 23-24 (the game's own maps run a ladder through the floor rows only:
+    // Tony stands in its top cell and steps sideways onto the floor). Map codes $7C $7D, two columns wide.
+    lda muralSeed + 30
+    lsr
+    lsr
+    and #15
+    cmp #15
+    bne !+
+        lda #14
+    !:
+    sta buildLadderK
+    lda muralDim
+    bne ladderColumn            // no candle, nothing to avoid
+    lda candleLeft              // 5 + 2 kc
+    sec
+    sbc #5
+    lsr
+    sta buildLadderTmp          // kc
+    lda buildLadderK
+    sec
+    sbc buildLadderTmp
+    clc
+    adc #1
+    cmp #3
+    bcs ladderColumn            // more than a slot apart
+        lda #14
+        sec
+        sbc buildLadderK        // mirror it
+        sta buildLadderK
+        sec
+        sbc buildLadderTmp
+        clc
+        adc #1
+        cmp #3
+        bcs ladderColumn
+            lda buildLadderK    // the candle in the middle: four slots along
+            clc
+            adc #4
+            cmp #15
+            bcc !+
+                sbc #15
+            !:
+            sta buildLadderK
+    ladderColumn:
+    lda buildLadderK
+    asl
+    clc
+    adc #5
+    sta buildLadderCol
+    lda currentChamberNumber
+    bne ladderAbove
+        ldy #0
+        ladderRows:
+            ldx buildLadderCol
+            lda #$7C
+            jsr buildWriteCell
+            inx
+            lda #$7D
+            jsr buildWriteCell
+            iny
+            cpy #(LADDER_BOTTOM + 1)
+        bne ladderRows
+        jmp ladderDone
+    ladderAbove:
+        ldy #23                 // the floor rows only, as the game's own maps do it: its top cell is the floor row
+        ladderFloor:
+            ldx buildLadderCol
+            lda #$7C
+            jsr buildWriteCell
+            inx
+            lda #$7D
+            jsr buildWriteCell
+            iny
+            cpy #25
+        bne ladderFloor
+    ladderDone:
     jsr muralBatsStamp
     rts
 
@@ -3459,7 +3544,7 @@ changeRoomIfNeeded: {
         lda roomChangeDirection
         cmp #ROOM_TRANSIT_DIRECTION_NORTH
         bne !+
-            lda #ROOM_TRANSIT_NORTH
+            lda #216                    // the build demo: arriving from below, on the ladder in the floor
             sta physPlayerY
             jmp updatePosition
         !:
@@ -5248,7 +5333,7 @@ endOfCode:
 
 // temporarily...
 levelDataStart:
-    #import "level/chamber/data.asm"
+    #import "level/build/data.asm"
 levelDataEnd:
 
 endOfNonMovable:
@@ -5263,7 +5348,8 @@ endOfNonMovable:
 // seeded bricks stay decoration; a placed brick may cover them and they come back when
 // it is lifted (muralBits remembers where they were). The second Tony checks the column
 // ahead of every step against the same materials, so a placed brick is a wall to him.
-.label BUILD_CODE   = $40
+.label BUILD_CODE   = $50         // above the room's own screen codes (the two-room map uses up to $42)
+.label LADDER_BOTTOM = 9          // the dangling ladder's lowest row in the room below: five bricks to reach it
 .label BUILD_COL0   = 5           // the wall's first column (slots at 5 + 2i, i = 0..14)
 .label BUILD_ROW_LO = 21          // the lowest level's top row: rows 21-22 sit on the floor at 23
 buildJoy:      .byte 0
@@ -5278,13 +5364,40 @@ buildCell:     .byte 0
 buildK:        .byte 0
 buildI:        .byte 0
 buildBCol:     .byte 0
+buildMask:     .byte 0
 buildTmp:      .word 0
 brickCodes:    .fill 4, 0         // the mural bricks' screen codes, TL TR BL BR (from the decoding table)
+ladderCodes:   .fill 2, 0         // the ladder's two screen codes
+buildOnce:     .byte 0            // the bitmaps are cleared once, at the start
+buildRoomOff:  .byte 0            // 0 or 19: this room's bitmap in placedBits
+placedBits:    .fill 38, 0        // the bricks laid, 150 slots per room, two rooms
+buildRoomCounts: .byte 0, 0
+buildLadderK:  .byte 0
+buildLadderTmp: .byte 0
+buildLadderCol: .byte 0
 stoneCodes:    .byte $31, $36, $37, $3C   // the placed brick's look: a floor brick's left and right ends, map codes
 muralBits:     .fill 19, 0        // 150 slots (15 x 10), bit set = a seeded brick
 
-// once the room's characters are translated: the codes, glyphs, materials, the bitmap, the count
+// once the room's characters are translated: the codes, glyphs, materials, the bitmap, this room's bricks, the count
 buildInit: {
+    lda buildOnce
+    bne !++
+        inc buildOnce
+        ldx #37
+        lda #0
+        !:
+            sta placedBits, x
+            dex
+        bpl !-
+        sta buildRoomCounts
+        sta buildRoomCounts + 1
+    !:
+    lda #0
+    ldx currentChamberNumber
+    beq !+
+        lda #19
+    !:
+    sta buildRoomOff
     ldx #0
     !:
         lda roomCharsDecodingBuffer + $B0, x
@@ -5292,6 +5405,10 @@ buildInit: {
         inx
         cpx #4
     bne !-
+    lda roomCharsDecodingBuffer + $7C
+    sta ladderCodes
+    lda roomCharsDecodingBuffer + $7D
+    sta ladderCodes + 1
     lda #BG_CLSN_WALL
     sta roomMaterialsBuffer + BUILD_CODE
     sta roomMaterialsBuffer + BUILD_CODE + 1
@@ -5363,20 +5480,102 @@ buildInit: {
         lda buildK
         cmp #10
     bne slotRows
-    // the floor under the block number back to plain stone, then the count
+    // the floor under the block number back to plain stone (the ladder's cells, if it stands there, kept)
     ldx #0
-    !:
+    floorLoop:
+        lda SCREEN_MEM_0 + 23*40 + 27, x
+        cmp ladderCodes
+        beq floorNext
+        cmp ladderCodes + 1
+        beq floorNext
         ldy floorPattern, x
         lda roomCharsDecodingBuffer, y
         sta SCREEN_MEM_0 + 23*40 + 27, x
+        floorNext:
         inx
         cpx #8
-    bne !-
+    bne floorLoop
+    // this room's bricks back on the wall
     lda #0
+    sta buildK
+    layRows:
+        lda #0
+        sta buildI
+        layCols:
+            jsr buildSlotBit
+            txa
+            clc
+            adc buildRoomOff
+            tax
+            lda placedBits, x
+            and buildMask
+            beq notLaid
+                lda buildK
+                asl
+                sta buildRow
+                lda #BUILD_ROW_LO
+                sec
+                sbc buildRow
+                sta buildRow
+                lda buildI
+                asl
+                clc
+                adc #BUILD_COL0
+                sta buildCol
+                jsr buildLayCells
+            notLaid:
+            inc buildI
+            lda buildI
+            cmp #15
+        bne layCols
+        inc buildK
+        lda buildK
+        cmp #10
+    bne layRows
+    ldx currentChamberNumber
+    lda buildRoomCounts, x
     sta buildCount
+    lda #0
     sta buildPrev
     jmp buildDrawCount
     floorPattern: .byte $34, $35, $36, $25, $26, $27, $28, $29     // the floor course's map codes at columns 27-34
+}
+
+// the four placed codes at buildRow, buildCol
+buildLayCells: {
+    ldy buildRow
+    ldx buildCol
+    lda #BUILD_CODE
+    jsr buildWriteCell
+    inx
+    lda #BUILD_CODE + 1
+    jsr buildWriteCell
+    iny
+    lda #BUILD_CODE + 3
+    jsr buildWriteCell
+    dex
+    lda #BUILD_CODE + 2
+    jmp buildWriteCell
+}
+
+// the bit of the slot at buildRow, buildCol in this room's bitmap: X = its byte, buildMask = its bit
+buildSlotOfTarget: {
+    lda buildCol
+    sec
+    sbc #BUILD_COL0
+    lsr
+    sta buildI
+    lda #BUILD_ROW_LO
+    sec
+    sbc buildRow
+    lsr
+    sta buildK
+    jsr buildSlotBit
+    txa
+    clc
+    adc buildRoomOff
+    tax
+    rts
 }
 
 // A = the screen code at row Y, column X (X and Y kept)
@@ -5419,6 +5618,7 @@ buildSlotBit: {
     and #7
     tay
     lda bitMask, y
+    sta buildMask
     rts
     bitMask: .byte 1, 2, 4, 8, 16, 32, 64, 128
 }
@@ -5544,21 +5744,13 @@ buildAct: {
     no:
     rts
     lay:
-    ldy buildRow
-    ldx buildCol
-    lda #BUILD_CODE
-    jsr buildWriteCell
-    inx
-    lda #BUILD_CODE + 1
-    jsr buildWriteCell
-    iny
-    lda #BUILD_CODE + 3
-    jsr buildWriteCell
-    dex
-    lda #BUILD_CODE + 2
-    jsr buildWriteCell
+    jsr buildLayCells
+    jsr buildSlotOfTarget
+    lda placedBits, x
+    ora buildMask
+    sta placedBits, x
     inc buildCount
-    jmp buildDrawCount
+    jmp buildCounted
     lift:
     ldy buildRow
     ldx buildCol
@@ -5569,7 +5761,16 @@ buildAct: {
     jsr buildRestoreCell
     dex
     jsr buildRestoreCell
+    jsr buildSlotOfTarget
+    lda buildMask
+    eor #$ff
+    and placedBits, x
+    sta placedBits, x
     dec buildCount
+    buildCounted:
+    ldx currentChamberNumber
+    lda buildCount
+    sta buildRoomCounts, x
     jmp buildDrawCount
 }
 
@@ -5751,7 +5952,7 @@ buildRestoreCell: {
     colSave: .byte 0
 }
 
-// the count, three carved digits in the floor at columns 27-29
+// the count, three carved digits in the floor at columns 1-3
 buildDrawCount: {
     lda buildCount
     ldx #0
@@ -5780,7 +5981,7 @@ buildDrawCount: {
         adc #MURAL_DIGIT_BASE
         tay
         lda roomCharsDecodingBuffer, y
-        sta SCREEN_MEM_0 + 23*40 + 27, x
+        sta SCREEN_MEM_0 + 23*40 + 1, x      // under the left pillar, where no ladder can stand
         inx
         cpx #3
     bne !-

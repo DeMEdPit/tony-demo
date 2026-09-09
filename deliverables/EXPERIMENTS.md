@@ -982,12 +982,14 @@ The PRG, the vectors and the base's freeze are untouched.
 
 ## E22 — The building demo: down + fire lays a brick · built (2026-09-09)
 
-A separate PRG (`prg/minimal64/tony-build.prg`, 42,311 bytes, sha256 `9a35cc8ff638deea...`) from the
+A separate PRG (`prg/minimal64/tony-build.prg`, 43,423 bytes, sha256 `6fb4ad7a2c9302bb...`) from the
 frozen base: no bats, the Shadow as the second Tony, down + fire lays or lifts a 2 x 2 brick in the wall
 slot in front of Tony at his feet, up + fire steps him onto it. Placed bricks are four new screen codes
 with wall material, drawn as a small stone block (a floor brick's two ends) so they read as built, so the engine's own collision makes them floor and wall; the Shadow got a guard on
 his step so a brick stops him. Measured on the way: Tony's jump carries 48 px, too far to land on a
-single brick, hence the step-up. Bench of ten checks on minimal64 in `tools/verify_build.py`. Write-up:
+single brick, hence the step-up. Later the same day a second room above, reached by a seeded ladder that
+hangs from the ceiling and needs five bricks to reach; each room keeps its own bricks, the Shadow stays
+below. Bench of seventeen checks on minimal64 in `tools/verify_build.py`. Write-up:
 `BUILD-DEMO.md`. The base, the tokens and the freeze are untouched.
 
 ## Road to seven tokens · plan (2026-09-06)

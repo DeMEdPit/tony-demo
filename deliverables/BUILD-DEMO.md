@@ -1,29 +1,43 @@
 # The building demo (tony-build.prg)
 
-A standalone program for the owner to play: the Chamber's room with one verb added, **build**.
+A standalone program for the owner to play: the Chamber's room with one verb added, **build**, and
+since 2026-09-09 a second room above it, reached by a ladder that hangs from the ceiling.
 It is a branch of the frozen base, not a change to it: the base (`tony-chamber.prg`, sha256
 `67dc97bc1e306715...`) is byte for byte what it was, and nothing here is on chain or in a token.
 
 | | |
 |---|---|
 | file | `deliverables/prg/minimal64/tony-build.prg` |
-| size | 42,311 bytes |
-| sha256 | `9a35cc8ff638deeadfc031dc3197e915156361dade4d796bca05d9f4a9d12344` |
-| boots on | minimal64 (the bench in `tools/verify_build.py`, ten checks passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
+| size | 43,423 bytes |
+| sha256 | `6fb4ad7a2c9302bb6506263d9d2e3bc642d7e82f172f100f531519b2f8714807` |
+| boots on | minimal64 (the bench in `tools/verify_build.py`, seventeen checks passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
 | built from | the Chamber base at `21b95e3`, room and seed as the base's default block, by `tools/make_chamber.py --variant tony-build --build-demo` and `tools/build_demo.sh tony-build` |
-| diff | `deliverables/build-demo/tony-build.diff`, the demo's source against the base's (599 lines changed, most of them the new code) |
+| diff | `deliverables/build-demo/tony-build.diff`, the demo's source against the base's (806 lines changed, most of them the new code) |
 
 ## Controls
 
 Left and right walk, fire jumps (fire with a direction jumps that way), down ducks.
 **Down + fire** lays a brick in the slot in front of Tony at his feet, or lifts it again if he laid it there; **up + fire** steps him up onto a brick he laid in front.
 
-## What is in the room
+## What is in the rooms
 
-The Chamber's room exactly as the base draws it for its default block: the seeded wall, the candle, the
-floor. Two changes for the demo: **the bats are gone**, and the block number carved in the floor is
-replaced by a **count of the bricks on screen** (three carved digits, same font, same wall material).
-The second Tony is **the Shadow** (behaviour 0, the base's default), green.
+Two rooms, exactly alike: the Chamber's room as the base draws it for its default block, the seeded
+wall, the candle, the floor. Changes for the demo: **the bats are gone**; the block number carved in the
+floor is replaced by plain floor, and a **count of this room's bricks** is carved under the left pillar
+(three digits, the room's own font, wall material). The second Tony is **the Shadow** (behaviour 0, the
+base's default), green, and he **stays in the room below**: he cannot climb, so when you go up he waits,
+and he is there when you come back.
+
+**The ladder.** In the room below a ladder hangs from the ceiling and stops at row 9, well above the
+floor: five bricks stacked under it bring its bottom rung within reach, and holding up on the top brick
+starts the climb. Its column is seeded (byte 30 of the seed, bits 2 to 5, mirrored away from the
+candle's niche), so a different block hangs it elsewhere. Climb off the top and you are in the room
+above, arriving on the same ladder where it comes up through the floor. To come back, stand over the
+hole and hold down: you climb through the floor, arrive at the top of the hanging ladder, climb to its
+end and drop, onto your bricks if you built them under it. Each room keeps its own bricks (a 19-byte
+record per room, re-laid when you enter), so the staircase is still there. The ladder in the room above
+runs through the floor rows only, as the game's own maps do it: Tony stands in its top cell and steps
+sideways onto the floor.
 
 ## The verb, exactly
 
@@ -60,7 +74,7 @@ The second Tony is **the Shadow** (behaviour 0, the base's default), green.
 - **Bat contact in the base kills.** No cheat bits are set, so a bat runs the death sequence, respawns
   Tony at the entry point and costs a life; running out of lives restarts the room. The demo removes the
   bats (the seed's presence value forced to none), so there is no contact and no death.
-- **The count** is the three carved digits in the floor at columns 27 to 29.
+- **The count** is the three carved digits in the floor at columns 1 to 3, this room's bricks.
 
 ## Why there is a step-up chord
 
@@ -74,7 +88,20 @@ change. If the second Tony ever gets real physics, the same problem applies to h
 Lay one brick (four cells, count 1); step up (Y 206 to 190, X over the brick's columns); a second and a
 third from up there (Y 174, 158; twelve cells); a fourth laid and lifted from the top with the wall
 restored cell for cell; walking off the top drops him to the floor; a brick between Tony and the Shadow
-stops the Shadow at X 159 while Tony walks to 286. Screenshot: `deliverables/screenshots/build-demo-stairs-m64.png`.
+stops the Shadow at X 159 while Tony walks to 286. The two rooms: five bricks up to the ladder, the climb into
+the room above (the Shadow's sprites off there, no bricks there), the climb back down onto the bricks (the
+count still five, the Shadow back). Screenshots: `deliverables/screenshots/build-demo-stairs-m64.png` and
+`build-demo-two-rooms-m64.png`.
+
+## Two rooms: what the engine needed
+
+- The tall room's floor lies below the game's south limit, so with a south exit Tony would leave the
+  moment he stood on the floor. The demo moves that limit to Y 224, which only a ladder through the
+  floor reaches, and lands an arrival from below at Y 216, on that ladder.
+- The four ladder characters have to be in the room's character set, so the demo's map carries them in
+  four empty cells of the mural area (`src/level-custom/build-room.bin`); the mural overwrites them and
+  the ladder is drawn with the mural, in map codes, before the room's characters are translated.
+- The extra characters push the room's screen codes past $40, so the placed bricks live at $50 to $53.
 
 ## For a v2
 
