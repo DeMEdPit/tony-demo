@@ -1,0 +1,130 @@
+{
+ "senses": [
+  {
+   "index": 20,
+   "name": "playerAway",
+   "value": "7 when Tony is in another room, else 0",
+   "derived_from": "currentChamberNumber against the clone's room; not in the twenty raw senses"
+  },
+  {
+   "index": 21,
+   "name": "routeDx",
+   "value": "while playerAway: the sign and bucket (as dx, 0 under 8 px ... 7 from 128) of the distance from the clone to the route point, the foot of the ladder that leads to Tony's room (its columns' centre); 0 when not away",
+   "derived_from": "the clone's X and the ladder column of the room (from the seed); not in the raw senses"
+  },
+  {
+   "index": 22,
+   "name": "routeDy",
+   "value": "while playerAway: the height of the route point above his feet in bricks, as dy is bucketed (the ladder's bottom rung row against his feet row); 0 when not away",
+   "derived_from": "the clone's Y and the ladder's bottom row"
+  },
+  {
+   "index": 23,
+   "name": "ladderDx",
+   "value": "the sign and bucket of the distance to the nearest ladder in his room (its columns' centre), whether or not Tony is away; 0 when he is within the ladder's columns",
+   "derived_from": "the clone's X and the room's ladder columns"
+  },
+  {
+   "index": 24,
+   "name": "ladderDy",
+   "value": "bricks between his feet and the nearest ladder's bottom rung, positive when the rung is above him, bucketed as dy; 0 when he is on or beside it",
+   "derived_from": "the clone's Y and the ladder's bottom row"
+  }
+ ],
+ "holdout": [
+  {
+   "id": "G01_find_ladder_tony_above",
+   "requires": [
+    "playerAway",
+    "routeDx",
+    "routeDy"
+   ],
+   "C": 33,
+   "setup": "stairs(33) built by Tony who then climbs through the ceiling into the room above (hold up 200 frames) and waits there; the clone parked at X 146 during the setup",
+   "goal": "on the ladder (states 2, 7) at Y <= 88 within 900 frames, strict",
+   "mirror": "G02"
+  },
+  {
+   "id": "G02_find_ladder_tony_above_mirror",
+   "requires": [
+    "playerAway",
+    "routeDx",
+    "routeDy"
+   ],
+   "C": 5,
+   "setup": "the mirror: leftward stairs under the ladder at column 5, Tony through the ceiling, the clone parked at X 226",
+   "goal": "as G01",
+   "mirror": "G01"
+  },
+  {
+   "id": "G03_choose_route_two_ladders",
+   "requires": [
+    "ladderDx",
+    "ladderDy",
+    "playerAway"
+   ],
+   "C": "two-ladder level (needs the two-ladder variant of the body's level data: seeded ladder plus a second ladder at the mirror column)",
+   "setup": "stairs under both ladders built by the scenario (the override drives Tony's verb through the setup); Tony climbs the RIGHT ladder into the room above; the clone starts between the two stairs",
+   "goal": "the right ladder within 900 frames; taking the left one is a failure",
+   "mirror": "G04"
+  },
+  {
+   "id": "G04_choose_route_two_ladders_mirror",
+   "requires": [
+    "ladderDx",
+    "ladderDy",
+    "playerAway"
+   ],
+   "C": "two-ladder level",
+   "setup": "as G03 with Tony up the LEFT ladder",
+   "goal": "the left ladder",
+   "mirror": "G03"
+  },
+  {
+   "id": "G05_come_back_down",
+   "requires": [
+    "playerAway",
+    "routeDx",
+    "routeDy"
+   ],
+   "C": 33,
+   "setup": "the clone driven up the ladder into the room above (the north stop is masked for this scenario's build only if needed; otherwise Tony climbs first and the clone follows under the follow rule), then Tony climbs back down to the room below and walks away from the ladder",
+   "goal": "beside Tony on the floor of the room below within 900 frames, strict",
+   "mirror": "G06"
+  },
+  {
+   "id": "G06_come_back_down_mirror",
+   "requires": [
+    "playerAway",
+    "routeDx",
+    "routeDy"
+   ],
+   "C": 5,
+   "setup": "the mirror at column 5",
+   "goal": "as G05",
+   "mirror": "G05"
+  },
+  {
+   "id": "G07_seek_ladder_no_stairs",
+   "requires": [
+    "ladderDx",
+    "ladderDy"
+   ],
+   "C": 33,
+   "setup": "no stairs; Tony stands under the ladder on the floor; the clone at the far left",
+   "goal": "within 24 px of Tony on the floor within 600 frames (a walk guided by the ladder senses is not required, but the scenario measures whether the ladder senses disturb a plain walk)",
+   "mirror": "G08"
+  },
+  {
+   "id": "G08_seek_ladder_no_stairs_mirror",
+   "requires": [
+    "ladderDx",
+    "ladderDy"
+   ],
+   "C": 5,
+   "setup": "the mirror",
+   "goal": "as G07",
+   "mirror": "G07"
+  }
+ ]
+}
