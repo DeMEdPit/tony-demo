@@ -331,7 +331,7 @@ def episode(scn, arm_name, arm, prg, mat, enc, screens):
 def run():
     S = corpus(); A = arms(); H = json.load(open(os.path.join(OUT, "hashes.json")))
     assert sha(BRAIN) == H["brain"] and sha(PERMUTED) == H["permuted"] and sha(PRG_DEFAULT) == H["prg"]["default"], "the inputs are not the pre-registered ones"
-    assert json.load(open(os.path.join(OUT, "scenarios.json"))) == S, "the corpus in the script differs from the pre-registered file"
+    assert json.load(open(os.path.join(OUT, "scenarios.json"))) == json.loads(json.dumps(S)), "the corpus in the script differs from the pre-registered file"
     mat = open(os.path.join(OUT, "materials.bin"), "rb").read()
     results, enc, screens = [], [], {}
     for scn in S:
