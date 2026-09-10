@@ -1,0 +1,54 @@
+{
+ "LP:T_dyup+dxs+last+adxt|abs|s1424|4": {
+  "status": "Optimal",
+  "seconds": 1.6
+ },
+ "LP:T_dyup+dxs+last+adxt|abs|s1424|8": {
+  "status": "Optimal",
+  "seconds": 1.2
+ },
+ "LP:T_dyup+dydown+dxs+last+adxt|abs|s1424|4": {
+  "status": "Optimal",
+  "seconds": 1.3
+ },
+ "LP:T_dyup+dydown+dxs+last+adxt|abs|s1424|8": {
+  "status": "Optimal",
+  "seconds": 1.2
+ },
+ "LP:A2_A1+adx1h+dxs|abs|s1424|4": {
+  "status": "Optimal",
+  "seconds": 0.9
+ },
+ "LP:A2_A1+adx1h+dxs|abs|s1424|8": {
+  "status": "Optimal",
+  "seconds": 0.9
+ },
+ "LP:raw20|abs|s1424|8": {
+  "status": "Infeasible",
+  "seconds": 0.8
+ },
+ "LP:raw20|rel|s231|8": {
+  "status": "Infeasible",
+  "seconds": 0.1
+ },
+ "LP:raw20|rel|s474|8": {
+  "status": "Infeasible",
+  "seconds": 0.1
+ },
+ "LP:raw20|rel|s1424|8": {
+  "status": "Infeasible",
+  "seconds": 0.6
+ },
+ "LP:R0|abs|s1424|8": {
+  "status": "Infeasible",
+  "seconds": 2.3
+ },
+ "LP:R1|abs|s1424|8": {
+  "status": "Infeasible",
+  "seconds": 1.9
+ },
+ "LP:R1b|abs|s1424|8": {
+  "status": "Infeasible",
+  "seconds": 2.3
+ }
+}
