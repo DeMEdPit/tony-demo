@@ -1,0 +1,1458 @@
+{
+ "stopping": {
+  "max_passes": 25,
+  "stop_rate": 0.02,
+  "patience": 3
+ },
+ "passes": [
+  {
+   "n": 1,
+   "episodes": [
+    {
+     "id": "E01_follow_right",
+     "taken": 2,
+     "final": {
+      "cx": 238,
+      "cy": 206,
+      "cs": 128,
+      "tx": 244,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E02_follow_left",
+     "taken": 2,
+     "final": {
+      "cx": 114,
+      "cy": 206,
+      "cs": 0,
+      "tx": 104,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E03_follow_far_right",
+     "taken": 2,
+     "final": {
+      "cx": 278,
+      "cy": 206,
+      "cs": 128,
+      "tx": 284,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E04_follow_far_left",
+     "taken": 3,
+     "final": {
+      "cx": 80,
+      "cy": 206,
+      "cs": 0,
+      "tx": 74,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E05_brick_right",
+     "taken": 2,
+     "final": {
+      "cx": 232,
+      "cy": 206,
+      "cs": 128,
+      "tx": 233,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E06_brick_left",
+     "taken": 3,
+     "final": {
+      "cx": 126,
+      "cy": 206,
+      "cs": 0,
+      "tx": 125,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E07_stairs_C33_ladder",
+     "taken": 11,
+     "final": {
+      "cx": 284,
+      "cy": 74,
+      "cs": 135,
+      "tx": 284,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 700
+    },
+    {
+     "id": "E08_stairs_C5_ladder",
+     "taken": 17,
+     "final": {
+      "cx": 60,
+      "cy": 74,
+      "cs": 7,
+      "tx": 60,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E09_stairs_C27_ladder",
+     "taken": 6,
+     "final": {
+      "cx": 236,
+      "cy": 78,
+      "cs": 135,
+      "tx": 236,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E10_stairs_C9_ladder",
+     "taken": 16,
+     "final": {
+      "cx": 92,
+      "cy": 74,
+      "cs": 7,
+      "tx": 92,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 900
+    },
+    {
+     "id": "E11_restraint_stairs",
+     "taken": 3,
+     "final": {
+      "cx": 198,
+      "cy": 206,
+      "cs": 0,
+      "tx": 187,
+      "ty": 206,
+      "bricks": 4
+     },
+     "frames": 300
+    },
+    {
+     "id": "E12_restraint_wall",
+     "taken": 3,
+     "final": {
+      "cx": 280,
+      "cy": 206,
+      "cs": 128,
+      "tx": 286,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E13_stack_from_right",
+     "taken": 3,
+     "final": {
+      "cx": 191,
+      "cy": 169,
+      "cs": 4,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E14_stack_from_left",
+     "taken": 4,
+     "final": {
+      "cx": 169,
+      "cy": 169,
+      "cs": 132,
+      "tx": 155,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E15_two_high",
+     "taken": 2,
+     "final": {
+      "cx": 217,
+      "cy": 169,
+      "cs": 132,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 3
+     },
+     "frames": 48
+    }
+   ],
+   "lessons": 79,
+   "ticks": 1561,
+   "rate": 0.05060858424087124,
+   "weights_sha256": "1ceb097ba8e888bd87f0c9d225354487f0cfc668126673f795bebaf8693c1731"
+  },
+  {
+   "n": 2,
+   "episodes": [
+    {
+     "id": "E01_follow_right",
+     "taken": 2,
+     "final": {
+      "cx": 238,
+      "cy": 206,
+      "cs": 128,
+      "tx": 244,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E02_follow_left",
+     "taken": 4,
+     "final": {
+      "cx": 114,
+      "cy": 206,
+      "cs": 0,
+      "tx": 104,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E03_follow_far_right",
+     "taken": 2,
+     "final": {
+      "cx": 278,
+      "cy": 206,
+      "cs": 128,
+      "tx": 284,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E04_follow_far_left",
+     "taken": 3,
+     "final": {
+      "cx": 80,
+      "cy": 206,
+      "cs": 0,
+      "tx": 74,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E05_brick_right",
+     "taken": 3,
+     "final": {
+      "cx": 232,
+      "cy": 206,
+      "cs": 128,
+      "tx": 233,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E06_brick_left",
+     "taken": 3,
+     "final": {
+      "cx": 126,
+      "cy": 206,
+      "cs": 0,
+      "tx": 125,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E07_stairs_C33_ladder",
+     "taken": 17,
+     "final": {
+      "cx": 284,
+      "cy": 78,
+      "cs": 135,
+      "tx": 284,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 700
+    },
+    {
+     "id": "E08_stairs_C5_ladder",
+     "taken": 14,
+     "final": {
+      "cx": 60,
+      "cy": 74,
+      "cs": 7,
+      "tx": 60,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E09_stairs_C27_ladder",
+     "taken": 8,
+     "final": {
+      "cx": 236,
+      "cy": 78,
+      "cs": 135,
+      "tx": 236,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E10_stairs_C9_ladder",
+     "taken": 16,
+     "final": {
+      "cx": 92,
+      "cy": 78,
+      "cs": 7,
+      "tx": 92,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 900
+    },
+    {
+     "id": "E11_restraint_stairs",
+     "taken": 3,
+     "final": {
+      "cx": 198,
+      "cy": 206,
+      "cs": 0,
+      "tx": 187,
+      "ty": 206,
+      "bricks": 4
+     },
+     "frames": 300
+    },
+    {
+     "id": "E12_restraint_wall",
+     "taken": 2,
+     "final": {
+      "cx": 280,
+      "cy": 206,
+      "cs": 128,
+      "tx": 286,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E13_stack_from_right",
+     "taken": 4,
+     "final": {
+      "cx": 191,
+      "cy": 169,
+      "cs": 4,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E14_stack_from_left",
+     "taken": 4,
+     "final": {
+      "cx": 169,
+      "cy": 169,
+      "cs": 132,
+      "tx": 155,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E15_two_high",
+     "taken": 1,
+     "final": {
+      "cx": 217,
+      "cy": 169,
+      "cs": 132,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 3
+     },
+     "frames": 48
+    }
+   ],
+   "lessons": 86,
+   "ticks": 1561,
+   "rate": 0.05509288917360666,
+   "weights_sha256": "01dbf7c98205e934a989ffdeaa5a10d090bd12aea9c7f6b7462f36114ed0e9d5"
+  },
+  {
+   "n": 3,
+   "episodes": [
+    {
+     "id": "E01_follow_right",
+     "taken": 3,
+     "final": {
+      "cx": 238,
+      "cy": 206,
+      "cs": 128,
+      "tx": 244,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E02_follow_left",
+     "taken": 2,
+     "final": {
+      "cx": 114,
+      "cy": 206,
+      "cs": 0,
+      "tx": 104,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E03_follow_far_right",
+     "taken": 2,
+     "final": {
+      "cx": 278,
+      "cy": 206,
+      "cs": 128,
+      "tx": 284,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E04_follow_far_left",
+     "taken": 3,
+     "final": {
+      "cx": 80,
+      "cy": 206,
+      "cs": 0,
+      "tx": 74,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E05_brick_right",
+     "taken": 2,
+     "final": {
+      "cx": 232,
+      "cy": 206,
+      "cs": 128,
+      "tx": 233,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E06_brick_left",
+     "taken": 2,
+     "final": {
+      "cx": 126,
+      "cy": 206,
+      "cs": 0,
+      "tx": 125,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E07_stairs_C33_ladder",
+     "taken": 14,
+     "final": {
+      "cx": 284,
+      "cy": 78,
+      "cs": 135,
+      "tx": 284,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 700
+    },
+    {
+     "id": "E08_stairs_C5_ladder",
+     "taken": 15,
+     "final": {
+      "cx": 60,
+      "cy": 74,
+      "cs": 7,
+      "tx": 60,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E09_stairs_C27_ladder",
+     "taken": 8,
+     "final": {
+      "cx": 236,
+      "cy": 78,
+      "cs": 135,
+      "tx": 236,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E10_stairs_C9_ladder",
+     "taken": 14,
+     "final": {
+      "cx": 92,
+      "cy": 74,
+      "cs": 7,
+      "tx": 92,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 900
+    },
+    {
+     "id": "E11_restraint_stairs",
+     "taken": 2,
+     "final": {
+      "cx": 198,
+      "cy": 206,
+      "cs": 0,
+      "tx": 187,
+      "ty": 206,
+      "bricks": 4
+     },
+     "frames": 300
+    },
+    {
+     "id": "E12_restraint_wall",
+     "taken": 2,
+     "final": {
+      "cx": 280,
+      "cy": 206,
+      "cs": 128,
+      "tx": 286,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E13_stack_from_right",
+     "taken": 4,
+     "final": {
+      "cx": 191,
+      "cy": 169,
+      "cs": 4,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E14_stack_from_left",
+     "taken": 4,
+     "final": {
+      "cx": 169,
+      "cy": 169,
+      "cs": 132,
+      "tx": 155,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E15_two_high",
+     "taken": 1,
+     "final": {
+      "cx": 217,
+      "cy": 169,
+      "cs": 132,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 3
+     },
+     "frames": 48
+    }
+   ],
+   "lessons": 78,
+   "ticks": 1561,
+   "rate": 0.049967969250480464,
+   "weights_sha256": "c1627c5dd52e6dc1b38bc60445ed8f958d356fb9e9863ef6c4618eb9ff75a0fe"
+  },
+  {
+   "n": 4,
+   "episodes": [
+    {
+     "id": "E01_follow_right",
+     "taken": 2,
+     "final": {
+      "cx": 238,
+      "cy": 206,
+      "cs": 128,
+      "tx": 244,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E02_follow_left",
+     "taken": 2,
+     "final": {
+      "cx": 114,
+      "cy": 206,
+      "cs": 0,
+      "tx": 104,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E03_follow_far_right",
+     "taken": 0,
+     "final": {
+      "cx": 278,
+      "cy": 206,
+      "cs": 128,
+      "tx": 284,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E04_follow_far_left",
+     "taken": 1,
+     "final": {
+      "cx": 80,
+      "cy": 206,
+      "cs": 0,
+      "tx": 74,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E05_brick_right",
+     "taken": 3,
+     "final": {
+      "cx": 232,
+      "cy": 206,
+      "cs": 128,
+      "tx": 233,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E06_brick_left",
+     "taken": 2,
+     "final": {
+      "cx": 126,
+      "cy": 206,
+      "cs": 0,
+      "tx": 125,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E07_stairs_C33_ladder",
+     "taken": 18,
+     "final": {
+      "cx": 284,
+      "cy": 78,
+      "cs": 135,
+      "tx": 284,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 700
+    },
+    {
+     "id": "E08_stairs_C5_ladder",
+     "taken": 14,
+     "final": {
+      "cx": 60,
+      "cy": 74,
+      "cs": 7,
+      "tx": 60,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E09_stairs_C27_ladder",
+     "taken": 5,
+     "final": {
+      "cx": 236,
+      "cy": 78,
+      "cs": 135,
+      "tx": 236,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E10_stairs_C9_ladder",
+     "taken": 10,
+     "final": {
+      "cx": 92,
+      "cy": 74,
+      "cs": 7,
+      "tx": 92,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 900
+    },
+    {
+     "id": "E11_restraint_stairs",
+     "taken": 1,
+     "final": {
+      "cx": 198,
+      "cy": 206,
+      "cs": 0,
+      "tx": 187,
+      "ty": 206,
+      "bricks": 4
+     },
+     "frames": 300
+    },
+    {
+     "id": "E12_restraint_wall",
+     "taken": 1,
+     "final": {
+      "cx": 280,
+      "cy": 206,
+      "cs": 128,
+      "tx": 286,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E13_stack_from_right",
+     "taken": 3,
+     "final": {
+      "cx": 191,
+      "cy": 169,
+      "cs": 4,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E14_stack_from_left",
+     "taken": 4,
+     "final": {
+      "cx": 169,
+      "cy": 169,
+      "cs": 132,
+      "tx": 155,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E15_two_high",
+     "taken": 1,
+     "final": {
+      "cx": 217,
+      "cy": 169,
+      "cs": 132,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 3
+     },
+     "frames": 48
+    }
+   ],
+   "lessons": 67,
+   "ticks": 1561,
+   "rate": 0.042921204356181936,
+   "weights_sha256": "94040ab2cfd61f64c40e87f42cba63601b752a301cec18f995b3e761d042b385"
+  },
+  {
+   "n": 5,
+   "episodes": [
+    {
+     "id": "E01_follow_right",
+     "taken": 2,
+     "final": {
+      "cx": 238,
+      "cy": 206,
+      "cs": 128,
+      "tx": 244,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E02_follow_left",
+     "taken": 2,
+     "final": {
+      "cx": 114,
+      "cy": 206,
+      "cs": 0,
+      "tx": 104,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E03_follow_far_right",
+     "taken": 3,
+     "final": {
+      "cx": 278,
+      "cy": 206,
+      "cs": 128,
+      "tx": 284,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E04_follow_far_left",
+     "taken": 3,
+     "final": {
+      "cx": 80,
+      "cy": 206,
+      "cs": 0,
+      "tx": 74,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E05_brick_right",
+     "taken": 3,
+     "final": {
+      "cx": 232,
+      "cy": 206,
+      "cs": 128,
+      "tx": 233,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E06_brick_left",
+     "taken": 0,
+     "final": {
+      "cx": 126,
+      "cy": 206,
+      "cs": 0,
+      "tx": 125,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E07_stairs_C33_ladder",
+     "taken": 10,
+     "final": {
+      "cx": 284,
+      "cy": 78,
+      "cs": 135,
+      "tx": 284,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 700
+    },
+    {
+     "id": "E08_stairs_C5_ladder",
+     "taken": 12,
+     "final": {
+      "cx": 60,
+      "cy": 78,
+      "cs": 7,
+      "tx": 60,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E09_stairs_C27_ladder",
+     "taken": 4,
+     "final": {
+      "cx": 236,
+      "cy": 78,
+      "cs": 135,
+      "tx": 236,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E10_stairs_C9_ladder",
+     "taken": 16,
+     "final": {
+      "cx": 92,
+      "cy": 78,
+      "cs": 7,
+      "tx": 92,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 900
+    },
+    {
+     "id": "E11_restraint_stairs",
+     "taken": 3,
+     "final": {
+      "cx": 198,
+      "cy": 206,
+      "cs": 0,
+      "tx": 187,
+      "ty": 206,
+      "bricks": 4
+     },
+     "frames": 300
+    },
+    {
+     "id": "E12_restraint_wall",
+     "taken": 3,
+     "final": {
+      "cx": 280,
+      "cy": 206,
+      "cs": 128,
+      "tx": 286,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E13_stack_from_right",
+     "taken": 5,
+     "final": {
+      "cx": 191,
+      "cy": 169,
+      "cs": 4,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E14_stack_from_left",
+     "taken": 2,
+     "final": {
+      "cx": 169,
+      "cy": 169,
+      "cs": 132,
+      "tx": 155,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E15_two_high",
+     "taken": 3,
+     "final": {
+      "cx": 217,
+      "cy": 169,
+      "cs": 132,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 3
+     },
+     "frames": 48
+    }
+   ],
+   "lessons": 71,
+   "ticks": 1561,
+   "rate": 0.04548366431774504,
+   "weights_sha256": "a38872b4dd2e22a717361c9137d5ec95b9d54e490f34a0ad4e21c8d1d65547b8"
+  },
+  {
+   "n": 6,
+   "episodes": [
+    {
+     "id": "E01_follow_right",
+     "taken": 2,
+     "final": {
+      "cx": 238,
+      "cy": 206,
+      "cs": 128,
+      "tx": 244,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E02_follow_left",
+     "taken": 2,
+     "final": {
+      "cx": 114,
+      "cy": 206,
+      "cs": 0,
+      "tx": 104,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E03_follow_far_right",
+     "taken": 2,
+     "final": {
+      "cx": 278,
+      "cy": 206,
+      "cs": 128,
+      "tx": 284,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E04_follow_far_left",
+     "taken": 2,
+     "final": {
+      "cx": 80,
+      "cy": 206,
+      "cs": 0,
+      "tx": 74,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E05_brick_right",
+     "taken": 3,
+     "final": {
+      "cx": 232,
+      "cy": 206,
+      "cs": 128,
+      "tx": 233,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E06_brick_left",
+     "taken": 2,
+     "final": {
+      "cx": 126,
+      "cy": 206,
+      "cs": 0,
+      "tx": 125,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E07_stairs_C33_ladder",
+     "taken": 13,
+     "final": {
+      "cx": 284,
+      "cy": 78,
+      "cs": 135,
+      "tx": 284,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 700
+    },
+    {
+     "id": "E08_stairs_C5_ladder",
+     "taken": 16,
+     "final": {
+      "cx": 60,
+      "cy": 74,
+      "cs": 7,
+      "tx": 60,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E09_stairs_C27_ladder",
+     "taken": 6,
+     "final": {
+      "cx": 236,
+      "cy": 78,
+      "cs": 135,
+      "tx": 236,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E10_stairs_C9_ladder",
+     "taken": 11,
+     "final": {
+      "cx": 92,
+      "cy": 78,
+      "cs": 7,
+      "tx": 92,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 900
+    },
+    {
+     "id": "E11_restraint_stairs",
+     "taken": 2,
+     "final": {
+      "cx": 198,
+      "cy": 206,
+      "cs": 0,
+      "tx": 187,
+      "ty": 206,
+      "bricks": 4
+     },
+     "frames": 300
+    },
+    {
+     "id": "E12_restraint_wall",
+     "taken": 1,
+     "final": {
+      "cx": 280,
+      "cy": 206,
+      "cs": 128,
+      "tx": 286,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E13_stack_from_right",
+     "taken": 4,
+     "final": {
+      "cx": 191,
+      "cy": 169,
+      "cs": 4,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E14_stack_from_left",
+     "taken": 4,
+     "final": {
+      "cx": 169,
+      "cy": 169,
+      "cs": 132,
+      "tx": 155,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E15_two_high",
+     "taken": 0,
+     "final": {
+      "cx": 217,
+      "cy": 169,
+      "cs": 132,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 3
+     },
+     "frames": 48
+    }
+   ],
+   "lessons": 70,
+   "ticks": 1561,
+   "rate": 0.04484304932735426,
+   "weights_sha256": "10e26edefc3c9fe1987b194324eafd3826212bb3e9808cbcab24ba36e9732456"
+  },
+  {
+   "n": 7,
+   "episodes": [
+    {
+     "id": "E01_follow_right",
+     "taken": 3,
+     "final": {
+      "cx": 238,
+      "cy": 206,
+      "cs": 128,
+      "tx": 244,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E02_follow_left",
+     "taken": 2,
+     "final": {
+      "cx": 114,
+      "cy": 206,
+      "cs": 0,
+      "tx": 104,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 300
+    },
+    {
+     "id": "E03_follow_far_right",
+     "taken": 2,
+     "final": {
+      "cx": 278,
+      "cy": 206,
+      "cs": 128,
+      "tx": 284,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E04_follow_far_left",
+     "taken": 3,
+     "final": {
+      "cx": 80,
+      "cy": 206,
+      "cs": 0,
+      "tx": 74,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E05_brick_right",
+     "taken": 3,
+     "final": {
+      "cx": 232,
+      "cy": 206,
+      "cs": 128,
+      "tx": 233,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E06_brick_left",
+     "taken": 0,
+     "final": {
+      "cx": 126,
+      "cy": 206,
+      "cs": 0,
+      "tx": 125,
+      "ty": 206,
+      "bricks": 1
+     },
+     "frames": 400
+    },
+    {
+     "id": "E07_stairs_C33_ladder",
+     "taken": 11,
+     "final": {
+      "cx": 284,
+      "cy": 78,
+      "cs": 135,
+      "tx": 284,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 700
+    },
+    {
+     "id": "E08_stairs_C5_ladder",
+     "taken": 14,
+     "final": {
+      "cx": 60,
+      "cy": 74,
+      "cs": 7,
+      "tx": 60,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E09_stairs_C27_ladder",
+     "taken": 7,
+     "final": {
+      "cx": 236,
+      "cy": 78,
+      "cs": 135,
+      "tx": 236,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 800
+    },
+    {
+     "id": "E10_stairs_C9_ladder",
+     "taken": 14,
+     "final": {
+      "cx": 92,
+      "cy": 78,
+      "cs": 7,
+      "tx": 92,
+      "ty": 72,
+      "bricks": 7
+     },
+     "frames": 900
+    },
+    {
+     "id": "E11_restraint_stairs",
+     "taken": 2,
+     "final": {
+      "cx": 198,
+      "cy": 206,
+      "cs": 0,
+      "tx": 187,
+      "ty": 206,
+      "bricks": 4
+     },
+     "frames": 300
+    },
+    {
+     "id": "E12_restraint_wall",
+     "taken": 3,
+     "final": {
+      "cx": 280,
+      "cy": 206,
+      "cs": 128,
+      "tx": 286,
+      "ty": 206,
+      "bricks": 0
+     },
+     "frames": 400
+    },
+    {
+     "id": "E13_stack_from_right",
+     "taken": 4,
+     "final": {
+      "cx": 191,
+      "cy": 169,
+      "cs": 4,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E14_stack_from_left",
+     "taken": 3,
+     "final": {
+      "cx": 169,
+      "cy": 169,
+      "cs": 132,
+      "tx": 155,
+      "ty": 174,
+      "bricks": 4
+     },
+     "frames": 48
+    },
+    {
+     "id": "E15_two_high",
+     "taken": 3,
+     "final": {
+      "cx": 217,
+      "cy": 169,
+      "cs": 132,
+      "tx": 203,
+      "ty": 174,
+      "bricks": 3
+     },
+     "frames": 48
+    }
+   ],
+   "lessons": 74,
+   "ticks": 1561,
+   "rate": 0.04740550928891736,
+   "weights_sha256": "02c5dc1fbb6c256b13318a5195f7b72e25a05051e0cc70c43001a8565f88f589"
+  }
+ ],
+ "stopped": "pass 7: no decrease for 3 passes (best 67)",
+ "frozen": {
+  "file": "/home/user/tony-demo/deliverables/curriculum/taught-curriculum.bin",
+  "sha256": "02c5dc1fbb6c256b13318a5195f7b72e25a05051e0cc70c43001a8565f88f589",
+  "passes": 7,
+  "lessons_total": 525,
+  "permuted": "/home/user/tony-demo/deliverables/curriculum/taught-curriculum-permuted.bin",
+  "permuted_sha256": "77ab50eb308bed7a70fc8b2d9c4deab2c9d709fde0619508f3313a660adb093a",
+  "permutation": [
+   0,
+   6,
+   3,
+   8,
+   2,
+   5,
+   7,
+   9,
+   4,
+   1
+  ]
+ }
+}
