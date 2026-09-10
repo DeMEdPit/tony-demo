@@ -1,4 +1,4 @@
-tony-body.prg: 47874 bytes
+tony-body.prg: 49348 bytes
 follow:
   ok   boots into the room: the clone walked from 120 to 146, on the floor, near Tony at 184
   ok   his sprites are where his record says
@@ -39,5 +39,5 @@ rooms (Tony climbs into the room above):
   ok   and the check agrees with the game's own in the room above too (0 differ)
 time:
   ok   no turn of the clone ended on raster line 250 or later (38 snapshots)
-  ok   the latest a turn ended: raster line 187 (the visual handler's line is 255)
+  ok   the latest a turn ended: raster line 188 (the visual handler's line is 255)
 ALL OK

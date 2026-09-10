@@ -1025,6 +1025,30 @@ with one worked episode. Frame time: a first packing in the interrupt put the wo
 measured against the real cost of a collision check (~24 lines); the fix was to keep the interrupt for
 copies only. Write-ups: `BODY.md`, `HARNESS.md`; brains in `deliverables/brains/`.
 
+## E25 — Learning on the machine: the rule, the golden vectors, TEACH · built (2026-09-10)
+
+The learning rule of the brain interface on the 6502 (`brainLearn`: the mood-free prediction, a step
+of one on the taught and the predicted rows, nibbles saturating at 8) behind a test hook like the
+forward pass; the slot's bytes 14 and 15 (lineage, rule version) and a check that makes a malformed
+slot kind 0; the Python reference and the golden vectors (`tools/brain_golden.py`,
+`deliverables/golden/`: 95 cases, all agreeing on the 6502); the interface returned with every proposed
+row settled (`BRAIN-INTERFACE-V1.md`). Then TEACH: the page's flag or the lay chord held a second, the
+port routed to the clone with the chords translated, Tony standing, a lesson at every think tick and at
+every press or release, recorded in a marked block (`LESSON1`) the page reads, a white flash per
+lesson, kind 0 made kind 1 by the first. Three things had to be learned on the way. The chord that
+toggled teaching off left a brick behind: not a latch bug but the brain doing what the hold had taught
+it, so the hold now takes back its lessons too (the weights and counters shadowed on the chord's first
+frame), and the spent chord is dead until let go. The shadow's 256-byte copy is 57 raster lines and
+first landed in the frame of Tony's own lay, the heaviest, at 244 again; it is made only while teaching,
+where the lay is the clone's. And the lesson's pairing: a block's own sense 16 is the action that made
+the state, so pairing them teaches "in the air: jump" and never "a wall ahead: jump"; a lesson now
+pairs a state with the action applied in the frame after it, and is taken at every edge as well as
+every tick, since a tick alone sees the launching frame one time in four. The number, on the harness
+(`tools/teach_demo.py`): from zero weights, a teacher driving the builder's rule through the port,
+four sessions and thirty-six lessons until he climbs Tony's stairs and the ladder to him on his own;
+the weights are `deliverables/brains/taught-climb.bin`. The harness gained an interactive mode for it.
+Write-ups: `BODY.md` ("The learning rule", "TEACH"), `HARNESS.md`, `BRAIN-INTERFACE-V1.md`.
+
 ## Road to seven tokens · plan (2026-09-06)
 
 What stands between the Chamber as it is and seven minted tokens, in the

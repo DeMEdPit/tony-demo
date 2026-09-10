@@ -132,6 +132,8 @@ better than anything fancier.
 **Learning in play.** Imitation can run live: while you play, his weights nudge toward doing what you did
 in the situation you were in. A few hundred additions per update. Two rails: a small learning rate and
 weights clamped to a byte. Reward learning in real time is too slow and noisy to feel like anything.
+(Built as TEACH: hold down with fire for a second and the stick is his; a lesson at every think tick
+and at every press or release, the step of one, nibbles saturating at 8; `BODY.md`, "TEACH".)
 
 **Persistence.** Nothing in the running program survives the page closing. The brain has to live where the
 seed lives: the weights become part of the stamped block next to the seed, every render stamps them into
@@ -231,8 +233,15 @@ it starts at zero every render.
    lines inside the top handler, or the main loop's ~60 lines a frame (a think step every fourth frame
    fits there without any change to the body).
 2. The hand-written builder brain, using the joystick contract, so the senses and the reflex layer get
-   exercised before any training.
+   exercised before any training. **Delivered:** kind 2 in the slot, `tony-body-builder.prg`; he jumps
+   a step and climbs the player's stairs and the ladder to him (`BODY.md`, "The builder").
 3. The think step on the 6502 with the header above, its Python twin, a bench that runs both on recorded
-   inputs and compares every output, and the first trained weights.
+   inputs and compares every output, and the first trained weights. **Delivered:** the sense block, the
+   `BRAIN01` slot, the forward pass and the learning rule on the 6502 behind test hooks, the Python
+   reference in `tools/brain_golden.py`, the golden vectors in `deliverables/golden/` (95 cases, all
+   agreeing), the interface returned with every row settled (`BRAIN-INTERFACE-V1.md`), and the first
+   taught weights: `deliverables/brains/taught-climb.bin`, thirty-six lessons from zero in four
+   sessions, after which he climbs the stairs and the ladder to Tony on his own (`BODY.md`, "TEACH").
 4. With the contracts session: the `MURAL03` block's layout, the offset and size, and the twin as the
-   check on the contract side.
+   check on the contract side. **In their hands:** the interface file names the block, the header
+   bytes, the lesson encoding and the golden sets; the `LESSON1` block's layout is in `BODY.md`.

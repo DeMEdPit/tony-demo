@@ -1,4 +1,4 @@
-tony-body.prg: 47874 bytes
+tony-body.prg: 49348 bytes
 senses (every nibble of the packed block against the twin, from the raw values of the same frame):
   ok   start: the clone near Tony: 20 of 20 nibbles agree
   ok   Tony walks right, the clone walking after him: 20 of 20 nibbles agree
@@ -22,7 +22,7 @@ senses (every nibble of the packed block against the twin, from the raw values o
   ok   the frame of the lay: last action build right
   ok   after the step up: on the ground, floor below
 slot:
-  ok   the block is page-aligned (at $7400)
+  ok   the block is page-aligned (at $7500)
   ok   the marker reads BRAIN01: b'BRAIN01'
   ok   the header: kind 0, layout 1, inputs 20, hidden 0, outputs 10, period 4
   ok   the weights at +16, the mood at +272
@@ -30,8 +30,8 @@ forward sweep (the 6502 against a Python forward on random weights, moods and se
   ok   40 vectors, accumulators and the chosen action: 40 agree
 two weights (kind 1):
   ok   right when dx is positive, left when negative, idle within 16 px (a bucket of one ties the bias, and the first output wins a tie): he came to 178 beside Tony at 184
-  ok   and followed Tony to the pillar (Tony 286, the clone 276)
-  ok   a think every four frames: 53 thinks in 215 frames
+  ok   and followed Tony to the pillar (Tony 286, the clone 282)
+  ok   a think every four frames: 54 thinks in 215 frames
   ok   build left whenever a slot is free: a staircase of 9 in 200 frames, up at Y 78
   ok   and on: 9 bricks, Y 78
 the builder (kind 2):

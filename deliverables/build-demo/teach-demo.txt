@@ -1,0 +1,25 @@
+tony-body.prg: 49348 bytes
+1. kind 0 boots and follows:
+  ok   a fresh boot: kind 0, no lessons
+  ok   the follow rule: Tony at 286, the clone at 248
+2. TEACH from zero, the page's way (the flag) and the stick's way (the lay chord held a second):
+  ok   while teaching Tony stands at 184 and the stick walks the clone to 226
+  ok   lessons taken: 1 (1 recorded); the first made him kind 1
+  ok   the weights are no longer zero (12 of 100 bytes set)
+3. let go: he drives what he was taught:
+  ok   taught 'right', he keeps walking right on his own brain: 226 -> 286 (the follow rule would have stopped beside Tony at 184)
+  ok   the lay chord held a second turns teaching on, and the brick its press laid is taken back (bricks 0)
+  ok   a second hold turns it off, the clone's brick taken back the same way (bricks 0)
+4. a lesson flashes him white:
+  ok   the press is an edge, so its lesson is taken at once and flashes him white within the frame (flash frames left 4, colour 1, lessons 1)
+5. a reload forgets:
+  ok   a fresh boot is kind 0 with all-zero weights
+6. the number: sessions of follow-and-climb from zero until he does it alone:
+       session 1: 11 lessons, taught up to Y 72 in 212 frames; alone after it: Y 206, X 206, state 128
+       session 2: 11 lessons, taught up to Y 72 in 212 frames; alone after it: Y 158, X 254, state 128
+       session 3: 7 lessons, taught up to Y 77 in 212 frames; alone after it: Y 206, X 206, state 128
+       session 4: 7 lessons, taught up to Y 72 in 212 frames; alone after it: Y 56, X 284, state 135  <- climbs to Tony
+  ok   he climbs the stairs and the ladder to Tony on his own after 4 session(s), 36 lessons from zero
+ALL OK
+LESSONS-TO-CLIMB 36 in 4 session(s)
+the weights that climbed: deliverables/brains/taught-climb.bin

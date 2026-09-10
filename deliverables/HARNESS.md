@@ -39,7 +39,13 @@ Output is text on stdout, one line per command that answers (`peek $6c34 = $1a`,
 | `pc` | print the program counter |
 
 A command the harness does not know is ignored without a message, so check the output when a
-script misbehaves.
+script misbehaves. In a script file (`@FILE`) a line starting with `#` is a comment.
+
+**Interactive mode.** `m64run PRG -` reads command lines from standard input and answers `ok` after
+each one is done, its peeks printed before it. A rig that must decide as it goes (a teacher that reads
+his senses and presses the stick every think period) writes a line, reads to the `ok`, decides, and
+writes the next; the machine holds still between lines. `tools/teach_demo.py` wraps it in a dozen lines
+(`Machine.do`).
 
 ## Addresses: the symbol file and the markers
 
@@ -65,9 +71,13 @@ exposes for a rig, all in the symbol file:
 | `cloneJoy`, `cloneJoyOverride` | the joystick byte the brain wrote this frame; the override (bit 7 set: bits 0 to 6 replace it every frame until cleared) |
 | `cloneSenses` (20), `cloneSensesFrame` (word) | the published sense block and the frame it describes (`BODY.md`, "The sense block") |
 | `senseRaw` (14), `sensePack` (20), `sensePackFrame` (word) | the raw values of the last turn and the packer's output for them, for a twin's check |
-| `brainMarker`, `brainKind`, `brainWeights` (256), `brainMood` (8) | the slot |
+| `brainMarker`, `brainKind`, `brainLineage`, `brainRule`, `brainWeights` (256), `brainMood` (8) | the slot (`BODY.md`, "The brain slot"); `brainKindNow` is the kind the turn uses, 0 when the slot is malformed |
 | `brainAction`, `brainThinks` (word), `brainAcc` (20) | the last think's choice, the count of thinks, the accumulators |
 | `brainTestRun`, `brainTestIn` (20), `brainTestAcc` (20), `brainTestAction` | the network test hook |
+| `brainLearnRun`, `brainLearnTestT`, `brainLearnTestP`, `brainLearnTestTook` | the learning hook: senses in `brainTestIn`, the taught action, out come the prediction and whether the lesson was taken; the weights change in place |
+| `teachMode`, `teachHold`, `teachWas`, `cloneFlash` | teaching on or off (poke it, or the chord sets it); the chord's frame count (255 once it has toggled); the override's release flag; the flash's frames left |
+| `lessonMarker` (`LESSON1`, page-aligned), `lessonCount` (word), `lessonTotal` (word), `lessonData` | the lesson block (`BODY.md`, "TEACH"): the lessons taken this session, 11 bytes each |
+| `TEACH_SHADOW` (256), `shadowValid` | the weights as they were when the chord was pressed, put back if the hold toggles |
 | `bodySelfTestRun`, `bodySelfTestBad` (word), `bodySelfTestDone` | the collision sweep |
 | `bodyFrames` (word), `bodyRasterMax`, `bodyRasterFrame` (word), `bodyOverruns` | the frame counter and the raster watch |
 | `buildCount`, `currentChamberNumber`, `buildLadderCol` | the room's brick count, the room, the seeded ladder's column |
@@ -96,20 +106,20 @@ addresses for another build):
 # drive, read his senses; then the same start with another brain; then the start itself.
 wait:300
 snapshot
-load:7410:deliverables/brains/follow-two-weights.bin
-poke:7408:01
-poke:6bc6:88
+load:7510:deliverables/brains/follow-two-weights.bin
+poke:7508:01
+poke:6CC6:88
 wait:20
-poke:6bc6:00
+poke:6CC6:00
 wait:100
-sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6CD1,peek:6CD2,peek:80AF,peek:80B0,peek:809B,peek:809C,peek:809D,peek:809E,peek:809F,peek:80A0,peek:80A1,peek:80A2,peek:80A3,peek:80A4,peek:80A5,peek:80A6,peek:80A7,peek:80A8,peek:80A9,peek:80AA,peek:80AB,peek:80AC,peek:80AD,peek:80AE,peek:7618,peek:761A,peek:761B,peek:6CB0,peek:6CB1,peek:4867,peek:4868
 restore
-load:7410:deliverables/brains/build-left.bin
-poke:7408:01
+load:7510:deliverables/brains/build-left.bin
+poke:7508:01
 wait:150
-sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6CD1,peek:6CD2,peek:80AF,peek:80B0,peek:809B,peek:809C,peek:809D,peek:809E,peek:809F,peek:80A0,peek:80A1,peek:80A2,peek:80A3,peek:80A4,peek:80A5,peek:80A6,peek:80A7,peek:80A8,peek:80A9,peek:80AA,peek:80AB,peek:80AC,peek:80AD,peek:80AE,peek:7618,peek:761A,peek:761B,peek:6CB0,peek:6CB1,peek:4867,peek:4868
 restore
-sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6CD1,peek:6CD2,peek:80AF,peek:80B0,peek:809B,peek:809C,peek:809D,peek:809E,peek:809F,peek:80A0,peek:80A1,peek:80A2,peek:80A3,peek:80A4,peek:80A5,peek:80A6,peek:80A7,peek:80A8,peek:80A9,peek:80AA,peek:80AB,peek:80AC,peek:80AD,peek:80AE,peek:7618,peek:761A,peek:761B,peek:6CB0,peek:6CB1,peek:4867,peek:4868
 ```
 
 Boot and let the level settle (`wait:300`); keep the machine (`snapshot`); load the two-weight follow
@@ -123,23 +133,23 @@ returns once more and the final reads describe the snapshot itself.
 The run's output, decoded (`tools/harness-examples/episode.out` has the raw lines):
 
 ```
-prg src/kickass/tony-body.prg: 47874 bytes
-load $7410 +100 <- deliverables/brains/follow-two-weights.bin
-poke $7408 <- $01
-poke $6bc6 <- $88
-poke $6bc6 <- $00
+prg src/kickass/tony-body.prg: 49348 bytes
+load $7510 +100 <- deliverables/brains/follow-two-weights.bin
+poke $7508 <- $01
+poke $6cc6 <- $88
+poke $6cc6 <- $00
 sync raster 0
-load $7410 +100 <- deliverables/brains/build-left.bin
-poke $7408 <- $01
+load $7510 +100 <- deliverables/brains/build-left.bin
+poke $7508 <- $01
 sync raster 0
 sync raster 0
-episode 1, taught right for 20 frames then the follow brain for 100: frame 371, the block describes frame 370
+episode 1, taught right for 20 frames then the follow brain for 100: frame 372, the block describes frame 371
    senses: bias 7, dx 0, dy 0, facingRight 7, onGround 7, inAir 0, onLadder 0, ducking 0, floorBelow 7, wallAheadFoot 0, wallAheadHead 0, brickAheadFoot 0, ladderHere 0, ladderBelow 0, buildable 7, playerAir 0, lastAction 0, still 6, playerDuck 0, playerOnLadder 0
    action 0, thinks 30, the clone at X 186, Tony at X 184
-episode 2, the build-left brain for 150 frames: frame 401, the block describes frame 400
+episode 2, the build-left brain for 150 frames: frame 402, the block describes frame 400
    senses: bias 7, dx 6, dy -5, facingRight 0, onGround 7, inAir 0, onLadder 0, ducking 0, floorBelow 7, wallAheadFoot 7, wallAheadHead 7, brickAheadFoot 0, ladderHere 0, ladderBelow 0, buildable 0, playerAir 0, lastAction 0, still 6, playerDuck 0, playerOnLadder 0
-   action 0, thinks 38, the clone at X 59, Tony at X 184
-the snapshot itself: frame 251, the block describes frame 250
+   action 0, thinks 37, the clone at X 59, Tony at X 184
+the snapshot itself: frame 252, the block describes frame 251
    senses: bias 7, dx 4, dy 0, facingRight 7, onGround 7, inAir 0, onLadder 0, ducking 0, floorBelow 7, wallAheadFoot 0, wallAheadHead 0, brickAheadFoot 0, ladderHere 0, ladderBelow 0, buildable 7, playerAir 0, lastAction 0, still 7, playerDuck 0, playerOnLadder 0
    action 0, thinks 0, the clone at X 146, Tony at X 184
 ```
@@ -149,3 +159,7 @@ Tony, within sixteen pixels, and the block published one frame behind the physic
 before. The second: the build-left brain climbed a staircase up to the left pillar, five bricks above
 Tony, and stopped when the slot ahead was the pillar. The last reads are the snapshot itself, three
 hundred frames in, before any brain: the clone at 146 beside Tony at 184, no thinks yet.
+
+A teaching episode is the same shape with the port instead of the override: `poke teachMode 1`, then
+`hold`, `wait` and `release` as a player would, and the reads add `lessonTotal`, `brainKind` and the
+weights; `tools/teach_demo.py` is that, six times over, with the interactive mode for the sessions.

@@ -11,3 +11,9 @@ first hundred of the slot's 256, `w[o][i]` as signed nibbles, output `o`'s twent
   steps onto it whenever the slot there is free: a staircase.
 
 Both are the bench's (`tools/verify_brain.py`, "two weights"). Written by hand, not trained.
+
+- `taught-climb.bin`: the first taught weights. Thirty-six lessons from zero in four teaching sessions
+  on the harness (`tools/teach_demo.py`, `BODY.md`, "TEACH"): the builder's rule driven through the
+  port as a teacher while Tony waits on the ladder above his five-brick stairs. Loaded alone from the
+  same start he jumps the stairs and climbs the ladder to Tony. He was never taught to walk in that
+  task (every state had a wall ahead), so these weights do not follow across a room.

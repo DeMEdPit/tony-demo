@@ -21,6 +21,9 @@
  *           restore       back to the snapshot (ends the child); the commands after it start from the snapshot
  *           load:ADDRHEX:FILE   write a file's bytes into memory at the address (weights in one line)
  *   In a script file (@FILE) each line is a command and a line starting with # is a comment.
+ *   With - as the script the harness reads lines from stdin, runs each (commands separated by commas)
+ *   and answers "ok" on a line of its own when the line is done, so a program can drive the machine
+ *   step by step and decide as it goes (snapshot and restore work within a line, not across lines).
  *           key:CODE:N    hold key CODE (keyboard.h codes) for N frames
  *           peek:HEX      print one byte of CPU-visible memory
  */
@@ -120,6 +123,7 @@ static void shot(const char *path) {
     printf("shot %s (%ux%u)\n", path, w, h);
 }
 
+static void runCommands(char *script);
 int main(int argc, char **argv) {
     if (argc < 3) { fprintf(stderr, "usage: %s prg script\n", argv[0]); return 1; }
     FILE *f = fopen(argv[1], "rb");
@@ -132,6 +136,18 @@ int main(int argc, char **argv) {
     m64_init(1 /* PAL */, 0);
     m64_injectAndRunPrg(prg, len, 0);
 
+    if (!strcmp(argv[2], "-")) {             /* interactive: one line at a time from stdin */
+        char line[65536];
+        while (fgets(line, sizeof line, stdin)) {
+            size_t n = strlen(line);
+            while (n && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = 0;
+            if (n == 0 || line[0] == '#') { printf("ok\n"); fflush(stdout); continue; }
+            runCommands(strdup(line));
+            printf("ok\n"); fflush(stdout);
+        }
+        wavClose();
+        return 0;
+    }
     char *script;
     if (argv[2][0] == '@') {                 /* @FILE: read the script from a file (long scripts exceed argv) */
         FILE *sf = fopen(argv[2] + 1, "rb");
@@ -155,6 +171,13 @@ int main(int argc, char **argv) {
     } else {
         script = strdup(argv[2]);
     }
+    runCommands(script);
+    wavClose();
+    return 0;
+}
+
+/* run a script: commands separated by commas; snapshot forks for the commands up to the next restore */
+static void runCommands(char *script) {
     /* the script as a list of commands, so snapshot can skip ahead */
     int ncmd = 0; char **cmds = malloc(sizeof(char *) * (strlen(script) / 2 + 2));
     for (char *cmd = strtok(script, ","); cmd; cmd = strtok(NULL, ",")) cmds[ncmd++] = cmd;
@@ -250,6 +273,5 @@ int main(int argc, char **argv) {
             printf("poke $%04x <- $%02x\n", a, val);
         }
     }
-    wavClose();
-    return 0;
+    free(cmds);
 }

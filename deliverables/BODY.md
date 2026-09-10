@@ -3,20 +3,21 @@
 The building demo's next step, for the owner to play and for the brain session to build on: the
 second Tony (the Shadow) no longer moves by a hand-written rule with a fixed floor. He is run through
 the player's own physics, a second time each frame, from a record of his own, and fed a one-byte
-joystick that a brain writes. The first brain is the Chamber's follow rule, as joystick bits. Nothing
+joystick that a brain writes. The first brain is the Chamber's follow rule, as joystick bits; the
+second is whatever you teach him, with the stick, while you play (TEACH, below). Nothing
 here touches the frozen base (`tony-chamber.prg`, sha256 `67dc97bc1e306715...`) or the building demo
 (`tony-build.prg`, sha256 `5c24a63e1c14e26c...`); both are byte for byte what they were.
 
 | | |
 |---|---|
 | file | `deliverables/prg/minimal64/tony-body.prg` |
-| size | 47,874 bytes |
-| sha256 | `9a5e882b238bd079b501ddbac1bb16a9fce79835f3f789bd223872a1a3745acc` |
-| boots on | minimal64 (the benches in `tools/verify_body.py` and `tools/verify_brain.py`, all passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
+| size | 49,348 bytes |
+| sha256 | `9976be313ca35a680ba70f75e137eff1b951a3bebeab15fcd2376f25333414e3` |
+| boots on | minimal64 (the benches in `tools/verify_body.py`, `tools/verify_brain.py`, `tools/brain_golden.py check` and `tools/teach_demo.py`, all passing); a plain PRG for VICE, READY 64 or the browser launcher, joystick in port 2 |
 | built from | the building demo's generator with one more option: `tools/make_chamber.py --variant tony-body --build-demo --body`, then `tools/build_demo.sh tony-body` |
-| the builder file | `deliverables/prg/minimal64/tony-body-builder.prg`, the same program with the slot's kind byte assembled as 2 (`--brain-kind 2`), sha256 `44b757b2e514300d303c5260699de2f3d29e345e194074f34d2416581646d4c1`: the builder brain from the start, for play |
+| the builder file | `deliverables/prg/minimal64/tony-body-builder.prg`, the same program with the slot's kind byte assembled as 2 (`--brain-kind 2`), sha256 `4a0fdf34511132635c48fb8403e6507da2ed4878dc94dcb074be79c0c10531bc`, one byte different: the builder brain from the start, for play; teaching does not touch a kind 2 brain |
 | diff | `deliverables/build-demo/tony-body.diff`, the body's source against the building demo's (the clone's code is the bulk of it) |
-| bench output | `deliverables/build-demo/verify-body.txt` (the body), `verify-brain.txt` (the senses, the slot, the builder) |
+| bench output | `deliverables/build-demo/verify-body.txt` (the body), `verify-brain.txt` (the senses, the slot, the builder), `golden-check.txt` (the learning rule against the reference's golden vectors), `teach-demo.txt` (teaching end to end, with the number) |
 
 ## What you see
 
@@ -30,8 +31,11 @@ seeded ladder), and the green Tony now moves like you do:
 - He does not leave the room: while you are in the room above he waits where he stood, and he is
   there when you come back. He cannot die (there is nothing that kills in these rooms, and the death
   path is not run for him anyway).
-- His brain is still only the follow rule, so he does not build or climb on his own. The body can do
-  both: the bench drives him through a staircase and up the ladder with the joystick byte (below).
+- His brain boots as the follow rule, so at first he does not build or climb on his own. Hold down
+  with fire for a second and the stick is his: while you drive him, what you do in each situation is a
+  lesson, and when you let go he does what he was taught (TEACH, below). The bench drives him through
+  a staircase and up the ladder with the joystick byte, and teaches him to climb to you in four short
+  sessions.
 
 Screenshots (minimal64): `deliverables/screenshots/body-start-m64.png` (the two at the start),
 `body-follow-m64.png`, `body-jump-m64.png` (the same frame of the same jump), `body-wall-m64.png` (a brick
@@ -146,15 +150,21 @@ render; `prg(id)` carries them to a real C64.
 | offset | bytes | field |
 |---|---|---|
 | 0 | 8 | the marker, `BRAIN01` and a zero |
-| 8 | 1 | kind: 0 no network, the follow rule drives and the weights are ignored (the page says "no brain yet"); 1 a perceptron over this layout; 2 the builder rule, hand-written, no weights |
+| 8 | 1 | kind: 0 no network, the follow rule drives and the weights are ignored (the page says "no brain yet"); 1 a perceptron over this layout; 2 the builder rule, hand-written, no weights. Live teaching turns 0 into 1 on the first lesson taken |
 | 9 | 1 | layout: 1, the sense packing above and the action vocabulary below |
 | 10 | 1 | inputs, 20 |
 | 11 | 1 | hidden, 0 for the perceptron |
 | 12 | 1 | outputs, 10 |
 | 13 | 1 | period, frames between thinks, 4 |
-| 14 | 2 | reserved, zero |
+| 14 | 1 | lineage bits, the contract's (the program does not read them) |
+| 15 | 1 | rule version: 1, the learning rule below. The program treats 2 and up as malformed |
 | 16 | 256 | the weights. Kind 1 uses the first 100: output `o`'s twenty weights are nibbles `o * 20` to `o * 20 + 19`, two per byte, the first of each pair in the low nibble, so `w[o][i]` is byte `16 + o * 10 + i / 2`, low nibble for even `i`, high for odd. Signed, two's complement |
 | 272 | 8 | the mood: ten signed nibbles in the same packing (five bytes used), `m[o]`. A render's nudge, never part of a saved brain |
+
+**A malformed slot is kind 0.** Every think starts with `brainCheck`: the marker, layout 1, a kind
+under 3, twenty inputs, no hidden units, ten outputs and a rule version under 2, or the effective kind
+(`brainKindNow`, the one the turn reads) is 0 and the follow rule drives. A page that writes a slot the
+program does not understand gets the follow rule, never garbage.
 
 **The forward pass, exactly.** For each output `o`, `acc[o]` is a 16-bit two's complement sum of
 `w[o][i] * x[i]` over the twenty senses, each product a signed byte from the 256-entry table indexed by
@@ -207,6 +217,32 @@ follows him across the room. With `w[build left][buildable] = 7` and the same bi
 staircase of nine bricks in two hundred frames, turning left first because the macro faces the way it
 was told. Both are in the bench.
 
+## The learning rule, and what a lesson is
+
+The rule is the interface's (`BRAIN-INTERFACE-V1.md`, section 6), on the 6502 as `brainLearn`: the
+mood-free prediction `p` (the forward pass with the mood left out), nothing when `p` equals the taught
+action `t`, otherwise `w[t][i] += sgn(x[i])` and `w[p][i] -= sgn(x[i])` for every non-zero sense, each
+nibble saturating at -8 and 7. Behind a test hook like the forward pass: poke the senses into
+`brainTestIn`, the taught action into `brainLearnTestT` and 1 into `brainLearnRun`; the weights change
+in place, `brainLearnTestP` gets `p` and `brainLearnTestTook` whether a lesson was taken.
+`tools/brain_golden.py` holds the Python reference (`forward`, `learn`, `replay`), writes the golden
+vectors in `deliverables/golden/` (`forward.json` 46 cases, `lessons.json` 27, `mood.json` 22) and checks
+them on the 6502 through both hooks: 95 of 95 agree (`deliverables/build-demo/golden-check.txt`).
+
+**What a lesson pairs.** A lesson is `(x, t)`: `x` is the published block, the state of one frame, and
+`t` is the action applied in the frame *after* it, the one taken from that state. Not the block's own
+sense 16, which is the action that *made* the state: a jump's first frame is already in the air, so
+pairing a block with its own action teaches "in the air: jump" and never "on the ground with a wall
+ahead: jump". The main loop has the next frame's packed block (`sensePack`) before the turn publishes
+it, so `t` is `sensePack + 16` and the lesson is taken only when the two frames are consecutive
+(`brainInFrame + 1 == sensePackFrame`; a pack missed because the main loop ran long is no lesson).
+
+**When lessons are taken.** At every think tick (every `period` frames), and at every **edge**: a frame
+whose applied action differs from the last frame's, a press or a release. The tick alone would see the
+frame that launched a jump one time in four; the edge sees every press, whatever the period's phase,
+and so a human's stick teaches as well as a rig's. A lesson taken flashes him white for six frames
+(`cloneFlash`; his sprites' colour, 1 while it runs).
+
 ## The builder, a brain anyone can read (kind 2)
 
 Kind 2 is a hand-written rule over the same senses and the same ten actions, so the decoder, the
@@ -233,6 +269,73 @@ the top brick under the ladder, and climbs to Tony's height, where he hangs. Wit
 while Tony builds, he waits beside the stairs, one step behind as Tony climbs, all five bricks get
 laid, and he follows up the ladder. Nothing in the follow rule could do any of it; the builder does
 it from the senses alone. The first thing a trained brain has to beat is this rule.
+
+## TEACH: teaching him with the stick
+
+Two ways in. The page pokes `teachMode` to 1, and to 0 to stop. Or, on any stick, hold the lay chord,
+down with fire, for a second (`TEACH_HOLD_FRAMES`, fifty frames): the press lays or lifts a brick as
+always, and when the hold reaches the second that brick is taken back, teaching toggles, and the chord
+is spent, dead for the player and for the clone until it is let go. A hold that turns teaching off also
+takes back what its press taught: on the chord's first frame, while teaching, the weights, the kind and
+the lesson counters are copied to a shadow (`TEACH_SHADOW`, $8900, 256 bytes) and put back when the
+hold toggles. So the hold has no side effect, whichever way it toggles; the brick that appears and
+vanishes is the cue. A tap, let go before the second, is a lay, and the lessons it taught stay. The
+shadow copy is 57 raster lines and lands in the frame where the clone lays (a turn ending at 191, the
+worst under teaching); it is not made when teaching is off, where Tony's own lay makes the heaviest
+frame (188) and no lesson can happen anyway.
+
+While teaching is on: Tony stands (his path sees no lines pressed); the port's byte goes to the
+clone's override with the chords translated, fire with down the lay bit, fire with up the step-up bit,
+the rest as they are; the think runs and the lessons are taken as above; the first lesson turns a
+kind 0 brain into kind 1; the builder (kind 2) is never taught. `teachHold` counts the chord's frames
+(255 once spent), `teachWas` clears the override when teaching ends. When the stick is let go the brain
+drives with what it learned: he does what he was taught, not what the follow rule did. A reload
+forgets; nothing here survives the program, and saving is the page's, from the lesson block below and
+the slot.
+
+**The lesson block, `LESSON1`.** Every lesson taken is recorded in order in a marked block at $8a00, in
+the memory the level tune vacates when it is copied to $A000 at startup (the shadow is below it, and the
+assembler refuses a build whose code reaches either). Found by its marker at a page boundary like the
+others; the symbol file names it (`lessonMarker`).
+
+| offset | bytes | field |
+|---|---|---|
+| 0 | 8 | `LESSON1` and a zero |
+| 8 | 2 | count: lessons recorded, low byte first |
+| 10 | 2 | capacity, 500 |
+| 12 | 1 | a lesson's size, 11 |
+| 13 | 2 | total: lessons taken this session, recorded or not (the buffer may be full) |
+| 15 | 1 | zero |
+| 16 | 11 each | the lessons: the twenty sense nibbles packed two per byte (nibble `i` in byte `i / 2`, low nibble for even `i`), then one byte with the taught action in its low nibble |
+
+The page replays them over the saved brain with the rule (the interface's section 7); a lesson whose
+replay finds `p == t` is a no-op and still counted.
+
+**The number (E5).** `tools/teach_demo.py` runs the milestone end to end on the harness (output in
+`deliverables/build-demo/teach-demo.txt`): kind 0 boots and follows; teaching through the flag and
+through the chord, the stick walking him; the weights change and the first lesson makes him kind 1;
+let go, he keeps walking right on his own brain where the follow rule would have stopped beside Tony;
+a lesson flashes him white within the frame; a reload boots kind 0 with zero weights. Then the number:
+Tony builds five bricks under the ladder and climbs it; a teacher (the builder's rule as joystick
+lines, decided from the published block once every think period, through the harness's interactive
+mode) drives the clone up the stairs and the ladder to him in 212 frames; then the same start with the
+taught weights and the brain alone for 480 frames. Sessions from zero until he climbs to Tony on his
+own:
+
+| session | lessons | alone afterwards |
+|---|---|---|
+| 1 | 11 | stands at the foot of the stairs |
+| 2 | 11 | jumps two steps, stops on the third |
+| 3 | 7 | stands at the foot |
+| 4 | 7 | climbs the stairs and the ladder to Tony |
+
+**Thirty-six lessons in four sessions, from zero weights.** The step of one argues over the features
+the states share (on the ground, the floor below, a wall ahead) between "jump" at the steps and "up" at
+the ladder's foot, which is the swing of sessions 1 to 3; by the fourth the features that separate them
+(the brick ahead, the ladder in the box, dy) carry it. The weights that climbed are
+`deliverables/brains/taught-climb.bin`. The teacher never walks in this task (every state has a wall
+ahead), so walking to Tony is not in these weights; the two-weight follow brain shows what that part
+costs.
 
 ## Time, measured
 
@@ -275,6 +378,11 @@ lines when he stands, 70 walking, 100 landing, including the senses' raw copy.
 The senses cost the interrupt about six lines (the raw copy and the publish); the packing itself runs
 in the main loop. A first version packed everything in the turn and cost twenty lines, which put the
 worst frame at 244: the interrupt's budget is the scarce one, and nothing else should go into it.
+Teaching keeps to that: the lessons, at ticks and edges, run in the main loop like the think (a forward
+pass and two rows of nudges), the chord's routing is a few lines in the player's part of the handler,
+and the shadow copy (57 lines, a second version of the same lesson: it first landed in the frame of
+Tony's own lay and put the worst frame at 244 again) is made only while teaching, where the lay is
+the clone's and the frame ends at 191.
 
 For a brain: the main loop's time, about 80 lines a frame, is where a think step runs, spread over
 frames, writing `cloneJoy` when it finishes; the body reads the byte at the start of every turn, so a
@@ -294,7 +402,10 @@ stairs stop him. Ladder: five bricks under the seeded ladder, the climb to the n
 ladder-stopped state, in his room, in view), the climb back down. Rooms: the collision sweep below with
 bricks laid, Tony's climb above (the clone's sprites off, his record unchanged a hundred frames later),
 the sweep above, the return. Time: no overruns, the latest turn end. `--verbose` prints every snapshot,
-`--shots DIR` keeps the screenshots.
+`--shots DIR` keeps the screenshots. `tools/verify_brain.py` covers the senses, the slot and the
+builder; `tools/brain_golden.py check` the learning rule (95 golden cases through the two hooks);
+`tools/teach_demo.py` the teaching story and the number (`teach_demo.py PRG SAVE` also keeps the
+weights that climbed).
 
 ## Notes for the brain session
 
@@ -315,6 +426,9 @@ the sweep above, the return. Time: no overruns, the latest turn end. `--verbose`
 ## For a v2
 
 - A builder brain: lay when blocked, step up, repeat towards Tony; the byte's bits 5 and 6 are ready.
+  (Built: kind 2.)
+- If the rig shows a scaled step or a lesson every frame converging faster than thirty-six lessons,
+  either is a rule version 2 with its own golden vectors, not a change to version 1.
 - If more frame time is needed: the second Tony's turn could skip `phys_transitState` and
   `phys_executeState` when his command and state are unchanged (they are a few lines), and the music
   could move to the visual handler if that handler is measured short enough (today it is 36 lines from

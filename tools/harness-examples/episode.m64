@@ -3,17 +3,17 @@
 # drive, read his senses; then the same start with another brain; then the start itself.
 wait:300
 snapshot
-load:7410:deliverables/brains/follow-two-weights.bin
-poke:7408:01
-poke:6bc6:88
+load:7510:deliverables/brains/follow-two-weights.bin
+poke:7508:01
+poke:6CC6:88
 wait:20
-poke:6bc6:00
+poke:6CC6:00
 wait:100
-sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6CD1,peek:6CD2,peek:80AF,peek:80B0,peek:809B,peek:809C,peek:809D,peek:809E,peek:809F,peek:80A0,peek:80A1,peek:80A2,peek:80A3,peek:80A4,peek:80A5,peek:80A6,peek:80A7,peek:80A8,peek:80A9,peek:80AA,peek:80AB,peek:80AC,peek:80AD,peek:80AE,peek:7618,peek:761A,peek:761B,peek:6CB0,peek:6CB1,peek:4867,peek:4868
 restore
-load:7410:deliverables/brains/build-left.bin
-poke:7408:01
+load:7510:deliverables/brains/build-left.bin
+poke:7508:01
 wait:150
-sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6CD1,peek:6CD2,peek:80AF,peek:80B0,peek:809B,peek:809C,peek:809D,peek:809E,peek:809F,peek:80A0,peek:80A1,peek:80A2,peek:80A3,peek:80A4,peek:80A5,peek:80A6,peek:80A7,peek:80A8,peek:80A9,peek:80AA,peek:80AB,peek:80AC,peek:80AD,peek:80AE,peek:7618,peek:761A,peek:761B,peek:6CB0,peek:6CB1,peek:4867,peek:4868
 restore
-sync,peek:6bd1,peek:6BD2,peek:7aed,peek:7AEE,peek:7AD9,peek:7ADA,peek:7ADB,peek:7ADC,peek:7ADD,peek:7ADE,peek:7ADF,peek:7AE0,peek:7AE1,peek:7AE2,peek:7AE3,peek:7AE4,peek:7AE5,peek:7AE6,peek:7AE7,peek:7AE8,peek:7AE9,peek:7AEA,peek:7AEB,peek:7AEC,peek:7518,peek:751a,peek:751B,peek:6bb0,peek:6BB1,peek:4864,peek:4865
+sync,peek:6CD1,peek:6CD2,peek:80AF,peek:80B0,peek:809B,peek:809C,peek:809D,peek:809E,peek:809F,peek:80A0,peek:80A1,peek:80A2,peek:80A3,peek:80A4,peek:80A5,peek:80A6,peek:80A7,peek:80A8,peek:80A9,peek:80AA,peek:80AB,peek:80AC,peek:80AD,peek:80AE,peek:7618,peek:761A,peek:761B,peek:6CB0,peek:6CB1,peek:4867,peek:4868

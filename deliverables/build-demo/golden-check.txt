@@ -1,0 +1,1 @@
+golden vectors: 95 cases, 95 agree between the 6502 and the reference

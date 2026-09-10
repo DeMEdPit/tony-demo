@@ -1192,8 +1192,12 @@ cloneInit: {
     sta brainThinks
     sta brainThinks + 1
     sta brainTestRun
+    sta brainLearnRun
+    sta brainNoMood
     sta macroStep
     sta cloneJoyOut
+    jsr lessonInit
+    jsr brainCheck
     lda #120
     sta cloneX
     sta cloneNextX
@@ -1244,6 +1248,12 @@ cloneUpdate: {
     lda #1
     sta bodyTurn
     jsr cloneSwap
+    lda cloneUndo                   // teaching's chord held a second: the brick its press laid comes back
+    beq !+
+        lda #0
+        sta cloneUndo
+        jsr buildAct
+    !:
     jsr cloneVerb                   // lay or step up, on the rising edge of bits 5 and 6
     lda io_oldJoy                   // dispatchPlayerCommand keeps the player's last command there
     pha
@@ -1741,7 +1751,7 @@ cloneVerb: {
 // frame of the player's jump; press down while he ducks, and let go for a frame to stand
 // up again. Runs before the swap: the physics block is the player's, the record is the clone's.
 cloneThink: {
-    lda brainKind
+    lda brainKindNow                    // the effective kind, checked in the main loop
     beq cloneFollow
     jmp cloneDecode
 }
@@ -1858,7 +1868,12 @@ cloneDraw: {
     sta c64lib.SPRITE_EXPAND_Y
     lda c64lib.SPRITE_2_COLOR       // and wears the player's backdrop colour
     sta c64lib.SPRITE_7_COLOR
-    lda muralColour                 // the clone's colour: the parameter block's
+    lda muralColour                 // the clone's colour: the parameter block's, white for a lesson's flash
+    ldx cloneFlash
+    beq !+
+        dec cloneFlash
+        lda #1
+    !:
     sta buddyColourNow
     sta c64lib.SPRITE_5_COLOR
     sta c64lib.SPRITE_6_COLOR
@@ -1984,7 +1999,8 @@ brainInputCount: .byte SENSE_COUNT      // +10
 brainHiddenCount: .byte 0               // +11  0: the perceptron
 brainOutputCount: .byte 10              // +12
 brainPeriod:    .byte 4                 // +13  frames between thinks
-brainReserved:  .byte 0, 0              // +14, +15
+brainLineage:   .byte 0                 // +14  lineage context bits, stamped at render: bit 0 PETARP, bit 1 ORAAND; no effect here
+brainRule:      .byte 1                 // +15  the learning rule's version: 1 (BRAIN-INTERFACE-V1, section 6); 0 reads as 1
 brainWeights:   .fill 256, 0            // +16  kind 1 uses the first 100: output o's twenty nibbles at bytes o*10 .. o*10+9
 brainMood:      .fill 8, 0              // +272 ten signed nibbles, m[o] at nibble o: added as m * 16; a render's nudge, never saved
 .label BRAIN_BLOCK_SIZE = * - brainMarker
@@ -2005,7 +2021,49 @@ oddLo:          .fill 10, 0
 brainMul:       .fill 256, ((((i >> 4) >= 8) ? (i >> 4) - 16 : (i >> 4)) * (((i & 15) >= 8) ? (i & 15) - 16 : (i & 15))) & 255
 
 // in the main loop: the think, every brainPeriod frames, for kinds 1 and 2; the test hook
+// the published block, whole, with the frame it describes -> brainIn, brainInFrame
+teachInputs: {
+    sei
+    .for (var i = 0; i < 20; i++) {
+        lda cloneSenses + i
+        sta brainIn + i
+    }
+    lda cloneSensesFrame
+    sta brainInFrame
+    lda cloneSensesFrame + 1
+    sta brainInFrame + 1
+    cli
+    rts
+}
+brainInFrame:   .word 0                 // the frame brainIn describes
+packSeenFrame:  .word 0                 // the last pack the edge check saw
+packLastAction: .byte 0                 // its action (sense 16)
+lessonEdge:     .byte 0                 // 1: an edge lesson was taken this frame
+
 bodyThink: {
+    jsr brainCheck                      // the slot as it is now -> brainKindNow (0 when malformed)
+    lda brainLearnRun
+    bne learnTest
+    jmp noLearnTest
+    learnTest:
+        .for (var i = 0; i < 20; i++) {
+            lda brainTestIn + i
+            sta brainIn + i
+        }
+        lda brainLearnTestT
+        sta brainTaught
+        lda brainAction
+        pha
+        jsr brainLearn
+        lda brainPredicted
+        sta brainLearnTestP
+        lda brainLearned
+        sta brainLearnTestTook
+        pla
+        sta brainAction
+        lda #0
+        sta brainLearnRun
+    noLearnTest:
     lda brainTestRun
     bne test
     jmp noTest
@@ -2028,10 +2086,40 @@ bodyThink: {
         lda #0
         sta brainTestRun
     noTest:
-    lda brainKind
-    bne !+
-        rts                             // kind 0: the follow rule, in his turn
-    !:
+    // the edge: when the action applied this frame differs from the last frame's (a press or a release),
+    // teaching takes a lesson now, whatever the period, so the frame that launched a jump pairs the
+    // state before it with the jump; a tick alone would see the launch one time in four
+    lda #0
+    sta lessonEdge
+    lda sensePackFrame                  // a fresh pack this frame?
+    cmp packSeenFrame
+    bne fresh
+    lda sensePackFrame + 1
+    cmp packSeenFrame + 1
+    beq period
+    fresh:
+    lda sensePackFrame
+    sta packSeenFrame
+    lda sensePackFrame + 1
+    sta packSeenFrame + 1
+    lda sensePack + 16
+    cmp packLastAction
+    sta packLastAction
+    beq period
+    lda teachMode
+    beq period
+    lda teachHold                       // not from a spent chord: the stick is dead until let go
+    cmp #255
+    beq period
+    lda brainKindNow
+    cmp #2                              // the builder is not taught
+    beq period
+        jsr teachInputs
+        jsr teachLesson
+        jsr brainCheck
+        lda #1
+        sta lessonEdge
+    period:
     lda bodyFrames
     sec
     sbc brainThinkFrame
@@ -2041,13 +2129,25 @@ bodyThink: {
     !:
     lda bodyFrames
     sta brainThinkFrame
-    sei                                 // the published senses, whole
-    .for (var i = 0; i < 20; i++) {
-        lda cloneSenses + i
-        sta brainIn + i
-    }
-    cli
-    lda brainKind
+    jsr teachInputs                     // the published senses, whole
+    lda teachMode                       // teaching: the lesson first, kind 0 or 1 (the builder is not taught)
+    beq !+
+        lda lessonEdge                  // unless the edge took it this frame
+        bne !+
+        lda teachHold                   // not from a spent chord: the stick is dead until let go
+        cmp #255
+        beq !+
+        lda brainKindNow
+        cmp #2
+        beq !+
+        jsr teachLesson
+        jsr brainCheck
+    !:
+    lda brainKindNow
+    bne !+
+        rts                             // kind 0: the follow rule, in his turn
+    !:
+    lda brainKindNow
     cmp #2
     bne !+
         jsr builderThink
@@ -2127,7 +2227,12 @@ brainForward: {
             iny
             cpy #10
         bne pairs
-        // the mood: m[o] * 16, the nibble moved up as a signed byte
+        // the mood: m[o] * 16, the nibble moved up as a signed byte (left out when brainNoMood: the lesson trigger)
+        lda brainNoMood
+        beq !+
+            lda #0
+            jmp moodHave
+        !:
         lda o
         lsr
         tay
@@ -2207,6 +2312,516 @@ brainForward: {
     o:    .byte 0
     acc:  .word 0
     best: .byte 0
+}
+
+// the slot as it is now: the marker, the layout, the kind, the sizes and the rule byte must be what this
+// build expects, or the clone behaves as kind 0 and the page says "no brain" (BRAIN-INTERFACE-V1,
+// section 1). Today the forward pass reads exactly twenty inputs and ten outputs whatever the header says.
+brainKindNow:     .byte 0
+brainCheck: {
+    ldx #7
+    !:
+        lda brainMarker, x
+        cmp markerText, x
+        bne bad
+        dex
+    bpl !-
+    lda brainLayout
+    cmp #1
+    bne bad
+    lda brainKind
+    cmp #3
+    bcs bad
+    lda brainInputCount
+    cmp #20
+    bne bad
+    lda brainHiddenCount
+    bne bad
+    lda brainOutputCount
+    cmp #10
+    bne bad
+    lda brainRule
+    cmp #2
+    bcs bad
+    lda brainKind
+    sta brainKindNow
+    rts
+    bad:
+    lda #0
+    sta brainKindNow
+    rts
+    markerText: .text "BRAIN01"
+                .byte 0
+}
+
+// ===================================================================== learning
+// The rule (BRAIN-INTERFACE-V1, section 6): with x the senses in brainIn and t the taught action in
+// brainTaught, compute the mood-free prediction p; if p is t, no lesson; else for every sense that is
+// not zero, w[t][i] += sgn(x[i]) and w[p][i] -= sgn(x[i]), each saturating at -8 and 7. brainLearn
+// applies one lesson and leaves p in brainPredicted and whether it was taken in brainLearned. The hook
+// brainLearnRun applies one lesson from brainTestIn and brainLearnTestT to the slot's weights in place
+// and reports in brainLearnTestP and brainLearnTestTook, so the rig and the golden vectors drive it
+// without a joystick.
+brainTaught:        .byte 0
+brainPredicted:     .byte 0
+brainLearned:       .byte 0
+brainNoMood:        .byte 0             // 1: brainForward leaves the mood out
+brainLearnRun:      .byte 0
+brainLearnTestT:    .byte 0
+brainLearnTestP:    .byte 0
+brainLearnTestTook: .byte 0
+brainLearn: {
+    lda #1
+    sta brainNoMood
+    jsr brainForward
+    lda #0
+    sta brainNoMood
+    sta brainLearned
+    lda brainAction
+    sta brainPredicted
+    cmp brainTaught
+    bne !+
+        rts                             // he would have done it: no lesson
+    !:
+    lda brainTaught                     // the taught row up
+    ldx #1
+    jsr nudgeRow
+    lda brainPredicted                  // the predicted row down
+    ldx #$ff
+    jsr nudgeRow
+    lda #1
+    sta brainLearned
+    rts
+    // IN: A - a row (an output), X - 1 or -1: w[row][i] += X * sgn(x[i]) for every x[i] that is not zero, saturating
+    nudgeRow: {
+        stx step
+        sta row
+        asl
+        asl
+        asl
+        sta rowOff                      // row * 8
+        lda row
+        asl                             // row * 2
+        clc
+        adc rowOff                      // row * 10
+        clc
+        adc #<brainWeights
+        sta rd + 1
+        sta wr + 1
+        lda #>brainWeights
+        adc #0
+        sta rd + 2
+        sta wr + 2
+        ldx #0
+        loop:
+            lda brainIn, x
+            and #$0f
+            beq next                    // a zero sense: no step
+            cmp #8
+            lda step
+            bcc positive
+                eor #$ff                // a negative sense: the step reversed
+                clc
+                adc #1
+            positive:
+            sta delta
+            txa
+            lsr
+            tay                         // k = i / 2, the carry says the high nibble
+            bcs high
+                rd: lda $ffff, y
+                sta byte
+                and #$0f
+                jsr addClamp
+                sta nib
+                lda byte
+                and #$f0
+                ora nib
+                jmp store
+            high:
+                lda rd + 1
+                sta rdh + 1
+                lda rd + 2
+                sta rdh + 2
+                rdh: lda $ffff, y
+                sta byte
+                lsr
+                lsr
+                lsr
+                lsr
+                jsr addClamp
+                asl
+                asl
+                asl
+                asl
+                sta nib
+                lda byte
+                and #$0f
+                ora nib
+            store:
+            wr: sta $ffff, y
+            next:
+            inx
+            cpx #20
+            bne loop
+        rts
+        // IN: A - a nibble; OUT: A - the nibble plus delta, saturating at -8 and 7
+        addClamp: {
+            cmp #8
+            bcc !+
+                ora #$f0                // sign-extend
+            !:
+            clc
+            adc delta
+            bpl positive
+                cmp #$f8                // -8 or more: fine
+                bcs ok
+                lda #$f8
+                jmp ok
+            positive:
+                cmp #8
+                bcc ok
+                lda #7
+            ok:
+            and #$0f
+            rts
+        }
+        step:   .byte 0
+        delta:  .byte 0
+        row:    .byte 0
+        rowOff: .byte 0
+        byte:   .byte 0
+        nib:    .byte 0
+    }
+}
+
+// ===================================================================== teaching
+// TEACH: the page sets teachMode, or a player holds the lay chord, down with fire, for a second, which
+// toggles it: the press lays or lifts a brick as always, and when the hold reaches a second that brick
+// is taken back, the lessons the press taught (a routed lay is a "build" lesson) are put back the way
+// they were, and the mode switches; the spent chord is then dead until it is let go. So the hold has
+// no side effect and any stick can make it, a phone's on-screen one included. While it is on, Tony
+// stands: the port's byte goes to the clone's override with the chords
+// translated (fire with down -> the lay bit, fire with up -> the step-up bit), and the player's path
+// sees no lines pressed. At every think tick, and at every frame where the applied action changes
+// (a press or a release), the published block's senses (the state of one frame) and the action
+// applied in the frame after it make a lesson by the rule above, recorded in the LESSON1 block the
+// page reads;
+// a lesson taken flashes his colour, and the first one turns a kind 0 brain into kind 1, so he drives
+// what he was taught when the stick is let go. A reload forgets: nothing here survives the program.
+.label TEACH_HOLD_FRAMES = 50
+.label LESSON_BLOCK = $8a00          // in the memory the level tune vacates once it is copied to $A000 (unpack):
+                                     // 5516 bytes, up to $9f8b; the shadow below it; the code must end below both
+.label LESSON_SIZE = 11
+.label LESSON_CAP = 500              // 500 * 11 + 16 = 5,516 bytes, to $9D8C
+.label lessonMarker = LESSON_BLOCK           // "LESSON1", 0
+.label lessonCount  = LESSON_BLOCK + 8       // word: lessons recorded this session
+.label lessonCap    = LESSON_BLOCK + 10      // word: the buffer's capacity
+.label lessonSize   = LESSON_BLOCK + 12      // 11
+.label lessonTotal  = LESSON_BLOCK + 13      // word: lessons taken this session, recorded or not (the buffer may be full)
+.label lessonPad    = LESSON_BLOCK + 15
+.label lessonData   = LESSON_BLOCK + 16
+teachMode:   .byte 0                 // 1 while teaching
+teachHold:   .byte 0                 // frames the chord has been held; 255 once it toggled, until released
+holdCount:   .byte 0                 // the brick count when the hold began
+// the hold's shadow: the weights and the lesson counters as they were when the chord was pressed, put
+// back if the hold toggles, so the hold takes back the lessons its press taught along with the brick
+.label TEACH_SHADOW = $8900          // the 256 weights, in the vacated memory below the lesson block
+shadowValid: .byte 0                 // 1: the shadow holds this hold's starting state
+shadowKind:  .byte 0
+shadowCount: .word 0
+shadowTotal: .word 0
+shadowPtr:   .word 0
+cloneUndo:   .byte 0                 // 1: the clone takes back his chord's brick at his next turn
+teachWas:    .byte 0                 // teachMode last frame, to clear the override on the way out
+portRaw:     .byte 0
+cloneFlash:  .byte 0                 // frames left of the lesson's flash
+lessonPtr:   .word 0                 // where the next lesson goes
+
+lessonInit: {
+    ldx #7
+    !:
+        lda lessonText, x
+        sta lessonMarker, x
+        dex
+    bpl !-
+    lda #0
+    sta lessonCount
+    sta lessonCount + 1
+    sta lessonTotal
+    sta lessonTotal + 1
+    sta lessonPad
+    lda #<LESSON_CAP
+    sta lessonCap
+    lda #>LESSON_CAP
+    sta lessonCap + 1
+    lda #LESSON_SIZE
+    sta lessonSize
+    lda #<lessonData
+    sta lessonPtr
+    lda #>lessonData
+    sta lessonPtr + 1
+    lda #0
+    sta teachMode
+    sta teachHold
+    sta teachWas
+    sta cloneFlash
+    sta cloneUndo
+    sta holdCount
+    sta shadowValid
+    rts
+    lessonText: .text "LESSON1"
+                .byte 0
+}
+
+// IN: A - the port's byte (a low line is a pressed one). OUT: A - the byte the player's path sees
+teachRoute: {
+    sta portRaw
+    // the chord: down with fire held TEACH_HOLD_FRAMES frames toggles teaching, once per hold, and takes
+    // back the brick the press laid or lifted (whoever held the stick lays it back the same way)
+    eor #$1f
+    and #%00010010
+    cmp #%00010010
+    bne notHeld
+        lda teachHold
+        cmp #255
+        beq held
+        bne counting
+        counting:
+        lda teachHold
+        bne !+
+            lda buildCount                  // the first frame of the hold: the count before the press acts
+            sta holdCount
+            lda #0                          // an earlier tap's shadow is stale
+            sta shadowValid
+            lda teachMode                   // teaching: the weights and lesson counters before its lessons
+            beq !+                          // (not otherwise: no lesson can happen, and the copy's 57 raster
+            jsr teachShadowSave             // lines would land in the frame of Tony's own lay, the heaviest)
+        !:
+        inc teachHold
+        lda teachHold
+        cmp #TEACH_HOLD_FRAMES
+        bne held
+            lda #255
+            sta teachHold
+            lda buildCount                  // did the press lay or lift? then take it back
+            cmp holdCount
+            beq toggle
+            lda teachMode
+            bne cloneLaid
+                jsr buildAct                // the player's: the same chord on the same slot lifts or re-lays
+                jmp toggle
+            cloneLaid:
+                lda #1                      // the clone's: at his next turn, swapped in
+                sta cloneUndo
+            toggle:
+            lda shadowValid                 // and the lessons the press taught, if any, are forgotten
+            beq !+
+            jsr teachShadowRestore
+            !:
+            lda teachMode
+            eor #1
+            sta teachMode
+        held:
+        jmp route
+    notHeld:
+    lda #0
+    sta teachHold
+    route:
+    lda teachHold                       // the chord that toggled is spent: the stick is dead until let go,
+    cmp #255                            // for the player and for the clone, and no lesson is taken from it
+    bne !+
+        lda #$1f
+        sta portRaw
+    !:
+    lda teachMode
+    bne teaching
+        lda teachWas                    // just switched off: the stick is his brain's again
+        beq !+
+            lda #0
+            sta teachWas
+            sta cloneJoyOverride
+        !:
+        lda portRaw
+        rts
+    teaching:
+    lda #1
+    sta teachWas
+    lda portRaw
+    eor #$1f
+    and #$1f
+    sta byte
+    and #%00010010                      // fire with down: the lay
+    cmp #%00010010
+    bne !+
+        lda #%00100000
+        sta byte
+        jmp have
+    !:
+    lda byte
+    and #%00010001                      // fire with up: the step up
+    cmp #%00010001
+    bne have
+        lda #%01000000
+        sta byte
+    have:
+    lda byte
+    ora #%10000000
+    sta cloneJoyOverride
+    lda #$1f                            // the player: no lines pressed
+    rts
+    byte: .byte 0
+}
+
+// the hold's shadow: saved on the chord's first frame, put back if the hold toggles
+teachShadowSave: {
+    ldx #0
+    !:
+        lda brainWeights, x
+        sta TEACH_SHADOW, x
+        inx
+    bne !-
+    lda brainKind
+    sta shadowKind
+    lda lessonCount
+    sta shadowCount
+    lda lessonCount + 1
+    sta shadowCount + 1
+    lda lessonTotal
+    sta shadowTotal
+    lda lessonTotal + 1
+    sta shadowTotal + 1
+    lda lessonPtr
+    sta shadowPtr
+    lda lessonPtr + 1
+    sta shadowPtr + 1
+    lda #1
+    sta shadowValid
+    rts
+}
+teachShadowRestore: {
+    lda #0
+    sta shadowValid
+    ldx #0
+    !:
+        lda TEACH_SHADOW, x
+        sta brainWeights, x
+        inx
+    bne !-
+    lda shadowKind
+    sta brainKind
+    lda shadowCount
+    sta lessonCount
+    lda shadowCount + 1
+    sta lessonCount + 1
+    lda shadowTotal
+    sta lessonTotal
+    lda shadowTotal + 1
+    sta lessonTotal + 1
+    lda shadowPtr
+    sta lessonPtr
+    lda shadowPtr + 1
+    sta lessonPtr + 1
+    rts
+}
+
+// at a think tick or an edge while teaching: the lesson from the block in brainIn (x, the state of
+// frame N) and the action applied in frame N + 1 (t: the packer's sense 16 of the frame after, which
+// the main loop has packed and the turn has not published yet), so a lesson pairs a state with the
+// action taken from it, not with the one that made it. No lesson when the two frames are not
+// consecutive (a pack was missed: the main loop ran long).
+teachLesson: {
+    clc
+    lda brainInFrame
+    adc #1
+    sta nextLo
+    lda brainInFrame + 1
+    adc #0
+    cmp sensePackFrame + 1
+    bne notNext
+    lda nextLo
+    cmp sensePackFrame
+    beq next
+    notNext:
+        lda #0
+        sta brainLearned
+        rts
+    next:
+    lda sensePack + 16
+    sta brainTaught
+    jsr brainLearn
+    lda brainLearned
+    bne taken
+        rts
+    taken:
+    inc lessonTotal
+    bne !+
+        inc lessonTotal + 1
+    !:
+    lda #6                              // the flash
+    sta cloneFlash
+    lda brainKind                       // the first lesson makes a brain of him
+    bne !+
+        lda #1
+        sta brainKind
+    !:
+    // record it, if there is room: the 20 nibbles packed, then the action
+    lda lessonCount + 1
+    cmp lessonCap + 1
+    bcc room
+    bne full
+    lda lessonCount
+    cmp lessonCap
+    bcs full
+    room:
+    lda lessonPtr
+    sta wr + 1
+    lda lessonPtr + 1
+    sta wr + 2
+    ldx #0
+    ldy #0
+    !:
+        lda brainIn + 1, x
+        and #$0f
+        asl
+        asl
+        asl
+        asl
+        sta pair
+        lda brainIn, x
+        and #$0f
+        ora pair
+        wr: sta $ffff, y
+        iny
+        inx
+        inx
+        cpx #20
+    bne !-
+    lda brainTaught
+    and #$0f
+    sta wr2byte
+    lda wr + 1
+    sta wr2 + 1
+    lda wr + 2
+    sta wr2 + 2
+    lda wr2byte
+    wr2: sta $ffff, y
+    clc
+    lda lessonPtr
+    adc #LESSON_SIZE
+    sta lessonPtr
+    bcc !+
+        inc lessonPtr + 1
+    !:
+    inc lessonCount
+    bne !+
+        inc lessonCount + 1
+    !:
+    full:
+    rts
+    pair:    .byte 0
+    wr2byte: .byte 0
+    nextLo:  .byte 0
 }
 
 // the builder rule (kind 2): the senses in brainIn -> brainAction, hand-written over the vocabulary,
@@ -3002,6 +3617,9 @@ senseCompute: {
     ladderTab:  .byte 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0
     duckTab:    .byte 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 }
+// the teaching blocks (the shadow, then the lesson block) live above the code, in the memory the
+// movable data vacates at startup: the code must end below them
+.errorif * > TEACH_SHADOW, "the body's code has reached the teaching shadow: move TEACH_SHADOW and LESSON_BLOCK up"
 """
 
 
@@ -3034,6 +3652,9 @@ def body(src):
               "    jsr translateRoom\n    jsr buildInit               // the build demo\n    lda #3\n    sta bodyStale               // the body: a new map, both Tonys' flags stale\n")
     for routine in ("buildLayCells: {\n", "buildRestoreCell: {\n", "buildDrawCount: {\n"):
         src = sub(src, routine, routine + "    lda #3\n    sta bodyStale               // the body: the map changes here\n")
+    # teaching takes the port for the clone, before the player's verb and dispatch see it
+    src = sub(src, "        jsr buildVerb               // the build demo: down + fire lays or lifts a brick\n        jsr dispatchPlayerCommand\n",
+              "        jsr teachRoute              // the body: teaching takes the port for the clone\n        jsr buildVerb               // the build demo: down + fire lays or lifts a brick\n        jsr dispatchPlayerCommand\n")
     # the collision check: the game's own kept as the reference for the self-test, the faster one in its place
     src = sub(src, "checkBGCollision: phys_checkBGCollisionExt2(roomMaterialsBuffer, chamberLines)\n",
               "checkBGCollisionRef: phys_checkBGCollisionExt2(roomMaterialsBuffer, chamberLines)    // the body: the game's own, the reference for bodySelfTest\n")
