@@ -1,0 +1,351 @@
+[
+ {
+  "id": "H01_tony_on_third_brick_C29",
+  "bucket": "middle_brick",
+  "held_out": true,
+  "C": 29,
+  "seed": 40,
+  "setup": "joy:4:6,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 20,
+   "dy": 12,
+   "states": [
+    0,
+    1,
+    2,
+    3,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "three bricks only at column 29, Tony standing on the third; the goal is beside him on it (the last jump has nothing to stop it)"
+ },
+ {
+  "id": "H02_step2_facing_away",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:84,wait:1,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "driven onto the second brick and turned away from the stairs before t0"
+ },
+ {
+  "id": "H03_far_left_150px",
+  "bucket": "walk_required",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:84,wait:40,poke:6CC6:80,joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 700,
+  "note": "the clone parked at X 66 while Tony builds and climbs: a hundred and fifty pixels of floor first"
+ },
+ {
+  "id": "H04_two_wide_platform",
+  "bucket": "obstacle",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:80,joy:8:1,joy:18:6,wait:20,joy:4:8,joy:8:1,joy:18:6,wait:20,joy:17:6,wait:30,joy:8:30,wait:30,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 24,
+   "dy": 12,
+   "states": [
+    0,
+    1,
+    2,
+    3,
+    7
+   ]
+  },
+  "limit": 500,
+  "note": "two bricks side by side on the floor, a 32-px platform; Tony crossed it and stands beyond"
+ },
+ {
+  "id": "H05_mirror_far_right_C9",
+  "bucket": "mirror",
+  "held_out": true,
+  "C": 9,
+  "seed": 17,
+  "setup": "poke:6CC6:88,wait:67,poke:6CC6:80,joy:4:6,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 800,
+  "note": "the mirror ladder at column 9 with the clone parked at the far right wall: the long walk left, the climb left, the route"
+ },
+ {
+  "id": "H06_restraint_left_wall",
+  "bucket": "restraint",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:4:70,wait:20,",
+  "during": [],
+  "goal": {
+   "kind": "restraint",
+   "y_min": 190,
+   "dx": 80
+  },
+  "limit": 300,
+  "note": "Tony walks to the left wall; the clone follows and must stand beside him there"
+ },
+ {
+  "id": "H07_tony_below_clone_on_step3",
+  "bucket": "tony_below",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,joy:4:60,wait:40,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 24,
+   "dy": 12,
+   "states": [
+    0,
+    1,
+    2,
+    3,
+    7
+   ]
+  },
+  "limit": 500,
+  "note": "four bricks; the clone driven onto the third, then Tony walks back down off the fourth to the floor: he must come down to him"
+ },
+ {
+  "id": "H08_stack_from_right_far",
+  "bucket": "obstacle",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:88,wait:62,poke:6CC6:80,joy:8:1,joy:18:6,wait:20,joy:4:8,joy:8:1,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,poke:6CC6:84,wait:1,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 20,
+   "dy": 12,
+   "states": [
+    0,
+    1,
+    2,
+    3,
+    7
+   ]
+  },
+  "limit": 500,
+  "note": "Tony on a two-brick stack, the clone far to its right facing back: walk, a step, and the jump onto the stack beside him"
+ },
+ {
+  "id": "H09_ladder_C21_from_far_right",
+  "bucket": "mirror",
+  "held_out": true,
+  "C": 21,
+  "seed": 6,
+  "setup": "poke:6CC6:88,wait:70,poke:6CC6:80,joy:4:38,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 900,
+  "note": "the ladder at column 21, stairs rising rightward, the clone parked at the right wall: under the floating stairs, over the first brick, back up them, the route"
+ },
+ {
+  "id": "H10_tony_climbs_while_mid_stairs",
+  "bucket": "timing",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,",
+  "during": [
+   [
+    60,
+    "hold:1"
+   ],
+   [
+    110,
+    "release:1"
+   ]
+  ],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "the clone driven onto the second brick; Tony waits on the fifth and climbs the ladder 60 frames after t0"
+ },
+ {
+  "id": "H11_tony_walks_away",
+  "bucket": "restraint",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "wait:30,",
+  "during": [
+   [
+    80,
+    "hold:8"
+   ],
+   [
+    120,
+    "release:8"
+   ]
+  ],
+  "goal": {
+   "kind": "restraint",
+   "y_min": 190,
+   "dx": 80
+  },
+  "limit": 400,
+  "note": "nothing built, the two side by side; Tony walks 80 px right after 80 frames: the clone must follow to stay within 80 px"
+ },
+ {
+  "id": "H12_tony_ducks",
+  "bucket": "restraint",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "wait:10,",
+  "during": [
+   [
+    0,
+    "hold:2"
+   ]
+  ],
+  "goal": {
+   "kind": "restraint",
+   "y_min": 190,
+   "dx": 80
+  },
+  "limit": 300,
+  "note": "Tony ducks beside him for the whole window (a sense value never seen: playerDuck)"
+ },
+ {
+  "id": "H13_tony_on_single_brick",
+  "bucket": "middle_brick",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:80,joy:8:1,joy:18:6,wait:20,joy:17:6,wait:30,wait:20,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 20,
+   "dy": 12,
+   "states": [
+    0,
+    1,
+    2,
+    3,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "Tony lays one brick and stands on it; the goal is beside him on the brick (a jump onto a lone brick has nothing to stop it)"
+ },
+ {
+  "id": "H14_C5_far_start_tony_high",
+  "bucket": "ladder_mirror",
+  "held_out": true,
+  "C": 5,
+  "seed": 1,
+  "setup": "poke:6CC6:88,wait:67,poke:6CC6:80,joy:4:22,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:60,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 900,
+  "note": "the left-wall ladder with the clone parked at the far right and Tony ten frames higher on the ladder"
+ },
+ {
+  "id": "H15_C27_tony_low",
+  "bucket": "ladder_same_side",
+  "held_out": true,
+  "C": 27,
+  "seed": 3,
+  "setup": "joy:4:14,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:20,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "an open column with Tony only twenty frames up the ladder (Y 102): the route's dy thresholds are shifted"
+ },
+ {
+  "id": "H16_clone_on_top_tony_on_floor",
+  "bucket": "tony_below",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,joy:4:60,wait:40,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 24,
+   "dy": 12,
+   "states": [
+    0,
+    1,
+    2,
+    3,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "four bricks; the clone driven onto the top one, then Tony walks back down to the floor: he must come all the way down"
+ }
+]

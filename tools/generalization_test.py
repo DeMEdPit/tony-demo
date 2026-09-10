@@ -421,7 +421,7 @@ def check():
         print(f"{scn['id']:24s} clone ({p['cx']},{p['cy']}) s{p['cs']}  Tony ({p['tx']},{p['ty']}) s{p['ts']}  bricks {p['bricks']} room {p['room']}  senses {p['senses']}  oracle {ACTIONS[oracle(p, scr, mat)]}, twin {ACTIONS[builder_twin(p['senses'])]}")
         print("      map around him (columns %d..%d, rows %d..): " % (left - 6, left + 9, max(0, top - 3)) + " | ".join(rows))
 
-if __name__ == "__main__" and sys.argv[1] != "run2":
+if __name__ == "__main__" and sys.argv[1] not in ("run2", "prereg-shadow", "check-shadow"):
     {"prereg": prereg, "train": train, "run": run, "check": check}[sys.argv[1]]()
 
 # =============================================================================== the curriculum experiment
@@ -550,3 +550,62 @@ def report2(corpora, A, results, enc, cu):
 
 if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "run2":
     run2()
+
+# ------------------------------------------------------------------------------------- the shadow holdout
+def shadow_corpus():
+    """Fresh scenarios for the curriculum experiment, written after the curriculum was committed and
+    before any training pass; used by nothing in training. Strict rule throughout."""
+    S = []
+    def add(id, bucket, setup, goal, limit, note, C=33, during=()):
+        S.append(dict(id=id, bucket=bucket, held_out=True, C=C, seed=SEEDS[C], setup=setup, during=list(during), goal=goal, limit=limit, note=note))
+    GROUND = near(24, 12, [0, 1, 2, 3, 7])
+    add("H01_tony_on_third_brick_C29", "middle_brick", stairs(29, 3), near(20, 12, [0, 1, 2, 3, 7]), 480, C=29,
+        note="three bricks only at column 29, Tony standing on the third; the goal is beside him on it (the last jump has nothing to stop it)")
+    add("H02_step2_facing_away", "same_side_variant", stairs(33) + tony_climb(50) + clone_step() * 2 + clone_hold(0x04, 1) + clone_idle() + "wait:4,", LADDER, 480,
+        note="driven onto the second brick and turned away from the stairs before t0")
+    add("H03_far_left_150px", "walk_required", clone_hold(0x04, 40) + clone_idle() + stairs(33) + tony_climb(50), LADDER, 700,
+        note="the clone parked at X 66 while Tony builds and climbs: a hundred and fifty pixels of floor first")
+    add("H04_two_wide_platform", "obstacle", clone_idle() + "joy:8:1," + LAY + "joy:4:8,joy:8:1," + LAY + STEP + "joy:8:30,wait:30,", GROUND, 500,
+        note="two bricks side by side on the floor, a 32-px platform; Tony crossed it and stands beyond")
+    add("H05_mirror_far_right_C9", "mirror", clone_hold(0x08, 67) + clone_idle() + stairs(9) + tony_climb(50), LADDER, 800, C=9,
+        note="the mirror ladder at column 9 with the clone parked at the far right wall: the long walk left, the climb left, the route")
+    add("H06_restraint_left_wall", "restraint", "joy:4:70,wait:20,", restraint(), 300, note="Tony walks to the left wall; the clone follows and must stand beside him there")
+    add("H07_tony_below_clone_on_step3", "tony_below", stairs(33, 4) + clone_step() * 3 + "joy:4:60,wait:40,", GROUND, 500,
+        note="four bricks; the clone driven onto the third, then Tony walks back down off the fourth to the floor: he must come down to him")
+    add("H08_stack_from_right_far", "obstacle", clone_hold(0x08, 62) + clone_idle() + "joy:8:1," + LAY + "joy:4:8,joy:8:1," + LAY + STEP + LAY + STEP + clone_hold(0x04, 1) + clone_idle() + "wait:4,", near(20, 12, [0, 1, 2, 3, 7]), 500,
+        note="Tony on a two-brick stack, the clone far to its right facing back: walk, a step, and the jump onto the stack beside him")
+    add("H09_ladder_C21_from_far_right", "mirror", clone_hold(0x08, 70) + clone_idle() + stairs(21) + tony_climb(50), LADDER, 900, C=21,
+        note="the ladder at column 21, stairs rising rightward, the clone parked at the right wall: under the floating stairs, over the first brick, back up them, the route")
+    add("H10_tony_climbs_while_mid_stairs", "timing", stairs(33) + clone_step() * 2, LADDER, 600, during=[(60, "hold:1"), (110, "release:1")],
+        note="the clone driven onto the second brick; Tony waits on the fifth and climbs the ladder 60 frames after t0")
+    add("H11_tony_walks_away", "restraint", "wait:30,", restraint(), 400, during=[(80, "hold:8"), (120, "release:8")],
+        note="nothing built, the two side by side; Tony walks 80 px right after 80 frames: the clone must follow to stay within 80 px")
+    add("H12_tony_ducks", "restraint", "wait:10,", restraint(), 300, during=[(0, "hold:2")], note="Tony ducks beside him for the whole window (a sense value never seen: playerDuck)")
+    add("H13_tony_on_single_brick", "middle_brick", clone_idle() + "joy:8:1," + LAY + STEP + "wait:20,", near(20, 12, [0, 1, 2, 3, 7]), 480,
+        note="Tony lays one brick and stands on it; the goal is beside him on the brick (a jump onto a lone brick has nothing to stop it)")
+    add("H14_C5_far_start_tony_high", "ladder_mirror", clone_hold(0x08, 67) + clone_idle() + stairs(5) + tony_climb(60), LADDER, 900, C=5,
+        note="the left-wall ladder with the clone parked at the far right and Tony ten frames higher on the ladder")
+    add("H15_C27_tony_low", "ladder_same_side", stairs(27) + tony_climb(20), LADDER, 600, C=27,
+        note="an open column with Tony only twenty frames up the ladder (Y 102): the route's dy thresholds are shifted")
+    add("H16_clone_on_top_tony_on_floor", "tony_below", stairs(33, 4) + clone_step() * 4 + "joy:4:60,wait:40,", GROUND, 600,
+        note="four bricks; the clone driven onto the top one, then Tony walks back down to the floor: he must come all the way down")
+    return S
+
+def prereg_shadow():
+    S = shadow_corpus(); json.dump(S, open(os.path.join(OUT, "shadow.json"), "w"), indent=1)
+    print(f"{len(S)} shadow scenarios")
+    print("| id | bucket | ladder | success | limit | what it is |\n|---|---|---|---|---|---|")
+    for s in S:
+        g = s["goal"]; gs = (f"on the ladder within {g['dx']}/{g['dy']} px of Tony" if g["kind"] == "near" and g["states"] == [2, 7] else f"within {g['dx']}/{g['dy']} px of Tony, grounded or on a ladder" if g["kind"] == "near" else f"stays on the floor within {g['dx']} px of Tony, every poll")
+        print(f"| {s['id']} | {s['bucket']} | {s['C']} | {gs} | {s['limit']} | {s['note']} |")
+
+def check_corpus(path):
+    mat = open(os.path.join(OUT, "materials.bin"), "rb").read()
+    for scn in json.load(open(path)):
+        prg = PRG_DEFAULT if scn["seed"] is None else os.path.join(OUT, "prg", f"tony-body-ladder-C{scn['C']}.prg")
+        m = Machine(prg); m.do("wait:300," + scn["setup"] + f"poke:{TEACH:X}:00," + clone_idle() + "wait:1")
+        p = parse_poll(m.do("sync," + POLL_PEEKS)); m.close()
+        print(f"{scn['id']:32s} clone ({p['cx']},{p['cy']}) s{p['cs']}  Tony ({p['tx']},{p['ty']}) s{p['ts']}  bricks {p['bricks']} room {p['room']}  senses {p['senses']}")
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] in ("prereg-shadow", "check-shadow"):
+    prereg_shadow() if sys.argv[1] == "prereg-shadow" else check_corpus(os.path.join(OUT, "shadow.json"))
