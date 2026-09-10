@@ -188,8 +188,18 @@ Three measurements, none of which involves the corpus:
    `representability-pass1.json`). Every episode's states are representable on their own; the
    conflicts are between episodes, and the one pair the solver could not settle in thirty seconds is
    the two wall-column climbs, E07 at the right wall and E08 at the left. The greedy scan in
-   curriculum order names the states that had to be dropped for the rest to fit. The old teaching's
-   17 consistent states were representable, which is why that brain existed.
+   curriculum order (`representability-pass1.json`) is less useful than hoped: with thirty seconds
+   per solve it dropped 30 states, but every drop was a timeout, not a proof, and the matrix fitted
+   to the 201 kept states reproduces 26 of the 30 anyway. Pinned directly instead
+   (`representability-core.json`): the 224 states whose label is not a build are representable
+   together (1.1 s); adding the seven build-labelled states makes the set infeasible; removing any
+   one of three of them (the route's first brick at column 5, its second brick there, or the stack's
+   foot from the right) restores feasibility, while removing the E14 stack state alone leaves it
+   infeasible, so there is more than one minimal conflict. The build decisions are the ones the
+   teacher takes on dy thresholds and the last action against walking, idle and jump states of the
+   same shape, the aliasing admitted in the pre-registration; a single linear layer cannot hold all
+   of them together. The old teaching's 17 consistent states were representable, which is why that
+   brain existed.
 2. **The rule's behaviour on an unrepresentable target.** The disagreement per pass settled at 4.3 to
    5.5% of ticks and never approached the 2% stop; the stop came from three passes without a
    decrease. Offline, the reference rule replayed over the 525 recorded lessons for 300 epochs peaks
