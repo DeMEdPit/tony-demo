@@ -1,0 +1,64 @@
+{
+ "prg": {
+  "default": "9976be313ca35a680ba70f75e137eff1b951a3bebeab15fcd2376f25333414e3",
+  "C31": {
+   "sha256": "f7ea14a417d8a3edccffef8d4ebb7ac292e0ed78de27de0d993ad61c6e882471",
+   "seed_text": "holdout seed 5",
+   "bytes_differing": 32,
+   "dim_room": 0
+  },
+  "C29": {
+   "sha256": "ca38b00b09e050827fe15a222461670d6e35d0af45e1802df099ecb81fb27a54",
+   "seed_text": "holdout seed 40",
+   "bytes_differing": 32,
+   "dim_room": 0
+  },
+  "C27": {
+   "sha256": "2f1f0fd7ec976c9166219c95579b740639c99d20c0efb4bfe0dc85feb7c5e7a7",
+   "seed_text": "holdout seed 3",
+   "bytes_differing": 32,
+   "dim_room": 0
+  },
+  "C25": {
+   "sha256": "45a7af15151c52f56dcd702b979cb72cf9ba1996c9899074e312cf8ba012783a",
+   "seed_text": "holdout seed 35",
+   "bytes_differing": 32,
+   "dim_room": 0
+  },
+  "C21": {
+   "sha256": "415d0245fccca5ece2c58d17588172b88d0a26e772d9bc3b2e9c4611adb7d84f",
+   "seed_text": "holdout seed 6",
+   "bytes_differing": 32,
+   "dim_room": 0
+  },
+  "C9": {
+   "sha256": "73044d7091627109a8c0a4ff690007da38acec29cf75f6bfe295e06cf08e7afc",
+   "seed_text": "holdout seed 17",
+   "bytes_differing": 32,
+   "dim_room": 0
+  },
+  "C5": {
+   "sha256": "d0bf34856124e28cbf66b339e96d08da9180f6b361ca9227cc1b39e5f3b7dee6",
+   "seed_text": "holdout seed 1",
+   "bytes_differing": 32,
+   "dim_room": 0
+  }
+ },
+ "brain": "fbf9bb1332be256503205faf3958b778b3dc96193c9e359c9c01d51905b0fb40",
+ "permuted": "2b601297a9999fde61b5c4cdaa3e116ef017dc03825a228dd0f69707f3b93b0d",
+ "permutation": [
+  0,
+  6,
+  3,
+  8,
+  2,
+  5,
+  7,
+  9,
+  4,
+  1
+ ],
+ "zero": "cd00e292c5970d3c5e2f0ffa5171e555bc46bfc4faddfb4a418b6840b86e79a3",
+ "commit": "5116a2dda0f855eb8d1caf52d5b2afd572676138",
+ "materials": "a4b0a8929596eee913c9cbd1a5102418c64861afca15bfcdbbaf272c98643c2f"
+}

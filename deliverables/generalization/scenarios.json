@@ -1,0 +1,494 @@
+[
+ {
+  "id": "A1_train_start",
+  "bucket": "in_distribution",
+  "held_out": false,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the teaching demo's start: Tony's five bricks under the ladder at column 33 and his climb to Y 72; the clone followed to the foot (X 206)"
+ },
+ {
+  "id": "B1_foot_facing_left",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:84,wait:1,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "at the foot but turned away: one frame of left before t0"
+ },
+ {
+  "id": "B2_tony_on_fourth_brick",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 20,
+   "dy": 12,
+   "states": null
+  },
+  "limit": 480,
+  "note": "four bricks only: Tony stands on the fourth, clear of the ladder (state 0, so playerOnLadder is 0 throughout), dy 4 at the foot; the goal is beside him on it"
+ },
+ {
+  "id": "B3_tony_climbs_late",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,",
+  "during": [
+   [
+    120,
+    "hold:1"
+   ],
+   [
+    170,
+    "release:1"
+   ]
+  ],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "Tony waits on the top brick 120 frames after t0, then climbs"
+ },
+ {
+  "id": "B4_start_in_air",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:98,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the override launches a jump right at the foot four frames before t0 and lets go in the air"
+ },
+ {
+  "id": "B5_partial_step2",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "driven onto the second brick before t0"
+ },
+ {
+  "id": "B6_partial_step4",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "driven onto the fourth brick before t0"
+ },
+ {
+  "id": "B7_start_on_top",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,poke:6CC6:C0,wait:3,poke:6CC6:80,wait:20,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "driven onto the fifth brick, under the ladder, before t0"
+ },
+ {
+  "id": "B8_tony_higher",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:60,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "Tony ten frames higher on the ladder (Y 62): dy one bucket more at the top"
+ },
+ {
+  "id": "B9_tony_lower",
+  "bucket": "same_side_variant",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:20,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "Tony only twenty frames up the ladder (Y 102): dy 2 at the top"
+ },
+ {
+  "id": "C1_far_left",
+  "bucket": "walk_required",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:80,joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "the clone held at his start (X 146) while Tony builds and climbs: sixty pixels of floor before the first brick"
+ },
+ {
+  "id": "C2_mid_distance",
+  "bucket": "walk_required",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:80,joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:88,wait:16,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "driven to X 178: a jump's reach short of the first brick, nothing ahead in the senses"
+ },
+ {
+  "id": "D1_two_high_wall",
+  "bucket": "obstacle",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:80,joy:8:1,joy:18:6,wait:20,joy:4:8,joy:8:1,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,poke:6CC6:88,wait:9,poke:6CC6:80,wait:4,poke:6CC6:A0,wait:3,poke:6CC6:80,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 20,
+   "dy": 12,
+   "states": null
+  },
+  "limit": 600,
+  "note": "Tony stacks two bricks in one slot and stands on them; the clone lifts the step Tony used: a two-high wall two columns ahead, an empty slot between"
+ },
+ {
+  "id": "D2_brick_between",
+  "bucket": "obstacle",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "poke:6CC6:80,joy:8:1,joy:18:6,wait:20,joy:17:6,wait:30,joy:8:20,wait:30,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 24,
+   "dy": 12,
+   "states": null
+  },
+  "limit": 500,
+  "note": "one brick on the floor between the clone (X 146) and Tony, who crossed it and stands beyond on the floor"
+ },
+ {
+  "id": "E1_mirror_with_walk",
+  "bucket": "mirror",
+  "held_out": true,
+  "C": 9,
+  "seed": 17,
+  "setup": "poke:6CC6:88,wait:40,poke:6CC6:80,joy:4:6,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "the ladder at column 9: Tony's stairs rise leftward; the clone parked to the right must walk left and jump left"
+ },
+ {
+  "id": "E2_C21_from_right",
+  "bucket": "mirror",
+  "held_out": true,
+  "C": 21,
+  "seed": 6,
+  "setup": "poke:6CC6:88,wait:60,poke:6CC6:80,joy:4:38,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 600,
+  "note": "the ladder at column 21, stairs rising rightward, the clone parked beyond them to the right: the floor under the floating stairs is open"
+ },
+ {
+  "id": "F_ladder_C31",
+  "bucket": "ladder_same_side",
+  "held_out": true,
+  "C": 31,
+  "seed": 5,
+  "setup": "joy:8:2,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the training protocol with the seeded ladder at column 31 (training: 33), the clone following to the foot"
+ },
+ {
+  "id": "F_ladder_C29",
+  "bucket": "ladder_same_side",
+  "held_out": true,
+  "C": 29,
+  "seed": 40,
+  "setup": "joy:4:6,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the training protocol with the seeded ladder at column 29 (training: 33), the clone following to the foot"
+ },
+ {
+  "id": "F_ladder_C27",
+  "bucket": "ladder_same_side",
+  "held_out": true,
+  "C": 27,
+  "seed": 3,
+  "setup": "joy:4:14,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the training protocol with the seeded ladder at column 27 (training: 33), the clone following to the foot"
+ },
+ {
+  "id": "F_ladder_C25",
+  "bucket": "ladder_same_side",
+  "held_out": true,
+  "C": 25,
+  "seed": 35,
+  "setup": "poke:6CC6:84,wait:30,poke:6CC6:80,joy:4:22,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:88,wait:40,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the seeded ladder at column 25: Tony's approach is left of the clone's start, so the clone is parked at the left first and driven to the foot after the climb"
+ },
+ {
+  "id": "F_ladder_C21",
+  "bucket": "ladder_same_side",
+  "held_out": true,
+  "C": 21,
+  "seed": 6,
+  "setup": "poke:6CC6:84,wait:30,poke:6CC6:80,joy:4:38,joy:8:1,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:88,wait:40,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the seeded ladder at column 21: Tony's approach is left of the clone's start, so the clone is parked at the left first and driven to the foot after the climb"
+ },
+ {
+  "id": "F_ladder_C9_mirror",
+  "bucket": "ladder_mirror",
+  "held_out": true,
+  "C": 9,
+  "seed": 17,
+  "setup": "poke:6CC6:88,wait:40,poke:6CC6:80,joy:4:6,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:84,wait:60,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the ladder at column 9: leftward stairs, the clone driven to their foot facing left before t0"
+ },
+ {
+  "id": "F_ladder_C5_mirror",
+  "bucket": "ladder_mirror",
+  "held_out": true,
+  "C": 5,
+  "seed": 1,
+  "setup": "poke:6CC6:88,wait:40,poke:6CC6:80,joy:4:22,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,hold:1,wait:50,release:1,wait:10,poke:6CC6:84,wait:60,poke:6CC6:80,wait:4,",
+  "during": [],
+  "goal": {
+   "kind": "near",
+   "dx": 16,
+   "dy": 16,
+   "states": [
+    2,
+    7
+   ]
+  },
+  "limit": 480,
+  "note": "the ladder at column 5: leftward stairs, the clone driven to their foot facing left before t0"
+ },
+ {
+  "id": "G1_beside_no_stairs",
+  "bucket": "restraint",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:20,wait:40,",
+  "during": [],
+  "goal": {
+   "kind": "restraint",
+   "y_min": 190,
+   "dx": 80
+  },
+  "limit": 300,
+  "note": "nothing built; Tony forty pixels right; success is staying on the floor near him"
+ },
+ {
+  "id": "G2_tony_back_on_floor",
+  "bucket": "restraint",
+  "held_out": true,
+  "C": 33,
+  "seed": null,
+  "setup": "joy:8:10,wait:20,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,joy:18:6,wait:20,joy:17:6,wait:30,wait:10,joy:4:60,wait:40,",
+  "during": [],
+  "goal": {
+   "kind": "restraint",
+   "y_min": 190,
+   "dx": 80
+  },
+  "limit": 300,
+  "note": "four bricks stand but Tony walked back off them to the floor beside the clone; success is not climbing without him"
+ }
+]
