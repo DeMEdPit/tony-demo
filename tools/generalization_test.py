@@ -429,8 +429,10 @@ if __name__ == "__main__" and sys.argv[1] not in ("run2", "prereg-shadow", "chec
 # with the strict rule (a near goal must hold in a grounded or ladder state) applied to every arm alike.
 STRICT_STATES = (0, 1, 2, 3, 7)
 def goal_met_strict(g, p):
-    if g["kind"] == "near": return goal_met(g, p) and (p["cs"] & 0x7f) in STRICT_STATES
-    return goal_met(g, p)
+    if g["kind"] == "near":
+        return (abs(p["cx"] - p["tx"]) <= g["dx"] and abs(p["cy"] - p["ty"]) <= g["dy"] and (g["states"] is None or (p["cs"] & 0x7f) in g["states"])
+                and (p["cs"] & 0x7f) in STRICT_STATES)
+    return p["cy"] >= g["y_min"] and abs(p["cx"] - p["tx"]) <= g["dx"]
 
 def episode_policy(scn, policy, driver_cls, prg, mat, enc, screens, arm_name, tick=4):
     """an arm that is a policy driven through the override (the teacher): decides every tick, the goal
