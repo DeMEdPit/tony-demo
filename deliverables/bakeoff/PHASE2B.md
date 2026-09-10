@@ -289,3 +289,7 @@ The review's (its section 7): R0 at 8 bits reproduces the box result: **right**.
    about 150 lessons a pass and the fit is never stable; the step of one is as large relative to
    the margins at 8 bits as it was at 4. The S5 stream as pre-registered measured the wrong thing and
    should be replaced by agreement with the lagged labels, or by behaviour.
+6. **Exploratory, after the pre-registration** (`PHASE1B.md` section 6): a binary retina whose dx
+   flags are a signed thermometer (61 inputs) learns the 231 in 276 lessons and the 474 from its own
+   stream under the absolute vocabulary (1,502 lessons, held 238), so the residual that the vocabulary
+   removes can also be removed by the retina; the vocabulary still halves the lessons.

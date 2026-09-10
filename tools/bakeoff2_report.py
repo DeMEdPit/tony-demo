@@ -88,7 +88,7 @@ if __name__ == "__main__":
 # ------------------------------------------------------------------------------------- phase 1b
 def p1_load():
     res = {}
-    for f in ("phase1b.json", "phase1b-B.json"):
+    for f in ("phase1b.json",):
         p = os.path.join(OUT, f)
         if os.path.exists(p): res.update(json.load(open(p)))
     return res
@@ -98,7 +98,10 @@ def p1_cell(r):
     if r.get("feasible") and r.get("min_unfit") == 0: return f"feasible ({r['seconds']}s)"
     if st == "OPTIMAL": return f"**{r['min_unfit']} unfit** of {N} ({r['seconds']}s)"
     if st == "FEASIBLE":
-        lo, hi = r["min_unfit_between"]; return f"{lo} to {hi} unfit of {N} (time limit; incumbent {fitted})"
+        lo, hi = r["min_unfit_between"]
+        if r.get("inferred_feasible_by_box_containment"): return f"feasible by box containment (the 4-bit solution); the 8-bit solve itself hit its limit at {hi} unfit"
+        if r.get("inferred_min_unfit_lower"): lo = max(lo, r["inferred_min_unfit_lower"])
+        return f"{lo} to {hi} unfit of {N} (time limit; incumbent {fitted}" + (f"; at least {lo}: {', '.join(r['inferred_from'])}" if r.get("inferred_from") else "") + ")"
     if st == "INFEASIBLE": return f"infeasible, no incumbent ({r['seconds']}s)"
     return f"{st} ({r.get('seconds')}s)"
 def p1_margin(r):

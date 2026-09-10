@@ -568,9 +568,9 @@ def budget():
     flags) or as code (an estimate, labelled); the flag vector n bytes of RAM; the teaching shadow a copy
     of the weights; the lesson block at its cap. The fit against the run-time map of this build."""
     def retina_bytes(name):
-        return {"R0": 56 * 3, "R1": 56 * 3 + 6 * 4, "R1b": 56 * 3 + 8 * 4, "R2": 56 * 3 + 8 * 4 + 273 * 2}[name]
+        return {"R0": 56 * 3, "R0s": 61 * 3, "R1": 56 * 3 + 6 * 4, "R1b": 56 * 3 + 8 * 4, "R2": 56 * 3 + 8 * 4 + 273 * 2}[name]
     rows = []
-    for name, n in (("R0", 56), ("R1", 62), ("R1b", 64), ("R1b+goal", 97), ("R2", 337)):
+    for name, n in (("R0", 56), ("R0s", 61), ("R1", 62), ("R1b", 64), ("R1b+goal", 97), ("R2", 337)):
         base = name.split("+")[0]; goal = "goal" in name
         rt = retina_bytes(base) + (33 * 3 if goal else 0)
         weights = 10 * n; header = 16; mood = 8
@@ -624,4 +624,34 @@ if __name__ == "__main__":
         else: phase2b(args or None, workers=workers or 2)
     elif cmd == "budget":
         for r in budget(): print(r)
+    elif cmd == "explore": pass                                   # dispatched below, after explore() is defined
     else: print(__doc__)
+
+# ----------------------------------------------------------------- exploratory, after the pre-registration
+def r_dxst(x): return [fl(x[1] >= k) for k in range(1, 8)] + [fl(x[1] <= -k) for k in range(1, 8)]     # a signed dx thermometer, like dy's
+def bin61(x): return r_bias(x) + r_rawflags(x) + r_dxst(x) + r_dyup(x) + r_dydown(x) + r_stillt(x) + r_last(x)
+def explore(workers=4):
+    """not pre-registered, not used for selection: R0s, the BIN retina with the dx sign and |dx| thermometer
+    (9 flags) replaced by a signed dx thermometer (14 flags: dx >= k, dx <= -k), 61 inputs, because the
+    absolute-vocabulary residual of R0 is a family the signed magnitude of dx separates. Representability
+    on the three sets in both vocabularies at 8 and 4 bits; the rule at 8 bits on S1, S2 and S2u."""
+    D = sets(); n = 61; Z = {x: np.array(bin61(list(x)), dtype=np.int64) for x in D["s1424"]}
+    out = {}
+    for vocab in ("abs", "rel"):
+        for setname in ("s231", "s474", "s1424"):
+            lab = D[setname] if vocab == "abs" else relabel(D[setname]); items = list(lab.items())
+            for bits in (8, 4):
+                f = cpsat_feasible(items, Z, n, BOXES[bits], time_limit=300, workers=workers)
+                r = dict(status=f["status"], seconds=f["seconds"], feasible=f.get("feasible"))
+                if not f.get("feasible"):
+                    m = cpsat(items, Z, n, BOXES[bits], time_limit=300, workers=workers, cut=(len(items) - 1 if f["feasible"] is False else None))
+                    r.update(min_unfit=m.get("min_unfit"), min_unfit_between=m.get("min_unfit_between"), status=m["status"])
+                    if m.get("unfit"): r["unfit_named"] = name_states(m["unfit"], D, vocab)
+                out[f"R0s|{vocab}|{setname}|{bits}"] = r; print(f"R0s|{vocab}|{setname}|{bits}", r["status"], r["seconds"], "feasible" if r.get("feasible") else f"unfit {r.get('min_unfit', r.get('min_unfit_between'))}", flush=True)
+        lab, S = streams(D, vocab); union = D["s474"] if vocab == "abs" else relabel(D["s474"])
+        for sname, stream, labels, un in (("S1", S["S1"], lab, union), ("S2", S["S2"], lab, union), ("S2u", list(union.items()), union, lab)):
+            r = learn_stream(Z, stream, labels, BOXES[8], union=un); r.pop("weights", None)
+            out[f"R0s|{vocab}|8|{sname}"] = r; print(f"R0s|{vocab}|8|{sname}", "first", r["first_full_at_lessons"], "held", r["passes_at_full"], "best", r["best_agree"], "/", r["states"], "max|w|", r["max_abs_w_curve_max"], "union", r["union_best_agree"], flush=True)
+    json.dump(out, open(os.path.join(OUT, "explore-R0s.json"), "w"), indent=1)
+    return out
+if __name__ == "__main__" and sys.argv[1:2] == ["explore"]: explore()

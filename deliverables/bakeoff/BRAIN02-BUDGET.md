@@ -23,6 +23,7 @@ padding before the marker is whatever the code before it leaves, up to 255 bytes
 | architecture | inputs n | header | weights | mood | **slot, exact** | whole pages | spare in those pages | inputs those pages could hold | retina as a table | flag vector (RAM) | teaching shadow |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | R0 (BIN) | 56 | 16 | 560 | 8 | **584** | 3 (768) | 184 | 74 | 168 | 56 | 560 |
+| R0s (BIN with a signed dx thermometer, exploratory, `PHASE1B.md` section 6) | 61 | 16 | 610 | 8 | **634** | 3 (768) | 134 | 74 | 183 | 61 | 610 |
 | R1 (BIN + 6 facts) | 62 | 16 | 620 | 8 | **644** | 3 (768) | 124 | 74 | 192 | 62 | 620 |
 | R1b (R1 + 2 facts) | 64 | 16 | 640 | 8 | **664** | 3 (768) | 104 | 74 | 200 | 64 | 640 |
 | R1b + the goal senses as 33 flags | 97 | 16 | 970 | 8 | **994** | 4 (1,024) | 30 | 100 | 299 | 97 | 970 |
@@ -52,6 +53,7 @@ vector come; the retina's code is the estimate.
 | architecture | slot − 280 − 256 − 20 + table + flag vector | with the code estimate (150..400) |
 |---|---:|---|
 | R0 | +252 | +402 to +652 |
+| R0s | +322 | +472 to +722 |
 | R1 | +342 | +492 to +742 |
 | R1b | +372 | +522 to +772 |
 | R1b + goal | +834 | +984 to +1,234 |
@@ -67,6 +69,7 @@ and `$a000`. The largest code growth the map allows, by lesson cap:
 | architecture | cap 500 | cap 400 | cap 300 | the cap that fits at the high code estimate |
 |---|---:|---:|---:|---:|
 | R0 | 517 | 1,617 | 2,717 | **487** (500 at the low estimate) |
+| R0s | 467 | 1,567 | 2,667 | **476** |
 | R1 | 457 | 1,557 | 2,657 | **474** |
 | R1b | 437 | 1,537 | 2,637 | **469** |
 | R1b + goal (`LESSON2`, 14 bytes a lesson) | −1,393 | 7 | 1,407 | **312** |
@@ -101,6 +104,8 @@ the comparison is honest.
 
 No arm survived the rule as written, because the S5 stream cannot be passed by any policy
 (`PHASE2B.md` section 3). On the remaining criteria the binary arms R0, R1 and R1b survive at 6 and 8
-bits under both vocabularies (R0 also at 4 bits under V), which is why they are the rows above; R2 is
+bits under both vocabularies (R0 also at 4 bits under V), which is why they are the rows above; R0s is
+the exploratory arm of `PHASE1B.md` section 6, added for the comparison and not a survivor of anything
+pre-registered; R2 is
 kept as the offline ceiling and does not fit the machine; the goal-sense row is the planned extension
 of `GOAL-SENSES.md`, whose senses stay sealed and untouched in this phase.

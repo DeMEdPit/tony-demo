@@ -1139,3 +1139,47 @@ step 6.
   intro tune's 5,782; replay-identical for 8 minutes (E17).
 - The intro tune's voice 3 raises ENV3 by ≥ $28 on 495 of its 532 attacks;
   under the Dancer's hit rule he is airborne 99% of the time with it (E17).
+
+## E26 — The architecture bake-off, phases 1b and 2b: binary retinas, wider weights, a reference-relative vocabulary · offline (2026-09-10)
+
+The second architecture review's claims reproduced independently on the engine's own exact bounded
+implementation, pre-registered first (`deliverables/bakeoff/PREREG-1B.md`, commit bcba27f), nothing in
+the PRG touched, the sealed goal senses untouched. The pre-registration pins the reference-relative
+vocabulary from an explicit signed reference vector (the horizontal sign decides toward and away; a
+zero horizontal falls back to the clone's facing in the same block; the same rule translates a human's
+press), the binary retinas R0/R1/R1b/R2 and the mixed controls, the three sets kept apart (the 231
+teacher states, the teacher-visited 474, the full 1,424), the survivor rule and the predictions. Before
+any 6- or 8-bit number was read, the rule generalised to n inputs and a box was checked against the
+golden reference (identical over 729 lessons) and the vectorised learner against it after every lesson
+at 4, 6 and 8 bits (`parity-1b.json`), with byte-boundary, tie and wrap vectors written for a later
+6502 (`golden-1b/`) and the 16-bit accumulator bound asserted for 128 unit-flag inputs (16,512).
+
+Phase 2b (`PHASE2B.md`, `phase2b.json`): the review's box result reproduces to the lesson (the binary
+retina at 6 or 8 bits: 384 lessons on the tick stream held 277 of 300, 428 on the cycled labels held
+263, weights never above 25; the four-lesson cycle at 4 bits with 931 clamps; the mixed controls at
+their cycle with zero clamps). Under the relative vocabulary every binary arm learns the 231 in about
+half the lessons, learns the 474 from its own stream (849 lessons for R0, 538 for R1b), and R0 fits
+at 4 bits; the mixed controls learn too, A2 even at 4 bits, so the review's "graded step" cause is not
+supported. The order-2 arm learns fastest, not slowest. Five percent label noise costs about 75
+corrective lessons a pass at any box and the fit never holds; the lagged stream as pre-registered has
+a ceiling of 178 of 231 for any policy, so no arm survives the rule as written and the defect is the
+stream's. From the curriculum stream alone every arm leaves about sixty of the 474 wrong, in
+situations the curriculum never showed.
+
+Phase 1b (`PHASE1B.md`, `phase1b.json`): CP-SAT, plain feasibility first and then a maximum feasible
+subset warm-started from the Phase 2b weights, every unfit state named, CBC and LP relaxations as
+cross-checks. Under the absolute vocabulary the teacher-visited residual of every binary first-order
+retina is exactly one state, drawn from a four-member family of builds whose direction flips with the
+side (the review's two kinds, count sharpened from two to one, the same family under the forced-fit
+probe); the named facts do not remove it, the order-2 layer fits everything, and so do the mixed
+encodings (A2 the whole 1,424 with 4-bit weights, T36 the 474), which the rule cannot learn. Under the
+relative vocabulary R0 fits the 231 and the 474 exactly and misses the 1,424 by one state; R1 (one
+more fact, facing the reference's way) fits the whole union with 62 inputs. Two of Phase 1's three
+undecided union cases settle as feasible. `BRAIN02-BUDGET.md` gives the exact slot, accumulator and
+memory arithmetic per architecture: R0 fits the present map at the 500-lesson cap only with a small
+retina, R1 and R1b at a cap near 470, the goal senses at about 310 with the 14-byte lesson, and R2
+not at all (337 inputs overflow the 16-bit accumulator). One exploratory arm after the
+pre-registration, outside the selection: a binary retina whose dx flags are a signed thermometer (61
+inputs) represents every set in both vocabularies at 4-bit weights and learns the 231 in 276 lessons
+and the 474 from its own stream under the absolute vocabulary, so the residual was the dx encoding;
+it goes to the next pre-registration. No BRAIN02 was built and no PRG changed.
