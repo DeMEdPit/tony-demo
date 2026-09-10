@@ -1,0 +1,1161 @@
+{
+ "A0_raw": {
+  "width": 20,
+  "description": "the twenty senses as published",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.2,
+   "mislabelled": null
+  }
+ },
+ "A1_raw+dy1h+last": {
+  "width": 45,
+  "description": "A0 plus one-hot dy (15) and one-hot last action (10)",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.2,
+   "mislabelled": null
+  }
+ },
+ "T_dyup": {
+  "width": 27,
+  "description": "raw plus dyup",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.2,
+   "mislabelled": null
+  }
+ },
+ "T_dydown": {
+  "width": 27,
+  "description": "raw plus dydown",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.2,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown": {
+  "width": 34,
+  "description": "raw plus dyup, dydown",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.2,
+   "mislabelled": null
+  }
+ },
+ "T_dxs": {
+  "width": 22,
+  "description": "raw plus dxs",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.0,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 1.3,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dxs": {
+  "width": 29,
+  "description": "raw plus dyup, dxs",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 5.3,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 2.2,
+   "mislabelled": null
+  }
+ },
+ "T_dydown+dxs": {
+  "width": 29,
+  "description": "raw plus dydown, dxs",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_last": {
+  "width": 30,
+  "description": "raw plus last",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.1,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+last": {
+  "width": 37,
+  "description": "raw plus dyup, last",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.1,
+   "mislabelled": null
+  }
+ },
+ "T_dydown+last": {
+  "width": 37,
+  "description": "raw plus dydown, last",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.1,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown+last": {
+  "width": 44,
+  "description": "raw plus dyup, dydown, last",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.1,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown+dxs": {
+  "width": 36,
+  "description": "raw plus dyup, dydown, dxs",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 2.5,
+   "mislabelled": 0,
+   "margin": 1,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 1.7,
+   "mislabelled": null
+  }
+ },
+ "T_dxs+last": {
+  "width": 32,
+  "description": "raw plus dxs, last",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.7,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 1.9,
+   "mislabelled": null
+  }
+ },
+ "A2_A1+adx1h+dxs": {
+  "width": 55,
+  "description": "A1 plus one-hot |dx| (8) and the sign of dx (2)",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.1,
+   "mislabelled": 0,
+   "margin": 16,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Not Solved",
+   "seconds": 300.6,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dxs+last": {
+  "width": 39,
+  "description": "raw plus dyup, dxs, last",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 60.3,
+   "mislabelled": 0,
+   "margin": 2,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 5.6,
+   "mislabelled": null
+  }
+ },
+ "T_dydown+dxs+last": {
+  "width": 39,
+  "description": "raw plus dydown, dxs, last",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.8,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 1.9,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown+dxs+last": {
+  "width": 46,
+  "description": "raw plus dyup, dydown, dxs, last",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.7,
+   "mislabelled": 0,
+   "margin": 1,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 6.2,
+   "mislabelled": null
+  }
+ },
+ "T_adxt": {
+  "width": 27,
+  "description": "raw plus adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+adxt": {
+  "width": 34,
+  "description": "raw plus dyup, adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dydown+adxt": {
+  "width": 34,
+  "description": "raw plus dydown, adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown+adxt": {
+  "width": 41,
+  "description": "raw plus dyup, dydown, adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dxs+adxt": {
+  "width": 29,
+  "description": "raw plus dxs, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 2.3,
+   "mislabelled": 0,
+   "margin": 7,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 2.6,
+   "mislabelled": null
+  }
+ },
+ "T_dydown+dxs+adxt": {
+  "width": 36,
+  "description": "raw plus dydown, dxs, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 4.2,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 2.4,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dxs+adxt": {
+  "width": 36,
+  "description": "raw plus dyup, dxs, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 14.5,
+   "mislabelled": 0,
+   "margin": 8,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 2.3,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown+dxs+adxt": {
+  "width": 43,
+  "description": "raw plus dyup, dydown, dxs, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 4.9,
+   "mislabelled": 0,
+   "margin": 7,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 2.4,
+   "mislabelled": null
+  }
+ },
+ "T_last+adxt": {
+  "width": 37,
+  "description": "raw plus last, adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+last+adxt": {
+  "width": 44,
+  "description": "raw plus dyup, last, adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dydown+last+adxt": {
+  "width": 44,
+  "description": "raw plus dydown, last, adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown+last+adxt": {
+  "width": 51,
+  "description": "raw plus dyup, dydown, last, adxt",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "T_dxs+last+adxt": {
+  "width": 39,
+  "description": "raw plus dxs, last, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 5.2,
+   "mislabelled": 0,
+   "margin": 4,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 3.0,
+   "mislabelled": null
+  }
+ },
+ "T_dydown+dxs+last+adxt": {
+  "width": 46,
+  "description": "raw plus dydown, dxs, last, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 4.2,
+   "mislabelled": 0,
+   "margin": 2,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 3.0,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K32_s0": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 0",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K32_s1": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 1",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.1,
+   "mislabelled": 0,
+   "margin": 1,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 3.2,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dxs+last+adxt": {
+  "width": 46,
+  "description": "raw plus dyup, dxs, last, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 3.1,
+   "mislabelled": 0,
+   "margin": 11,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Not Solved",
+   "seconds": 300.9,
+   "mislabelled": null
+  }
+ },
+ "T_dyup+dydown+dxs+last+adxt": {
+  "width": 53,
+  "description": "raw plus dyup, dydown, dxs, last, adxt",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 7.3,
+   "mislabelled": 0,
+   "margin": 16,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Not Solved",
+   "seconds": 301.0,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K32_s2": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 2",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 11.9,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 4.1,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K32_s3": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 3",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.1,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K32_s4": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 4",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K32_s5": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 5",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K32_s7": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 7",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.4,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K32_s6": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 6",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 8.9,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K32_s8": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 8",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 12.9,
+   "mislabelled": 0,
+   "margin": 2,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K32_s9": {
+  "width": 52,
+  "description": "raw plus 32 fixed sign units, seed 9",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 7.8,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_sign_K48_s0": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 0",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.1,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 4.3,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K48_s1": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 1",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 3.2,
+   "mislabelled": 0,
+   "margin": 6,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 10.6,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K48_s2": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 2",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 11.2,
+   "mislabelled": 0,
+   "margin": 1,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K48_s3": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 3",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 1.5,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K48_s4": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 4",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K48_s5": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 5",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 0.4,
+   "mislabelled": 0,
+   "margin": 7,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_sign_K48_s6": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 6",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 19.3,
+   "mislabelled": 0,
+   "margin": 2,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K48_s7": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 7",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 3.6,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K48_s8": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 8",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 19.2,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_sign_K48_s9": {
+  "width": 68,
+  "description": "raw plus 48 fixed sign units, seed 9",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.3,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_sign_K64_s0": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 0",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 31.8,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 14.2,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K64_s1": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 1",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 8.3,
+   "mislabelled": 0,
+   "margin": 7,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 5.4,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K64_s2": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 2",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 11.7,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_sign_K64_s4": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 4",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 4.1,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K64_s3": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 3",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 14.1,
+   "mislabelled": 0,
+   "margin": 2,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K64_s5": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 5",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 7.2,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K64_s7": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 7",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.3,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K64_s6": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 6",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.1,
+   "mislabelled": 0,
+   "margin": 5,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_sign_K64_s8": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 8",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_sign_K64_s9": {
+  "width": 84,
+  "description": "raw plus 64 fixed sign units, seed 9",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K32_s2": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 2",
+  "frozen231": {
+   "status": "Infeasible",
+   "seconds": 0.2,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K32_s0": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 0",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.1,
+   "mislabelled": 0,
+   "margin": 1,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 2.2,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K32_s1": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 1",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 8.3,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 3.8,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K32_s3": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 3",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.8,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_bucket_K32_s4": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 4",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K32_s5": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 5",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.1,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K32_s6": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 6",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 5.9,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K32_s7": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 7",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 12.7,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K32_s8": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 8",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K32_s9": {
+  "width": 52,
+  "description": "raw plus 32 fixed bucket units, seed 9",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 5.9,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K48_s0": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 0",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.5,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 4.4,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K48_s1": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 1",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 4.4,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 3.5,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K48_s2": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 2",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 3.2,
+   "mislabelled": 0,
+   "margin": 6,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K48_s3": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 3",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 3.4,
+   "mislabelled": 0,
+   "margin": 7,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_bucket_K48_s4": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 4",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 4.5,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K48_s5": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 5",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 14.7,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K48_s6": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 6",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 10.3,
+   "mislabelled": 0,
+   "margin": 2,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K48_s7": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 7",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 10.6,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_bucket_K48_s8": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 8",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 2.7,
+   "mislabelled": 0,
+   "margin": 5,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K48_s9": {
+  "width": 68,
+  "description": "raw plus 48 fixed bucket units, seed 9",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 8.7,
+   "mislabelled": 0,
+   "margin": 1,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K64_s0": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 0",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K64_s1": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 1",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.4,
+   "mislabelled": 0,
+   "margin": 6,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 3.9,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K64_s2": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 2",
+  "frozen231": {
+   "status": "Not Solved",
+   "seconds": 120.2,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K64_s3": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 3",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 6.5,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  },
+  "union": {
+   "status": "Infeasible",
+   "seconds": 3.2,
+   "mislabelled": null
+  }
+ },
+ "C3_bucket_K64_s4": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 4",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 50.6,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K64_s6": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 6",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 13.2,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_bucket_K64_s5": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 5",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 80.8,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ },
+ "C3_bucket_K64_s8": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 8",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 17.8,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K64_s7": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 7",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 50.3,
+   "mislabelled": 0,
+   "margin": 0,
+   "margin_status": "Optimal",
+   "max_abs_w": 8
+  }
+ },
+ "C3_bucket_K64_s9": {
+  "width": 84,
+  "description": "raw plus 64 fixed bucket units, seed 9",
+  "frozen231": {
+   "status": "Optimal",
+   "seconds": 9.0,
+   "mislabelled": 0,
+   "margin": 3,
+   "margin_status": "Not Solved"
+  }
+ }
+}
