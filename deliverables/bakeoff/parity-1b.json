@@ -1,0 +1,78 @@
+{
+ "ref_vs_golden_box4_n20": {
+  "passes": 20,
+  "lessons": 729,
+  "identical": true
+ },
+ "vectorised_vs_reference": [
+  {
+   "arm": "raw20",
+   "vocab": "abs",
+   "bits": 4,
+   "passes": 3,
+   "lessons": 209,
+   "identical": true,
+   "max_abs_acc": 126
+  },
+  {
+   "arm": "R0",
+   "vocab": "abs",
+   "bits": 8,
+   "passes": 3,
+   "lessons": 172,
+   "identical": true,
+   "max_abs_acc": 40
+  },
+  {
+   "arm": "R0",
+   "vocab": "rel",
+   "bits": 6,
+   "passes": 3,
+   "lessons": 131,
+   "identical": true,
+   "max_abs_acc": 43
+  },
+  {
+   "arm": "R2",
+   "vocab": "rel",
+   "bits": 8,
+   "passes": 2,
+   "lessons": 109,
+   "identical": true,
+   "max_abs_acc": 74
+  },
+  {
+   "arm": "A2",
+   "vocab": "abs",
+   "bits": 8,
+   "passes": 2,
+   "lessons": 106,
+   "identical": true,
+   "max_abs_acc": 261
+  },
+  {
+   "arm": "R1b",
+   "vocab": "abs",
+   "bits": 4,
+   "passes": 3,
+   "lessons": 178,
+   "identical": true,
+   "max_abs_acc": 52
+  }
+ ],
+ "accumulator_bound": {
+  "n_max": 128,
+  "weight_min": -128,
+  "weight_max": 127,
+  "mood_term_max": 128,
+  "bound_abs": 16512,
+  "int16_ok": true,
+  "positive_extreme": 16368,
+  "negative_extreme": -16512,
+  "note": "every input a flag of 1; |acc| <= n*128 + 128"
+ },
+ "golden_written": {
+  "forward": 32,
+  "lessons": 38
+ }
+}
