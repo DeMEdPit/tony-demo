@@ -111,8 +111,9 @@ def p1_table(res, arms, vocab):
     for a in arms:
         c = []
         for setname in ("s231", "s474", "s1424"):
-            for bits in ((8, 4) if a.startswith("R") else (8,)):
+            for bits in (8, 4):
                 if bits == 4 and setname == "s1424": continue
+                if bits == 4 and not a.startswith("R"): c.append("(8-bit only)"); continue
                 r = res.get(f"{a}|{vocab}|{setname}|{bits}")
                 cell = p1_cell(r)
                 if bits == 8 and r and r.get("feasible"):

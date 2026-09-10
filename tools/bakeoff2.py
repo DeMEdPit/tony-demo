@@ -385,23 +385,37 @@ def phase1b(only=None, time_limit=300, workers=4):
                         if ck not in res:
                             res[ck] = cbc_check(items, Z, n, BOXES[8]); json.dump(res, open(path, "w"))
                         print(f"{ck:24s} {res[ck]['status']:10s} {res[ck]['seconds']:6.1f}s replay mislabelled {res[ck]['replay_mislabelled']}", flush=True)
-    # the three undecided union cases of phase 1, at their own box (4 bits) and at 8, absolute vocabulary
-    if not only:
-        for name in UNDECIDED:
-            enc, n, desc = A1[name]; Z = enc_cache(enc); items = list(D["s1424"].items())
-            for bits in (4, 8):
-                key = f"P1:{name}|abs|s1424|{bits}"
-                hint = learn_stream(Z, items, D["s1424"], BOXES[bits], passes=60)["weights"]
-                r = run(key, items, Z, n, BOXES[bits], hint=hint)
-                print(f"{key:44s} {r['status']:10s} {r['seconds']:6.1f}s fitted {r.get('fitted')}/{len(items)} bound {r.get('bound')}", flush=True)
-                if r.get("unfit"): res[key]["unfit_named"] = name_states(r["unfit"], D, "abs"); json.dump(res, open(path, "w"))
+    if not only: phase1b_undecided(time_limit, workers, D, res, path)
+    return res
+
+def phase1b_undecided(time_limit=300, workers=4, D=None, res=None, path=None):
+    """the three undecided union cases of phase 1, at their own box (4 bits) and at 8, absolute vocabulary"""
+    D = D or sets(); A1 = b1.arms()
+    path = path or os.path.join(OUT, os.environ.get("P1_OUT", "phase1b.json"))
+    if res is None: res = json.load(open(path)) if os.path.exists(path) else {}
+    for name in UNDECIDED:
+        enc, n, desc = A1[name]; Z = {x: np.array(enc(list(x)), dtype=np.int64) for x in D["s1424"]}; items = list(D["s1424"].items())
+        for bits in (4, 8):
+            key = f"P1:{name}|abs|s1424|{bits}"
+            if key in res and res[key].get("status") not in (None, "UNKNOWN"): continue
+            hint = learn_stream(Z, items, D["s1424"], BOXES[bits], passes=100)["weights"]
+            f = cpsat_feasible(items, Z, n, BOXES[bits], time_limit=time_limit, workers=workers, hint=hint)
+            if f.get("feasible"):
+                r = dict(status="OPTIMAL", seconds=f["seconds"], states=len(items), objective=len(items), bound=len(items), fitted=len(items), unfit=[], min_unfit=0, feasible=True, replay_mislabelled=0, max_abs_w=f["max_abs_w"], weights=f["weights"], via="feasibility")
+            else:
+                r = cpsat(items, Z, n, BOXES[bits], time_limit=time_limit, workers=workers, hint=hint, cut=(len(items) - 1 if f["feasible"] is False else None))
+                r["via"] = "max-subset"; r["feasibility_status"] = f["status"]; r["feasibility_seconds"] = f["seconds"]
+                if f["feasible"] is False: r["feasible"] = False
+            if r.get("unfit"): r["unfit_named"] = name_states(r["unfit"], D, "abs")
+            res[key] = r; json.dump(res, open(path, "w"))
+            print(f"{key:44s} {r['status']:10s} {r['seconds']:6.1f}s fitted {r.get('fitted')}/{len(items)} bound {r.get('bound')} unfit {len(r.get('unfit', []))}", flush=True)
     return res
 
 def alternatives(keys=None, time_limit=300, workers=4):
     """the minimum unfit set is not unique in general: for the named cases (default: every binary arm's
     absolute-vocabulary teacher-visited union at 8 bits), re-solve with each named unfit state forced to
     fit and report the minimum and the unfit set that results"""
-    D = sets(); A = arms(); path = os.path.join(OUT, "phase1b.json"); res = json.load(open(path))
+    D = sets(); A = arms(); path = os.path.join(OUT, os.environ.get("P1_OUT", "phase1b.json")); res = json.load(open(path))
     keys = keys or [f"{a}|abs|s474|8" for a in ("R0", "R1", "R1b", "R2")]
     for key in keys:
         r = res.get(key, {})
@@ -600,10 +614,11 @@ if __name__ == "__main__":
             for a in range(10): assert to_relative(to_absolute(a, h), h) == a and to_absolute(to_relative(a, h), h) == a
         print("vocabulary round trips: ok")
     elif cmd == "parity": parity()
-    elif cmd in ("phase1b", "alternatives", "phase2b", "phase2b-u"):
+    elif cmd in ("phase1b", "phase1b-undecided", "alternatives", "phase2b", "phase2b-u"):
         args = sys.argv[2:]; workers = None
         if args[:1] == ["--workers"]: workers = int(args[1]); args = args[2:]
         if cmd == "phase1b": phase1b(args or None, workers=workers or 4)
+        elif cmd == "phase1b-undecided": phase1b_undecided(workers=workers or 4)
         elif cmd == "alternatives": alternatives(args or None, workers=workers or 4)
         elif cmd == "phase2b-u": phase2b(args or None, workers=workers or 2, streams_=("S2u",))
         else: phase2b(args or None, workers=workers or 2)
