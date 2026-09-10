@@ -220,7 +220,33 @@ def streams(D, vocab):
     return lab, dict(S1=S1, S2=S2, S5=S5)
 
 # ------------------------------------------------------------------------- phase 1b: CP-SAT exact
-def cpsat(items, Z, n, box, time_limit=300, margin=False, workers=4, forced=()):
+def cpsat_feasible(items, Z, n, box, time_limit=300, workers=4, hint=None):
+    """plain feasibility: every state's constraints unconditional, no objective. OPTIMAL/FEASIBLE with a
+    clean replay is a representable solution; INFEASIBLE is a proof that none exists in the box."""
+    from ortools.sat.python import cp_model
+    lo, hi = box
+    model = cp_model.CpModel()
+    w = [[model.NewIntVar(lo, hi, f"w{o}_{i}") for i in range(n)] for o in range(10)]
+    for x, t in items:
+        z = Z[x]; act = [(i, int(z[i])) for i in range(n) if z[i] != 0]
+        for o in range(10):
+            if o == t: continue
+            model.Add(sum((w[t][i] - w[o][i]) * zi for i, zi in act) >= (1 if o < t else 0))
+    if hint is not None:
+        for o in range(10):
+            for i in range(n): model.AddHint(w[o][i], max(lo, min(hi, int(hint[o][i]))))
+    solver = cp_model.CpSolver(); solver.parameters.max_time_in_seconds = time_limit; solver.parameters.num_workers = workers
+    t0 = time.time(); st = solver.Solve(model); dt = time.time() - t0
+    r = dict(status=solver.StatusName(st), seconds=round(dt, 1), states=len(items))
+    if st in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        W = [[int(solver.Value(w[o][i])) for i in range(n)] for o in range(10)]
+        bad = sum(1 for x, t in items if forward_ref(W, Z[x])[1] != t)
+        r.update(feasible=(bad == 0), replay_mislabelled=bad, weights=W, max_abs_w=max(abs(v) for row in W for v in row))
+    elif st == cp_model.INFEASIBLE: r["feasible"] = False
+    else: r["feasible"] = None
+    return r
+
+def cpsat(items, Z, n, box, time_limit=300, margin=False, workers=4, forced=(), hint=None, cut=None):
     """maximum feasible subset (margin False): one Bool per state, every constraint of that state
     enforced only when its Bool holds, maximise the count. margin True: every state enforced, maximise the
     integer m added to every gap. Returns the status, the objective and its bound, the unfit states, the
@@ -242,7 +268,14 @@ def cpsat(items, Z, n, box, time_limit=300, margin=False, workers=4, forced=()):
             if margin: model.Add(gap >= need + m)
             else: model.Add(gap >= need).OnlyEnforceIf(fit[k])
     if margin: model.Maximize(m)
-    else: model.Maximize(sum(fit))
+    else:
+        model.Maximize(sum(fit))
+        if cut is not None: model.Add(sum(fit) <= cut)          # a proven bound from the plain feasibility solve
+    if hint is not None:
+        for o in range(10):
+            for i in range(n): model.AddHint(w[o][i], max(lo, min(hi, int(hint[o][i]))))
+        if not margin:
+            for k, (x, t) in enumerate(items): model.AddHint(fit[k], 1 if forward_ref(hint, Z[x])[1] == t else 0)
     solver = cp_model.CpSolver(); solver.parameters.max_time_in_seconds = time_limit; solver.parameters.num_workers = workers
     t0 = time.time(); st = solver.Solve(model); dt = time.time() - t0
     status = solver.StatusName(st)
@@ -289,18 +322,44 @@ def name_states(xs, D, vocab):
         out.append(dict(x=list(x), senses=describe(x), teacher=ABS_ACTIONS[t], taught=(ABS_ACTIONS[t] if vocab == "abs" else REL_ACTIONS[to_relative(t, href(x))]), h=href(x), where=i))
     return out
 
+def hint_for(name, vocab, bits, setname, D=None, enc=None, n=None):
+    """a warm start for the solver: the weights the rule reached in Phase 2b (S2u for the unions, S1 for
+    the 231) at the same box, else a short run of the rule on the set itself"""
+    p2 = os.path.join(OUT, "phase2b.json"); res = json.load(open(p2)) if os.path.exists(p2) else {}
+    if setname != "s1424":
+        for s in (("S1",) if setname == "s231" else ("S2u", "S1")):
+            r = res.get(f"{name}|{vocab}|{bits}|{s}")
+            if r and "weights" in r: return r["weights"]
+    if D is None: return None
+    Z = {x: np.array(enc(list(x)), dtype=np.int64) for x in D["s1424"]}
+    lab = D[setname] if vocab == "abs" else relabel(D[setname])
+    return learn_stream(Z, list(lab.items()), lab, BOXES[bits], passes=100 if setname == "s1424" else 60)["weights"]
+
 def phase1b(only=None, time_limit=300, workers=4):
     os.makedirs(OUT, exist_ok=True)
     D = sets(); A = arms(); A1 = b1.arms()
-    path = os.path.join(OUT, "phase1b.json")
+    path = os.path.join(OUT, os.environ.get("P1_OUT", "phase1b.json"))      # a second process writes its own file, merged after
     res = json.load(open(path)) if os.path.exists(path) else {}
     def enc_cache(enc):
         Z = {}
         for x in D["s1424"]: Z[x] = np.array(enc(list(x)), dtype=np.int64)
         return Z
-    def run(key, items, Z, n, box, margin=False):
+    def run(key, items, Z, n, box, margin=False, hint=None):
+        """plain feasibility first (fast either way); the maximum feasible subset only when the set is
+        not feasible, warm-started and with the proven cut"""
         if key in res and res[key].get("status") not in (None, "UNKNOWN"): return res[key]
-        r = cpsat(items, Z, n, box, time_limit=time_limit, margin=margin, workers=workers)
+        if margin:
+            r = cpsat(items, Z, n, box, time_limit=time_limit, margin=True, workers=workers, hint=hint)
+        else:
+            f = cpsat_feasible(items, Z, n, box, time_limit=time_limit, workers=workers, hint=hint)
+            if f.get("feasible"):
+                r = dict(status="OPTIMAL", seconds=f["seconds"], states=len(items), objective=len(items), bound=len(items), fitted=len(items), unfit=[], min_unfit=0,
+                         feasible=True, replay_mislabelled=0, max_abs_w=f["max_abs_w"], weights=f["weights"], via="feasibility")
+            else:
+                cut = len(items) - 1 if f["feasible"] is False else None
+                r = cpsat(items, Z, n, box, time_limit=time_limit, workers=workers, hint=hint, cut=cut)
+                r["via"] = "max-subset"; r["feasibility_status"] = f["status"]; r["feasibility_seconds"] = f["seconds"]
+                if f["feasible"] is False: r["feasible"] = False
         res[key] = r; json.dump(res, open(path, "w"))
         return r
     plan = only or ["raw20", "T36", "A2", "R0", "R1", "R1b", "R2"]
@@ -312,13 +371,14 @@ def phase1b(only=None, time_limit=300, workers=4):
                 for bits in ((8, 4) if name.startswith("R") else (8,)):
                     if bits == 4 and setname == "s1424": continue
                     key = f"{name}|{vocab}|{setname}|{bits}"
-                    r = run(key, items, Z, n, BOXES[bits])
+                    hint = hint_for(name, vocab, bits, setname, D, enc, n)
+                    r = run(key, items, Z, n, BOXES[bits], hint=hint)
                     unfit = r.get("unfit", [])
                     print(f"{key:24s} {r['status']:10s} {r['seconds']:6.1f}s fitted {r.get('fitted')}/{len(items)} bound {r.get('bound')} unfit {len(unfit)} max|w| {r.get('max_abs_w')}", flush=True)
                     if unfit:
                         res[key]["unfit_named"] = name_states(unfit, D, vocab); json.dump(res, open(path, "w"))
                     if bits == 8 and r.get("feasible"):
-                        mk = key + "|margin"; mr = run(mk, items, Z, n, BOXES[8], margin=True)
+                        mk = key + "|margin"; mr = run(mk, items, Z, n, BOXES[8], margin=True, hint=r.get("weights"))
                         print(f"{mk:24s} {mr['status']:10s} {mr['seconds']:6.1f}s margin {mr.get('margin')} bound {mr.get('margin_bound')} max|w| {mr.get('max_abs_w')}", flush=True)
                     if bits == 8 and setname == "s231":
                         ck = key + "|cbc"
@@ -330,7 +390,9 @@ def phase1b(only=None, time_limit=300, workers=4):
         for name in UNDECIDED:
             enc, n, desc = A1[name]; Z = enc_cache(enc); items = list(D["s1424"].items())
             for bits in (4, 8):
-                key = f"P1:{name}|abs|s1424|{bits}"; r = run(key, items, Z, n, BOXES[bits])
+                key = f"P1:{name}|abs|s1424|{bits}"
+                hint = learn_stream(Z, items, D["s1424"], BOXES[bits], passes=60)["weights"]
+                r = run(key, items, Z, n, BOXES[bits], hint=hint)
                 print(f"{key:44s} {r['status']:10s} {r['seconds']:6.1f}s fitted {r.get('fitted')}/{len(items)} bound {r.get('bound')}", flush=True)
                 if r.get("unfit"): res[key]["unfit_named"] = name_states(r["unfit"], D, "abs"); json.dump(res, open(path, "w"))
     return res
@@ -350,7 +412,7 @@ def alternatives(keys=None, time_limit=300, workers=4):
         for j, u in enumerate(r["unfit"]):
             fk = f"{key}|force{j}"
             if fk in res and res[fk].get("status") != "UNKNOWN": continue
-            fr = cpsat(items, Z, n, BOXES[int(bits)], time_limit=time_limit, workers=workers, forced={tuple(u)})
+            fr = cpsat(items, Z, n, BOXES[int(bits)], time_limit=time_limit, workers=workers, forced={tuple(u)}, hint=r.get("weights"), cut=len(items) - r.get("min_unfit", 1))
             fr["forced"] = u
             if fr.get("unfit"): fr["unfit_named"] = name_states(fr["unfit"], D, vocab)
             res[fk] = fr; json.dump(res, open(path, "w"))
@@ -364,17 +426,21 @@ def _p2_one(args):
     Z = {x: np.array(enc(list(x)), dtype=np.int64) for x in D["s1424"]}
     lab, S = streams(D, vocab); union = D["s474"] if vocab == "abs" else relabel(D["s474"])
     if sname == "S4": r = learn_stream(Z, S["S1"], lab, BOXES[bits], noise=0.05, seed=0, union=union)
+    elif sname == "S2u":
+        # post-registration addition (PHASE2B.md says so): the 474 labels cycled, the review's own 474
+        # experiment; "states" is then the 474 and the "union" fields report the 231 subset
+        r = learn_stream(Z, list(union.items()), union, BOXES[bits], union=lab)
     else: r = learn_stream(Z, S[sname], lab, BOXES[bits], union=union)
     r["width"] = n
     return f"{name}|{vocab}|{bits}|{sname}", r
 
-def phase2b(only=None, workers=None):
+def phase2b(only=None, workers=None, streams_=("S1", "S2", "S4", "S5")):
     import multiprocessing as mp
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, "phase2b.json")
     res = json.load(open(path)) if os.path.exists(path) else {}
     plan = only or ["R0", "R1", "R1b", "R2", "raw20", "T36", "A2"]
-    jobs = [(name, vocab, bits, s) for name in plan for vocab in ("abs", "rel") for bits in (8, 6, 4) for s in ("S1", "S2", "S4", "S5") if f"{name}|{vocab}|{bits}|{s}" not in res]
+    jobs = [(name, vocab, bits, s) for name in plan for vocab in ("abs", "rel") for bits in (8, 6, 4) for s in streams_ if f"{name}|{vocab}|{bits}|{s}" not in res]
     with mp.Pool(workers or 2) as pool:
         for key, r in pool.imap_unordered(_p2_one, jobs):
             res[key] = r; json.dump(res, open(path, "w"))
@@ -476,30 +542,41 @@ def parity():
     return out
 
 # ------------------------------------------------------------------------------------- budget
+# the map of this build (src/kickass/tony-body.sym, BODY.md): the code and its data end at CODE_END; the
+# Movable segment follows in the file and is copied out at startup, so CODE_END+1..$9fff is free at run
+# time and holds the teaching shadow and the lesson block; the level tune lives at $a000 from then on.
+CODE_END = 0x863e; CEIL = 0xa000; SHADOW_NOW = 0x8900; LESSON_NOW = 0x8a00; LESSON_CAP = 500; LESSON1 = 11; LESSON2 = 14
+BRAIN01_SLOT = 280; MUL_TABLE = 256; EXPANSION = 20          # retired by a byte-weight, flag-input brain
 def budget():
     """the exact BRAIN02 byte budget: nothing built, a table. The slot: marker 8, header 8 (kind, layout,
     inputs, hidden, outputs, period, lineage, rule), weights 10 * n bytes, mood 8 as today; the retina as
     a table (3 bytes per threshold flag, 4 per conjunction of two flags, 2 per order-2 pair over base
-    flags) or as code; the slot rounded to a page. The run-time map of this build for the fit."""
-    A = arms()
+    flags) or as code (an estimate, labelled); the flag vector n bytes of RAM; the teaching shadow a copy
+    of the weights; the lesson block at its cap. The fit against the run-time map of this build."""
     def retina_bytes(name):
-        if name == "R0": return 56 * 3
-        if name == "R1": return 56 * 3 + 6 * 4
-        if name == "R1b": return 56 * 3 + 8 * 4
-        if name == "R2": return 56 * 3 + 8 * 4 + 273 * 2
-        return None
+        return {"R0": 56 * 3, "R1": 56 * 3 + 6 * 4, "R1b": 56 * 3 + 8 * 4, "R2": 56 * 3 + 8 * 4 + 273 * 2}[name]
     rows = []
     for name, n in (("R0", 56), ("R1", 62), ("R1b", 64), ("R1b+goal", 97), ("R2", 337)):
-        base = name.split("+")[0]
-        rt = retina_bytes(base) + (33 * 3 if "goal" in name else 0)
+        base = name.split("+")[0]; goal = "goal" in name
+        rt = retina_bytes(base) + (33 * 3 if goal else 0)
         weights = 10 * n; header = 16; mood = 8
-        slot = header + weights + mood; slot_page = (slot + 255) // 256 * 256
-        slot_rt = slot + rt; slot_rt_page = (slot_rt + 255) // 256 * 256
-        shadow = weights
-        rows.append(dict(arch=name, inputs=n, header=header, weights=weights, mood=mood, retina_table=rt, slot=slot, slot_page_aligned=slot_page,
-                         spare_in_page=slot_page - slot, max_inputs_in_page=(slot_page - header - mood) // 10,
-                         slot_with_table=slot_rt, slot_with_table_page_aligned=slot_rt_page, teach_shadow=shadow,
-                         acc_bound=n * 128 + 128, header_max_inputs=255, int16_max_inputs=(32768 - 128) // 128))
+        slot = header + weights + mood; pages = (slot + 255) // 256
+        r = dict(arch=name, inputs=n, header=header, weights=weights, mood=mood, slot=slot, slot_pages=pages, spare_in_pages=pages * 256 - slot,
+                 max_inputs_in_pages=(pages * 256 - header - mood) // 10, retina_table=rt, flag_vector=n, teach_shadow=weights,
+                 acc_bound=n * 128 + 128, int16_ok=(n * 128 + 128) <= 32768, header_max_inputs=255, int16_max_inputs=(32768 - 128) // 128)
+        # the code region: the slot replaces BRAIN01, the multiply table and the nibble expansions go; the
+        # table and the flag vector come; the retina's code is an estimate (150..400 bytes)
+        data_delta = slot - BRAIN01_SLOT - MUL_TABLE - EXPANSION + rt + n
+        r["code_region_delta_data"] = data_delta; r["code_region_delta_with_code_estimate"] = [data_delta + 150, data_delta + 400]
+        # the run-time fit: shadow + lesson block must sit between the new code end and the ceiling
+        lesson_size = LESSON2 if goal else LESSON1
+        for cap in (500, 400, 300, 200):
+            block = cap * lesson_size + 16
+            max_growth = CEIL - block - weights - (CODE_END + 1)
+            r[f"max_code_growth_at_cap_{cap}"] = max_growth
+        r["fits_now_at_cap_500_estimate_high"] = (data_delta + 400) <= r["max_code_growth_at_cap_500"]
+        r["lesson_cap_that_fits_estimate_high"] = (CEIL - weights - (CODE_END + 1 + data_delta + 400) - 16) // lesson_size
+        rows.append(r)
     return rows
 
 if __name__ == "__main__":
@@ -523,11 +600,12 @@ if __name__ == "__main__":
             for a in range(10): assert to_relative(to_absolute(a, h), h) == a and to_absolute(to_relative(a, h), h) == a
         print("vocabulary round trips: ok")
     elif cmd == "parity": parity()
-    elif cmd in ("phase1b", "alternatives", "phase2b"):
+    elif cmd in ("phase1b", "alternatives", "phase2b", "phase2b-u"):
         args = sys.argv[2:]; workers = None
         if args[:1] == ["--workers"]: workers = int(args[1]); args = args[2:]
         if cmd == "phase1b": phase1b(args or None, workers=workers or 4)
         elif cmd == "alternatives": alternatives(args or None, workers=workers or 4)
+        elif cmd == "phase2b-u": phase2b(args or None, workers=workers or 2, streams_=("S2u",))
         else: phase2b(args or None, workers=workers or 2)
     elif cmd == "budget":
         for r in budget(): print(r)
