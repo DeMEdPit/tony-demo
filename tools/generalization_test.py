@@ -421,5 +421,132 @@ def check():
         print(f"{scn['id']:24s} clone ({p['cx']},{p['cy']}) s{p['cs']}  Tony ({p['tx']},{p['ty']}) s{p['ts']}  bricks {p['bricks']} room {p['room']}  senses {p['senses']}  oracle {ACTIONS[oracle(p, scr, mat)]}, twin {ACTIONS[builder_twin(p['senses'])]}")
         print("      map around him (columns %d..%d, rows %d..): " % (left - 6, left + 9, max(0, top - 3)) + " | ".join(rows))
 
-if __name__ == "__main__":
+if __name__ == "__main__" and sys.argv[1] != "run2":
     {"prereg": prereg, "train": train, "run": run, "check": check}[sys.argv[1]]()
+
+# =============================================================================== the curriculum experiment
+# run2: the frozen curriculum brain against the old corpus (a regression set now) and the shadow holdout,
+# with the strict rule (a near goal must hold in a grounded or ladder state) applied to every arm alike.
+STRICT_STATES = (0, 1, 2, 3, 7)
+def goal_met_strict(g, p):
+    if g["kind"] == "near": return goal_met(g, p) and (p["cs"] & 0x7f) in STRICT_STATES
+    return goal_met(g, p)
+
+def episode_policy(scn, policy, driver_cls, prg, mat, enc, screens, arm_name, tick=4):
+    """an arm that is a policy driven through the override (the teacher): decides every tick, the goal
+    checked every POLL frames like the brain arms; no brain involved (kind 0 in the slot, teaching off)"""
+    m = Machine(prg)
+    m.do("wait:300," + scn["setup"] + f"poke:{TEACH:X}:00,poke:{KIND:X}:00,poke:{OV:X}:80,wait:1")
+    drv = driver_cls(m); log, success, t_goal, screen_id = [], None, None, None
+    def snap():
+        nonlocal screen_id
+        f = tempfile.NamedTemporaryFile(suffix=".scr", delete=False).name
+        m.do(f"dump:C000:3E8:{f}"); b = open(f, "rb").read(); os.unlink(f)
+        h = hashlib.sha256(b).hexdigest()[:16]; screens[h] = b.hex(); screen_id = h
+    p0 = parse_poll(m.do("sync," + POLL_PEEKS)); snap(); p0["screen"] = screen_id; log.append(dict(off=0, **p0))
+    bricks, during, frames = p0["bricks"], sorted(scn["during"]), 0
+    restraint_ok = goal_met_strict(scn["goal"], p0) if scn["goal"]["kind"] == "restraint" else None
+    while frames < scn["limit"]:
+        p = parse_poll(m.do("sync," + POLL_PEEKS)) if frames else p0
+        a = policy(p["senses"])
+        for at, cmd in during:
+            if frames - tick < at <= frames: m.do(cmd)
+        m.do(drv.emit(a)); frames += 32 if a >= 8 else tick
+        p = parse_poll(m.do("sync," + POLL_PEEKS))
+        if p["bricks"] != bricks: snap(); bricks = p["bricks"]
+        p["screen"] = screen_id; p["off"] = frames; p["policy_action"] = a; log.append(p)
+        enc.append(dict(scenario=scn["id"], arm=arm_name, off=frames, key=",".join(map(str, p["senses"])), action=a, cx=p["cx"], cy=p["cy"], cs=p["cs"], tx=p["tx"], ty=p["ty"],
+                        screen=screen_id, oracle=oracle(p, bytes.fromhex(screens[screen_id]), mat), twin=builder_twin(p["senses"])))
+        if scn["goal"]["kind"] == "near":
+            if goal_met_strict(scn["goal"], p): success, t_goal = True, frames; break
+        elif not goal_met_strict(scn["goal"], p): restraint_ok = False
+    if scn["goal"]["kind"] == "near" and success is None: success = False
+    if scn["goal"]["kind"] == "restraint": success = bool(restraint_ok)
+    end = m.do(pk("lessonTotal", 2)); m.close(); last = log[-1]
+    return dict(scenario=scn["id"], arm=arm_name, success=success, time_to_goal=t_goal, polls=len(log) - 1,
+                start=dict(cx=p0["cx"], cy=p0["cy"], cs=p0["cs"], tx=p0["tx"], ty=p0["ty"], ts=p0["ts"], bricks=p0["bricks"]),
+                final=dict(cx=last["cx"], cy=last["cy"], cs=last["cs"], tx=last["tx"], ty=last["ty"], ts=last["ts"], bricks=last["bricks"], frame=last["off"]),
+                min_cy=min(r["cy"] for r in log), min_dist=min(abs(r["cx"] - r["tx"]) + abs(r["cy"] - r["ty"]) for r in log),
+                bricks_laid=last["bricks"] - p0["bricks"], left_room=any(r["room"] != 0 for r in log), weights_unchanged=True, lessons_after=end[0] | end[1] << 8, trace=log)
+
+def episode_strict(scn, arm_name, arm, prg, mat, enc, screens):
+    """the brain arms under the strict rule: episode() with goal_met swapped"""
+    global goal_met
+    saved = goal_met
+    try:
+        goal_met = goal_met_strict
+        return episode(scn, arm_name, arm, prg, mat, enc, screens)
+    finally:
+        goal_met = saved
+
+def run2():
+    import importlib.util as iu
+    spec = iu.spec_from_file_location("cu", os.path.join(ROOT, "tools/curriculum.py")); cu = iu.module_from_spec(spec); spec.loader.exec_module(cu)
+    CUR = os.path.join(ROOT, "deliverables/curriculum")
+    H = json.load(open(os.path.join(OUT, "hashes.json"))); mat = open(os.path.join(OUT, "materials.bin"), "rb").read()
+    brain2 = cu.BRAIN2; perm2 = os.path.join(CUR, "taught-curriculum-permuted.bin")
+    frozen = json.load(open(os.path.join(CUR, "training-log.json")))["frozen"]
+    assert sha(brain2) == frozen["sha256"], "the curriculum brain is not the frozen one"
+    assert sha(BRAIN) == H["brain"], "the old brain changed"
+    A = dict(learned2=dict(weights=brain2, kind=1), learned_old=dict(weights=BRAIN, kind=1), teacher="policy", builder=dict(weights=None, kind=2),
+             follow=dict(weights=None, kind=0), zero=dict(weights=ZERO, kind=1), permuted2=dict(weights=perm2, kind=1))
+    corpora = [("old", json.load(open(os.path.join(OUT, "scenarios.json"))))]
+    if os.path.exists(os.path.join(OUT, "shadow.json")): corpora.append(("shadow", json.load(open(os.path.join(OUT, "shadow.json")))))
+    results, enc, screens = [], [], {}
+    for cname, S in corpora:
+        for scn in S:
+            prg = PRG_DEFAULT if scn["seed"] is None else os.path.join(OUT, "prg", f"tony-body-ladder-C{scn['C']}.prg")
+            for name, arm in A.items():
+                if arm == "policy": r = episode_policy(scn, cu.teacher, cu.OverrideDriver, prg, mat, enc, screens, name)
+                else: r = episode_strict(scn, name, arm, prg, mat, enc, screens)
+                r["corpus"] = cname; results.append(r)
+                print(f"{cname:6s} {scn['id']:26s} {name:11s} {'ok  ' if r['success'] else 'FAIL'} t={r['time_to_goal']} final=({r['final']['cx']},{r['final']['cy']},s{r['final']['cs']}) minDist={r['min_dist']} bricks+{r['bricks_laid']} unchanged={r['weights_unchanged']} lessons={r['lessons_after']}", flush=True)
+    assert sha(brain2) == frozen["sha256"] and sha(BRAIN) == H["brain"], "a brain file changed during the run"
+    json.dump(dict(prereg_commit=subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip(), brain2_sha256=frozen["sha256"], brain_old_sha256=H["brain"], results=results),
+              open(os.path.join(CUR, "results2.json"), "w"))
+    json.dump(dict(encountered=enc, screens=screens), open(os.path.join(CUR, "encountered2.json"), "w"))
+    report2(corpora, A, results, enc, cu)
+
+def report2(corpora, A, results, enc, cu):
+    CUR = os.path.join(ROOT, "deliverables/curriculum")
+    by = {(r["corpus"], r["scenario"], r["arm"]): r for r in results}
+    L = ["# Curriculum experiment: results\n", "Strict rule for every arm: a near goal counts only in a grounded or ladder state.\n"]
+    for cname, S in corpora:
+        L += [f"## {'The old corpus (regression, 24 held out)' if cname == 'old' else 'The shadow holdout (fresh)'}\n", "| scenario | bucket | " + " | ".join(A) + " |", "|---|---|" + "---|" * len(A)]
+        for s in S:
+            cells = []
+            for a in A:
+                r = by[(cname, s["id"], a)]; cells.append((f"ok {r['time_to_goal']}" if r["time_to_goal"] else "ok") if r["success"] else f"FAIL (d {r['min_dist']}{', +' + str(r['bricks_laid']) if r['bricks_laid'] else ''})")
+            L.append(f"| {s['id']} | {s['bucket']}{'' if s.get('held_out', True) else ' (training)'} | " + " | ".join(cells) + " |")
+        buckets = []
+        for s in S:
+            if s["bucket"] not in buckets: buckets.append(s["bucket"])
+        L += ["\n| bucket | n | " + " | ".join(A) + " |", "|---|---|" + "---|" * len(A)]
+        def rate(sel, a): return f"{sum(1 for s in sel if by[(cname, s['id'], a)]['success'])}/{len(sel)}"
+        for b in buckets:
+            sel = [s for s in S if s["bucket"] == b]; L.append(f"| {b} | {len(sel)} | " + " | ".join(rate(sel, a) for a in A) + " |")
+        held = [s for s in S if s.get("held_out", True)]; L.append(f"| **all{' held out' if cname == 'old' else ''}** | {len(held)} | " + " | ".join(rate(held, a) for a in A) + " |")
+        L.append("")
+    # the residual: the frozen brain against its teacher on the states teaching visited (pass 1's decisions, identical every pass)
+    brain2 = open(cu.BRAIN2, "rb").read(); states = {}
+    for f in sorted(os.listdir(CUR)):
+        if f.startswith("decisions-"):
+            for d in json.load(open(os.path.join(CUR, f))): states.setdefault(",".join(map(str, d["senses"])), d["action"])
+    dis = [(k, t, forward(brain2, list(map(int, k.split(","))))) for k, t in states.items() if forward(brain2, list(map(int, k.split(",")))) != t]
+    L += ["## The residual against the teacher\n", f"{len(states)} distinct sense vectors were visited under teaching; the frozen brain reproduces the teacher's action on {len(states) - len(dis)} of them ({100 * (len(states) - len(dis)) / max(1, len(states)):.1f}%).",
+          "| senses | teacher | brain |", "|---|---|---|"] + [f"| {k} | {ACTIONS[t]} | {ACTIONS[b]} |" for k, t, b in dis[:80]]
+    # label aliasing in the curriculum's lessons, all passes
+    by_x = {}
+    for f in sorted(os.listdir(CUR)):
+        if f.startswith("lessons-pass"):
+            for l in json.load(open(os.path.join(CUR, f))): by_x.setdefault(",".join(map(str, l["x"])), []).append(l["t"])
+    conf = {k: v for k, v in by_x.items() if len(set(v)) > 1}
+    L += ["\n## Aliasing in the curriculum's lessons\n", f"{sum(len(v) for v in by_x.values())} lessons over all passes, {len(by_x)} distinct states, {len(conf)} states with conflicting labels:"]
+    for k, v in list(conf.items())[:40]: L.append(f"- `{k}`: " + ", ".join(f"{ACTIONS[t]} x{v.count(t)}" for t in sorted(set(v))))
+    keys = {}
+    for e in enc: keys.setdefault(e["key"], set()).add(e["oracle"])
+    L += [f"\nOracle aliasing over the evaluation's {len(keys)} distinct vectors: {sum(1 for v in keys.values() if len(v) > 1)} vectors where the privileged oracle wants different actions."]
+    open(os.path.join(CUR, "RESULTS2.md"), "w").write("\n".join(L) + "\n"); print("\n".join(L[:60]))
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "run2":
+    run2()
