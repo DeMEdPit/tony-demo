@@ -69,6 +69,7 @@ def blocks_all():
     return sorted(D["s1424"]), D
 def xb(x): return bytes(v & 15 for v in x)
 def parity(b, quick=False):
+    WAIT = 2 if b.n <= 72 else 6                                     # the hook runs inside one main-loop pass; 128 fully set inputs take 2.6 frames
     """gate 1 on one build: the retina on every recorded block, the golden sets at this build's width (and the
     128-input sets on the parity build), the vocabulary, malformed slots, and a learned brain replayed"""
     global ok
@@ -85,7 +86,7 @@ def parity(b, quick=False):
         bad = 0; total = 0
         for c in range(0, len(blocks), 150):
             chunk = blocks[c:c + 150]; script = "wait:300," + f"poke:{TM:X}:00,"
-            for x in chunk: script += po(TI, xb(x)) + f"poke:{TR:X}:01,wait:2,sync," + pk(TF, n) + pk(TH) + pk(TO) + pk(TA)
+            for x in chunk: script += po(TI, xb(x)) + f"poke:{TR:X}:01,wait:{WAIT},sync," + pk(TF, n) + pk(TH) + pk(TO) + pk(TA)
             v, out = b.run(script); per = n + 3
             for k, x in enumerate(chunk):
                 got = v[k * per:(k + 1) * per]; total += 1
@@ -98,7 +99,7 @@ def parity(b, quick=False):
     cases = [c for c in G if c["n"] == n]
     if cases:
         script = "wait:300," + f"poke:{TM:X}:01,"
-        for c in cases: script += po(W, bytes.fromhex(c["weights"])) + po(MOOD, bytes.fromhex(c["mood"])) + po(TF, bytes(c["x"])) + f"poke:{TR:X}:01,wait:2,sync," + pk(TAC, 20) + pk(TO) + pk(TA)
+        for c in cases: script += po(W, bytes.fromhex(c["weights"])) + po(MOOD, bytes.fromhex(c["mood"])) + po(TF, bytes(c["x"])) + f"poke:{TR:X}:01,wait:{WAIT},sync," + pk(TAC, 20) + pk(TO) + pk(TA)
         v, out = b.run(script); bad = 0
         for k, c in enumerate(cases):
             got = v[k * 22:(k + 1) * 22]; acc = [s16(got[2 * o], got[2 * o + 1]) for o in range(10)]
@@ -112,7 +113,7 @@ def parity(b, quick=False):
         script = "wait:300," + f"poke:{TM:X}:01," + po(MOOD, bytes(10))
         for c in cases:
             script += po(W, bytes.fromhex(c["weights_before"]))
-            for l in c["lessons"]: script += po(TF, bytes(l["x"])) + f"poke:{LT:X}:{l['t']:02X},poke:{LR:X}:01,wait:2,sync," + pk(LP) + pk(LK)
+            for l in c["lessons"]: script += po(TF, bytes(l["x"])) + f"poke:{LT:X}:{l['t']:02X},poke:{LR:X}:01,wait:{WAIT},sync," + pk(LP) + pk(LK)
             script += "sync," + pk(W, 10 * n)
         v, out = b.run(script); i = 0; bad = 0
         for c in cases:
@@ -128,8 +129,8 @@ def parity(b, quick=False):
     script = "wait:300," + f"poke:{TM:X}:00," + po(MOOD, bytes(10))
     for c in G:
         Wm = [[0] * n for _ in range(10)]; Wm[c["output"]][0] = 100               # the bias flag alone chooses the output
-        script += po(W, bytes(v & 255 for row in Wm for v in row)) + po(TI, xb(c["block"])) + f"poke:{TR:X}:01,wait:2,sync," + pk(TO) + pk(TA) + pk(TH)
-        script += f"poke:{LT:X}:{c['pressed_absolute']:02X},poke:{LR:X}:01,wait:2,sync," + pk(LREL) + pk(LP)
+        script += po(W, bytes(v & 255 for row in Wm for v in row)) + po(TI, xb(c["block"])) + f"poke:{TR:X}:01,wait:{WAIT},sync," + pk(TO) + pk(TA) + pk(TH)
+        script += f"poke:{LT:X}:{c['pressed_absolute']:02X},poke:{LR:X}:01,wait:{WAIT},sync," + pk(LREL) + pk(LP)
     v, out = b.run(script); bad = 0
     for k, c in enumerate(G):
         got = v[k * 5:(k + 1) * 5]; h = 1 if c["h"] == 1 else 0
@@ -140,14 +141,14 @@ def parity(b, quick=False):
     # 5. malformed slots -> kind 0; a valid kind 2 stays 2
     KN = b["brainKindNow"]; fields = [("marker", b["brainMarker"] + 2, ord("X")), ("layout", b["brainLayout"], 1), ("kind", KIND, 3), ("inputs", b["brainInputCount"], n + 1), ("hidden", b["brainHiddenCount"], 1),
                                       ("outputs", b["brainOutputCount"], 9), ("rule", b["brainRule"], 1), ("vocabulary", b["brainVocab"], 2), ("retina", b["brainRetinaId"], b.retina + 1)]
-    script = "wait:300," + f"poke:{KIND:X}:01,wait:2,sync," + pk(KN)
+    script = "wait:300," + f"poke:{KIND:X}:01,wait:{WAIT},sync," + pk(KN)
     for name, addr, badv in fields:
-        script += f"peek:{addr:X}," + f"poke:{addr:X}:{badv:02X},wait:2,sync," + pk(KN)
+        script += f"peek:{addr:X}," + f"poke:{addr:X}:{badv:02X},wait:{WAIT},sync," + pk(KN)
         script += f"poke:{addr:X}:{{{name}}},"     # restored below
     # build with the restore values by reading them first
     v0, _ = b.run("wait:300," + "".join(f"peek:{addr:X}," for name, addr, badv in fields))
     for (name, addr, badv), orig in zip(fields, v0): script = script.replace(f"poke:{addr:X}:{{{name}}},", f"poke:{addr:X}:{orig:02X},")
-    script += f"poke:{KIND:X}:02,wait:2,sync," + pk(KN) + f"poke:{KIND:X}:00,wait:2,sync," + pk(KN)
+    script += f"poke:{KIND:X}:02,wait:{WAIT},sync," + pk(KN) + f"poke:{KIND:X}:00,wait:{WAIT},sync," + pk(KN)
     v, out = b.run(script)
     k2, k0 = 1 + 2 * len(fields), 2 + 2 * len(fields)
     checks = [v[0] == 1] + [v[2 + 2 * k] == 0 for k in range(len(fields))] + [v[k2] == 2, v[k0] == 0]
@@ -159,7 +160,7 @@ def parity(b, quick=False):
         Wl = P2[key]["weights"]; blocks, D = blocks_all(); test = sorted(D["s474"])
         if quick: test = test[::5]
         script = "wait:300," + f"poke:{TM:X}:00," + po(MOOD, bytes(10)) + po(W, bytes(v & 255 for row in Wl for v in row))
-        for x in test: script += po(TI, xb(x)) + f"poke:{TR:X}:01,wait:2,sync," + pk(TO) + pk(TA)
+        for x in test: script += po(TI, xb(x)) + f"poke:{TR:X}:01,wait:{WAIT},sync," + pk(TO) + pk(TA)
         v, out = b.run(script); bad = 0
         for k, x in enumerate(test):
             z = ref.flags(entries, list(x)); acc, o = ref.forward(Wl, z); a = ref.to_absolute(o, ref.h_of(list(x))) if b.vocab else o
@@ -188,8 +189,8 @@ def senses(m, b):
     v = m.do("sync," + pk(b["cloneSenses"], 20) + pk(b["cloneX"], 2) + pk(b["cloneY"]) + pk(b["cloneState"]) + pk(b["physPlayerX"], 2) + pk(b["physPlayerY"]) + pk(b["physPlayerState"]))
     return dict(senses=[sgn(x) for x in v[:20]], cx=v[20] | v[21] << 8, cy=v[22], cs=v[23], px=v[24] | v[25] << 8, py=v[26], ps=v[27])
 def ring_state(m, b):
-    v = m.do("sync," + pk(b["lessonWriteSeq"], 2) + pk(b["lessonReadSeq"], 2) + pk(b["lessonStatus"]) + pk(b["brainEducation"], 2) + pk(b["lessonCap"], 2) + pk(b["lessonDrains"]) + pk(b["lessonCumWrite"], 2) + pk(b["lessonCumRead"], 2))
-    return dict(write=v[0] | v[1] << 8, read=v[2] | v[3] << 8, status=v[4], education=v[5] | v[6] << 8, cap=v[7] | v[8] << 8, drains=v[9], cumWrite=v[10] | v[11] << 8, cumRead=v[12] | v[13] << 8)
+    v = m.do("sync," + pk(b["lessonWriteSeq"], 2) + pk(b["lessonReadSeq"], 2) + pk(b["lessonStatus"]) + pk(b["brainEducation"], 2) + pk(b["lessonCap"], 2) + pk(b["lessonDrains"]) + pk(b["lessonCumWrite"], 2) + pk(b["lessonCumRead"], 2) + pk(b["lessonNotPaired"], 2))
+    return dict(write=v[0] | v[1] << 8, read=v[2] | v[3] << 8, status=v[4], education=v[5] | v[6] << 8, cap=v[7] | v[8] << 8, drains=v[9], cumWrite=v[10] | v[11] << 8, cumRead=v[12] | v[13] << 8, not_paired=v[14] | v[15] << 8)
 def slot(m, b):
     """the whole slot as bytes"""
     n = b["BRAIN_BLOCK_SIZE"]; out = []
@@ -202,22 +203,29 @@ def teach_frames(m, b, drv, frames, on_tick=None):
         d = senses(m, b); a = cu.teacher(d["senses"]); m.do(drv.emit(a)); f += 32 if a in (cu.BUILDL, cu.BUILDR) else cu.TICK
         if on_tick: on_tick(m, f)
     if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
-STAIRS_C33 = "wait:300,joy:8:{},wait:20,".format((8 * 33 - 60 - 184) // 2) + "".join("joy:18:6,wait:20,joy:17:6,wait:30," for _ in range(5)) + "wait:10,hold:1,wait:50,release:1,wait:10"
+STAIRS_C33 = "wait:300,joy:8:{},wait:20,".format((8 * 33 - 60 - 184) // 2) + "".join("joy:18:6,wait:20,joy:17:6,wait:30," for _ in range(5)) + "wait:10,hold:1,wait:50,release:1,wait:10,"   # every setup ends with a comma: commands are appended
 EPISODES = [("E01_follow_right", "wait:300,joy:8:30,wait:20,", 300), ("E02_follow_left", "wait:300,joy:4:40,wait:20,", 300), ("E07_stairs_C33", STAIRS_C33, 700), ("E03_follow_far_right", "wait:300,joy:8:50,wait:20,", 400), ("E12_restraint_wall", "wait:300,joy:8:60,wait:20,", 400)]
 
-def drain(m, b, saved_slot, log):
-    """read the unread lessons, acknowledge with the checksum, replay them over the saved slot with the
-    reference and compare with the machine's slot byte for byte; returns the new saved slot"""
-    st = ring_state(m, b); cap = st["cap"]; n = b.n
-    seqs = list(range(st["read"], st["write"])); recs = []
-    for s in seqs:
-        base = b["lessonData"] + (s % cap) * 11
-        recs.append(bytes(m.do("".join(f"peek:{base + i:X}," for i in range(11)))))
-    total = sum(sum(r) for r in recs) & 0xffff
-    m.do(po(b["lessonAckSeq"], w16(st["write"])) + po(b["lessonAckSum"], w16(total)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2")
-    st2 = ring_state(m, b)
-    accepted = (st2["status"] & 0x80) != 0 and st2["read"] == st["write"] and st2["drains"] == st["drains"] + 1 and (st2["status"] & 0x0e) == 0
-    # the replay: the reference over the saved slot
+def drain(m, b, saved_slot, log, teaching=True):
+    """with teaching held off for the frames the handshake needs (no lesson can be recorded meanwhile; the
+    workbench pauses the emulator instead), read the unread lessons, acknowledge with the checksum (retrying
+    if a lesson landed between the read and the request), replay the accepted range over the saved slot with
+    the reference and compare with the machine's slot byte for byte. Returns (the new saved slot, ok)."""
+    TEACH = b["teachMode"]; n = b.n
+    if teaching: m.do(f"poke:{TEACH:X}:00,wait:2")
+    accepted = False; recs = []
+    for attempt in range(4):
+        st = ring_state(m, b); cap = st["cap"]
+        recs = []
+        for sq in range(st["read"], st["write"]):
+            base = b["lessonData"] + (sq % cap) * 11
+            recs.append(bytes(m.do("".join(f"peek:{base + i:X}," for i in range(11)))))
+        total = sum(sum(r) for r in recs) & 0xffff
+        m.do(po(b["lessonAckSeq"], w16(st["write"])) + po(b["lessonAckSum"], w16(total)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2")
+        st2 = ring_state(m, b)
+        accepted = (st2["status"] & 0x80) != 0 and st2["read"] == st["write"] and st2["drains"] == st["drains"] + 1 and (st2["status"] & 0x0e) == 0
+        if accepted or not (st2["status"] & 0x02): break                  # accepted, or refused for a reason a retry cannot mend
+    if teaching: m.do(f"poke:{TEACH:X}:01")
     p = ref.parse_slot(saved_slot); W = [row[:] for row in p["weights"]]; edu = p["education"]; entries = ref.TABLES[b.retina][1]()
     divergent = 0
     for r in recs:
@@ -228,68 +236,87 @@ def drain(m, b, saved_slot, log):
         edu += 1
     machine = slot(m, b); pm = ref.parse_slot(machine)
     same = pm["weights"] == W and pm["education"] == edu
-    log.append(dict(drained=len(recs), seq_from=st["read"], seq_to=st["write"], sum=total, accepted=accepted, replay_took_all=(divergent == 0), weights_equal=(pm["weights"] == W),
+    log.append(dict(drained=len(recs), seq_from=st["read"], seq_to=st["write"], sum=total, accepted=accepted, attempts=attempt + 1, replay_took_all=(divergent == 0), weights_equal=(pm["weights"] == W),
                     education_machine=pm["education"], education_replay=edu, hash_machine=ref.brain_hash(machine), hash_replay=ref.brain_hash(ref.slot_bytes(pm["kind"], pm["vocabulary"], pm["retina_id"], W, edu))))
-    return machine, accepted and same and divergent == 0
+    good = accepted and same and divergent == 0
+    return (machine if good else saved_slot), good
+def dummy_drain(m, b):
+    """the same frames as a drain, no acknowledgement (the uninterrupted run of the equivalence test)"""
+    m.do(f"poke:{b['teachMode']:X}:00,wait:2,wait:2,poke:{b['teachMode']:X}:01")
+
+import random as _random
+_CHATTER = _random.Random(20260911); CHATTER = [_CHATTER.choice((1, 2, 5, 3, 0, 4)) for _ in range(2000)]
+def chatter(tick):
+    """a teacher whose next action the senses cannot predict (a fixed pseudo-random sequence of toward, away,
+    jump, up, idle, down), so the brain disagrees on most ticks and the ring fills quickly; the sense of the
+    lessons is beside the point in the ring tests. A cycling sequence was learned in a few lessons through
+    the last-action flags."""
+    return CHATTER[tick]
+def chatter_frames(m, b, drv, frames, on_tick=None):
+    f = 0; tick = 0
+    while f < frames:
+        a = chatter(tick); m.do(drv.emit(a)); f += cu.TICK; tick += 1
+        if on_tick: on_tick(m, f)
+    if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
 
 def gate_drain(b, outdir):
     """gate 4: three ring cycles at a lowered capacity (a research control at boot), the replay equality after
-    every drain, the full-ring pause, and the split-versus-uninterrupted equivalence"""
+    every drain, the full-ring pause, refused acknowledgements, and the split-versus-uninterrupted equivalence"""
     global ok
     os.makedirs(outdir, exist_ok=True); n = b.n; W, KIND, TEACH, CAP = b["brainWeights"], b["brainKind"], b["teachMode"], b["lessonCap"]
     print(f"{b.name}: gate 4, save, drain and reuse")
-    # 1. three ring cycles: capacity 40, drains whenever 30 or more are unread, over the stairs episode repeated with the brain carried
-    log = []; saved = None; wraps_seen = 0; sessions = 0; total_lessons = 0; all_ok = True
-    for k in range(8):
-        m = Machine(b); m.do(EPISODES[2][1] if k % 2 == 0 else EPISODES[0][1])
-        if saved: m.do(po(b["brainMarker"], saved))               # the saved brain, whole
+    log = []; saved = None; wraps = 0; total_lessons = 0; all_ok = True; last_write = 0
+    for k in range(2):
+        m = Machine(b); m.do(EPISODES[2][1] if k == 0 else EPISODES[0][1])
+        if saved: m.do(po(b["brainMarker"], saved))
         m.do(po(CAP, w16(40)) + f"poke:{KIND:X}:01,poke:{TEACH:X}:01,wait:1")
         if saved is None: saved = slot(m, b)
         drv = cu.PortDriver(m)
         def on_tick(m, f):
-            nonlocal saved, all_ok, wraps_seen
+            nonlocal saved, all_ok, wraps, last_write
             st = ring_state(m, b)
+            if st["write"] // 40 > last_write // 40: wraps += 1
+            last_write = st["write"]
             if st["write"] - st["read"] >= 30:
                 if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
                 saved, good = drain(m, b, saved, log); all_ok &= good
-                if st["write"] >= 40 * (wraps_seen + 1): wraps_seen += 1
-        teach_frames(m, b, drv, EPISODES[2][2] if k % 2 == 0 else EPISODES[0][2], on_tick)
-        m.do(f"poke:{TEACH:X}:00,wait:1")
-        st = ring_state(m, b)
+        chatter_frames(m, b, drv, 640, on_tick)
+        m.do(f"poke:{TEACH:X}:00,wait:1"); st = ring_state(m, b)
         if st["write"] > st["read"]: saved, good = drain(m, b, saved, log); all_ok &= good
-        total_lessons += st["write"]; sessions += 1; m.close()
-        if wraps_seen >= 3 and len(log) >= 6: break
-    check(all_ok and len(log) >= 3, f"{len(log)} drains over {sessions} sessions, {total_lessons} lessons, {wraps_seen} ring wraps at capacity 40: every acknowledgement accepted and every replay equal to the machine byte for byte")
+        total_lessons += st["write"]; last_write = 0; m.close()
+    check(all_ok and len(log) >= 6 and wraps >= 3, f"{len(log)} drains over 2 sessions, {total_lessons} lessons, {wraps} ring wraps at capacity 40: every acknowledgement accepted and every replay equal to the machine byte for byte")
     check(all(l["hash_machine"] == l["hash_replay"] for l in log), "the behavioural hash of the machine's slot equals the replay's after every drain")
     edu = [l["education_machine"] for l in log]
     check(all(a <= c for a, c in zip(edu, edu[1:])) and edu[-1] == sum(l["drained"] for l in log), f"the education count runs across sessions and drains: {edu[-1]} lessons applied over the whole run, {sum(l['drained'] for l in log)} drained")
-    json.dump(log, open(os.path.join(outdir, f"drain-{b.name}.json"), "w"), indent=1)
-    # 2. the full ring pauses learning: capacity 12, no drain; then an acknowledgement resumes it
-    m = Machine(b); m.do(EPISODES[2][1] + po(CAP, w16(12)) + f"poke:{KIND:X}:01,poke:{TEACH:X}:01,wait:1")
-    drv = cu.PortDriver(m); teach_frames(m, b, drv, 200); st = ring_state(m, b)
-    v = m.do("sync," + pk(b["cloneFlashColour"]) + pk(b["cloneFlash"]))
-    check(st["write"] == 12 and st["write"] - st["read"] == 12 and (st["status"] & 1) and st["education"] == 12, f"capacity 12 with no drain: {st['write']} lessons recorded, the ring full (status ${st['status']:02x}), education {st['education']}: learning paused; the flash colour {v[0]}")
-    saved0 = slot(m, b); saved0, good = drain(m, b, saved0, log)
-    teach_frames(m, b, drv, 100); st2 = ring_state(m, b)
-    check(good and st2["write"] > 12 and not (st2["status"] & 1), f"after the acknowledgement learning resumes: {st2['write']} lessons, status ${st2['status']:02x}")
+    m = Machine(b); m.do(EPISODES[2][1] + po(CAP, w16(12)) + f"poke:{KIND:X}:01,poke:{TEACH:X}:01,wait:1"); saved0 = slot(m, b)
+    drv = cu.PortDriver(m); chatter_frames(m, b, drv, 120); st = ring_state(m, b)
+    v = m.do("sync," + pk(b["cloneFlashColour"]))
+    check(st["write"] == 12 and st["write"] - st["read"] == 12 and (st["status"] & 1) and st["education"] == 12, f"capacity 12 with no drain after 30 chattering ticks: {st['write']} lessons recorded, the ring full (status ${st['status']:02x}), education {st['education']}: learning paused; the last flash colour {v[0]} (2 is red)")
+    m.do(po(b["lessonAckSeq"], w16(st["write"])) + po(b["lessonAckSum"], w16((st["cumWrite"] - st["cumRead"] + 1) & 0xffff)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2"); bad1 = ring_state(m, b)
+    m.do(po(b["lessonAckSeq"], w16(st["write"] - 1)) + po(b["lessonAckSum"], w16((st["cumWrite"] - st["cumRead"]) & 0xffff)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2"); bad2 = ring_state(m, b)
+    check(bad1["read"] == st["read"] and (bad1["status"] & 4) and bad2["read"] == st["read"] and (bad2["status"] & 2), f"a wrong checksum is refused (status ${bad1['status']:02x}) and a stale range is refused (status ${bad2['status']:02x}); nothing reclaimed")
+    saved0, good = drain(m, b, saved0, log); chatter_frames(m, b, drv, 60); st2 = ring_state(m, b)
+    check(good and st2["write"] > 12 and not (st2["status"] & 1), f"after the right acknowledgement learning resumes: {st2['write']} lessons, status ${st2['status']:02x}")
     m.close()
-    # 3. the equivalence: the same script uninterrupted (capacity 300) and split across drains (capacity 40)
     results = []
     for cap in (300, 40):
         m = Machine(b); m.do(EPISODES[2][1] + po(CAP, w16(cap)) + f"poke:{KIND:X}:01,poke:{TEACH:X}:01,wait:1")
         drv = cu.PortDriver(m); saved_e = slot(m, b); dlog = []
         def on_tick(m, f):
             nonlocal saved_e
-            if cap == 40:
-                st = ring_state(m, b)
-                if st["write"] - st["read"] >= 30:
-                    if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
-                    saved_e, good = drain(m, b, saved_e, dlog)
-        teach_frames(m, b, drv, 700, on_tick); m.do(f"poke:{TEACH:X}:00,wait:1")
+            st = ring_state(m, b)
+            if st["write"] - st["read"] >= 30 or (cap == 300 and st["write"] % 30 == 0 and st["write"] > 0 and f % 4 == 0 and st["write"] != on_tick.last):
+                on_tick.last = st["write"]
+                if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
+                if cap == 40: saved_e, good = drain(m, b, saved_e, dlog)
+                else: dummy_drain(m, b)
+        on_tick.last = -1
+        chatter_frames(m, b, drv, 720, on_tick); m.do(f"poke:{TEACH:X}:00,wait:1")
         st = ring_state(m, b); final = slot(m, b); m.close()
         results.append(dict(cap=cap, lessons=st["write"], drains=len(dlog), hash=ref.brain_hash(final), education=ref.parse_slot(final)["education"], weights=ref.parse_slot(final)["weights"]))
     a, c = results
-    check(a["weights"] == c["weights"] and a["education"] == c["education"] and a["hash"] == c["hash"], f"the identical script uninterrupted ({a['lessons']} lessons, no drain) and split ({c['lessons']} lessons, {c['drains']} drains): the same weights, education {a['education']} = {c['education']}, hash {a['hash'][:16]}")
+    diff = sum(1 for ra, rc in zip(a["weights"], c["weights"]) for x, y in zip(ra, rc) if x != y)
+    check(a["weights"] == c["weights"] and a["education"] == c["education"] and a["hash"] == c["hash"], f"the identical script uninterrupted ({a['lessons']} lessons, no drain) and split ({c['lessons']} lessons, {c['drains']} drains): the same weights ({diff} bytes differ), education {a['education']} = {c['education']}, hashes {a['hash'][:16]} = {c['hash'][:16]}")
     json.dump(dict(cycles=log, equivalence=[{k: v for k, v in r.items() if k != "weights"} for r in results]), open(os.path.join(outdir, f"drain-{b.name}.json"), "w"), indent=1)
     return ok
 
@@ -298,32 +325,27 @@ def gate_teach(b, outdir):
     global ok
     os.makedirs(outdir, exist_ok=True); n = b.n; W, KIND, TEACH, WS, EDU = b["brainWeights"], b["brainKind"], b["teachMode"], b["lessonWriteSeq"], b["brainEducation"]
     SNAP = "sync," + pk(b["physPlayerX"], 2) + pk(b["cloneX"], 2) + pk(KIND) + pk(TEACH) + pk(WS, 2) + pk(EDU, 2) + pk(b["buildCount"]) + pk(b["cloneFlash"]) + pk(b["cloneFlashColour"]) + pk(b["buddyColourNow"])
-    PER = 13
+    PER = 14
     def row(v, k):
         d = v[k * PER:(k + 1) * PER]
-        return dict(px=d[0] | d[1] << 8, cx=d[2] | d[3] << 8, kind=d[4], teach=d[5], lessons=d[6] | d[7] << 8, edu=d[8] | d[9] << 8, bricks=d[10], flash=d[11], colour=d[12], bcol=d[13] if len(d) > 13 else None)
+        return dict(px=d[0] | d[1] << 8, cx=d[2] | d[3] << 8, kind=d[4], teach=d[5], lessons=d[6] | d[7] << 8, edu=d[8] | d[9] << 8, bricks=d[10], flash=d[11], colour=d[12], bcol=d[13])
     print(f"{b.name}: gate 3, TEACH end to end")
     v, _ = b.run("wait:300," + SNAP + "joy:8:60,wait:100," + SNAP)
     a, c = row(v, 0), row(v, 1)
     check(a["kind"] == 0 and a["teach"] == 0 and a["lessons"] == 0 and a["edu"] == 0, "a fresh boot: kind 0, no lessons, education 0")
     check(abs(c["px"] - c["cx"]) < 52 and c["px"] > 270, f"kind 0 follows: Tony at {c['px']}, the clone at {c['cx']}")
-    v, _ = b.run("wait:300," + f"poke:{TEACH:X}:01,hold:8,wait:40,release:8,wait:2," + SNAP + f"poke:{TEACH:X}:00,wait:150," + SNAP + pk(W, 10 * n))
+    v, _ = b.run("wait:300," + f"poke:{TEACH:X}:01,hold:4,wait:30,release:4,wait:2," + SNAP + f"poke:{TEACH:X}:00,wait:150," + SNAP + pk(W, 10 * n))
     a, c = row(v, 0), row(v, 1); wts = v[2 * PER:2 * PER + 10 * n]
-    check(a["teach"] == 1 and a["px"] == 184 and a["cx"] > 200, f"TEACH by the flag: Tony stands at {a['px']}, the stick walks the clone to {a['cx']}")
+    check(a["teach"] == 1 and a["px"] == 184 and a["cx"] < 130, f"TEACH by the flag: Tony stands at {a['px']}, the stick walks the clone left to {a['cx']} (Tony stays to his right)")
     check(a["lessons"] >= 1 and a["kind"] == 1 and a["edu"] == a["lessons"], f"lessons taken: {a['lessons']} (education {a['edu']}); the first made him kind {a['kind']}")
     check(any(wts), f"BRAIN02's weights changed ({sum(1 for x in wts if x)} of {10 * n} bytes set)")
-    check(c["teach"] == 0 and c["cx"] > a["cx"] + 40, f"let go: taught 'toward/right' he keeps walking on his own brain, {a['cx']} -> {c['cx']} (the follow rule stops beside Tony at {c['px']})")
+    check(c["teach"] == 0 and c["cx"] < a["cx"] - 30, f"let go: taught 'left' (away from Tony) he keeps walking left on his own brain, {a['cx']} -> {c['cx']}, where the follow rule would have walked right to Tony at {c['px']}")
     v, _ = b.run("wait:300,hold:18,wait:60,release:18,wait:10," + SNAP + "hold:18,wait:60,release:18,wait:10," + SNAP)
     a, c = row(v, 0), row(v, 1)
     check(a["teach"] == 1 and a["bricks"] == 0 and c["teach"] == 0 and c["bricks"] == 0, f"the chord held a second toggles teaching on and off, the brick taken back each time (bricks {a['bricks']}, {c['bricks']})")
     v, _ = b.run("wait:300," + f"poke:{TEACH:X}:01,hold:4,wait:3," + SNAP + "wait:1," + SNAP)
     a, c = row(v, 0), row(v, 1)
     check((a["flash"] > 0 and a["colour"] == 1) or (c["flash"] > 0 and c["colour"] == 1), f"a press is an edge: its lesson is taken at once and flashes him white (flash {a['flash']}, colour {a['colour']}, lessons {a['lessons']})")
-    # save and reload: the learned slot dumped, a fresh boot with it drives the same way; the untouched PRG forgets
-    m = Machine(b); m.do(f"wait:300,poke:{TEACH:X}:01,hold:8,wait:40,release:8,wait:2"); learned = slot(m, b); m.do(f"poke:{TEACH:X}:00,wait:150"); d1 = senses(m, b); m.close()
-    m = Machine(b); m.do("wait:300," + po(b["brainMarker"], learned) + "wait:150"); d2 = senses(m, b); st = ring_state(m, b); reloaded = slot(m, b); m.close()
-    h1, h2 = ref.brain_hash(learned), ref.brain_hash(reloaded)
-    check(ref.parse_slot(learned)["kind"] == 1 and d2["cx"] > 246 and h1 == h2 and st["education"] == ref.parse_slot(learned)["education"], f"the saved brain reloaded on a fresh boot drives him right on his own ({d2['cx']} after 150 frames, the taught run reached {d1['cx']}); hash {h1[:16]} kept, education {st['education']}")
     v, _ = b.run("wait:300," + SNAP + pk(W, 10 * n))
     a = row(v, 0); wts = v[PER:PER + 10 * n]
     check(a["kind"] == 0 and not any(wts) and a["edu"] == 0, "the untouched PRG forgets: a fresh boot is kind 0 with zero weights and education 0")
@@ -356,7 +378,11 @@ def gate_teach(b, outdir):
         story.append(dict(session=k, lessons=st["write"], taught_to_y=None, alone_y=a2["cy"], alone_x=a2["cx"], climbs=on_ladder)); print(f"       session {k}: {st['write']} lessons; alone after it: Y {a2['cy']}, X {a2['cx']}, state {a2['cs']}" + ("  <- climbs to Tony" if on_ladder else ""))
         if on_ladder: reached = (k, lessons_total); break
     check(reached is not None, f"he climbs the stairs and the ladder to Tony on his own after {reached[0] if reached else '?'} session(s), {reached[1] if reached else lessons_total} lessons from zero")
-    if reached: open(os.path.join(outdir, f"climbed-{b.name}.bin"), "wb").write(saved)
+    if reached:
+        open(os.path.join(outdir, f"climbed-{b.name}.bin"), "wb").write(saved)
+        m = Machine(b); m.do(STAIRS_C33 + po(b["brainMarker"], saved) + "wait:480"); a3 = senses(m, b); st = ring_state(m, b); back = slot(m, b); m.close()
+        on_ladder = (a3["cs"] & 0x7f) in (2, 7) and a3["cy"] <= a3["py"] + 16
+        check(on_ladder and back == saved and ref.brain_hash(back) == ref.brain_hash(saved) and st["education"] == ref.parse_slot(saved)["education"], f"the saved brain reloaded on a fresh boot climbs to Tony again (Y {a3['cy']}, X {a3['cx']}); the slot reads back byte for byte, hash {ref.brain_hash(saved)[:16]}, education {st['education']}")
     json.dump(dict(sessions=story, lessons_to_climb=reached), open(os.path.join(outdir, f"teach-{b.name}.json"), "w"), indent=1)
     return ok
 
@@ -379,10 +405,11 @@ def gate_resources(b, outdir):
     P2 = json.load(open(os.path.join(ROOT, "deliverables/bakeoff/phase2b.json"))); arm = {1: "R0", 2: "R1b", 3: "R0s"}.get(b.retina)
     Wl = P2[f"{arm}|{'rel' if b.vocab else 'abs'}|8|S2u"]["weights"] if arm else [[0] * n for _ in range(10)]
     m = Machine(b); m.do(STAIRS_C33 + po(b["brainWeights"], bytes(v & 255 for row in Wl for v in row)) + f"poke:{b['brainKind']:X}:01,poke:{b['teachMode']:X}:01,wait:1")
+    saved = slot(m, b)                                                  # the brain before any lesson: the replay starts here
     drv = cu.PortDriver(m); teach_frames(m, b, drv, 400)
     m.do("hold:18,wait:60,release:18,wait:10")                          # the chord: a snapshot, then the restore at the toggle (teaching goes off)
     m.do(f"poke:{b['teachMode']:X}:01,wait:1"); teach_frames(m, b, drv, 200)
-    st = ring_state(m, b); saved = slot(m, b); log = []; saved, good = drain(m, b, saved, log)
+    st = ring_state(m, b); log = []; saved, good = drain(m, b, saved, log)
     v = m.do("sync," + pk(S["profThink"], 4) + pk(S["profLesson"], 4) + pk(S["profShadow"], 4) + pk(S["profDrain"], 4) + pk(S["profThinkPure"], 4) + pk(S["profLessonPure"], 4) +
              pk(S["bodyRasterMax"]) + (pk(S["bodyOverruns"]) if "bodyOverruns" in S else "") + pk(S["gapMin"], 2) + pk(S["gapMax"], 2) + pk(S["gapSum"], 4) + pk(S["gapCount"], 2) + pk(S["brainThinks"], 2))
     m.close()
@@ -413,3 +440,58 @@ if __name__ == "__main__" and sys.argv[1] in ("resources", "teach", "drain"):
     b = Build(sys.argv[2]); outdir = os.path.join(ROOT, "deliverables/bakeoff/phase3")
     f = {"resources": gate_resources, "teach": gate_teach, "drain": gate_drain}[sys.argv[1]]
     sys.exit(0 if f(b, outdir) else 1)
+
+# --------------------------------------------------------------------------- the workbench descriptor
+def descriptor(b, commit):
+    """a machine-readable descriptor of one research PRG for the Akalabeth workbench (WORKBENGH-INTEGRATION.md):
+    identities, every address the contract names, the block layouts, and the three access lists"""
+    S = b.sym; n = b.n
+    entries = ref.TABLES[b.retina][1]() if b.retina else []
+    d = dict(
+        schema="tony-brain02-descriptor/1", filename=os.path.basename(b.prg), sha256=b.sha, prg_size=b.size, engine_commit=commit,
+        candidate={"tony-b02-a": "A: R1b, reference-relative", "tony-b02-b": "B: R0s, reference-relative", "tony-b02-drel": "diagnostic: R0, reference-relative", "tony-b02-dabs": "diagnostic: R0, absolute", "tony-b02-p128": "parity build, 128 inputs, not a candidate"}.get(b.name, b.name),
+        load_address=0x0801, machine="Commodore 64 PAL; Minimal64 and VICE; a plain PRG",
+        brain=dict(marker="BRAIN02\\0", marker_address=S["brainMarker"], slot_bytes=S["BRAIN_BLOCK_SIZE"], layout=2, rule_version=2, inputs=n, outputs=10, vocabulary=b.vocab, retina_id=b.retina,
+                   header=dict(kind=S["brainKind"], layout=S["brainLayout"], inputs=S["brainInputCount"], hidden=S["brainHiddenCount"], outputs=S["brainOutputCount"], period=S["brainPeriod"], lineage=S["brainLineage"], rule=S["brainRule"],
+                               vocabulary=S["brainVocab"], retina_id=S["brainRetinaId"], education_count=S["brainEducation"], education_bytes=2, reserved=S["brainEducation"] + 2),
+                   weights=S["brainWeights"], weight_bytes=10 * n, weight_layout="row o at weights + o * inputs, one signed byte per flag (two's complement)", mood=S["brainMood"], mood_bytes=10,
+                   hash_domains=dict(behavioural="bytes 8..12, 16..17 and the weights, in slot order, SHA-256 (brain_hash)", provenance="lineage, rule version, education count", timing_render="period, mood")),
+        retina=dict(id=b.retina, name=ref.TABLES[b.retina][0] if b.retina else "none", table_address=S["retinaTable"], table_bytes=1 + 3 * n, table_layout="count, then ops[n], operands a[n], k-or-b[n] (the published triples stored as three arrays)",
+                    ops=["GE: sense[a] >= k (signed)", "LE: sense[a] <= k (signed)", "EQN: (sense[a] & 15) == k", "AND(a,b)", "ANDNOT(a,b)", "OR(a,b)", "XNOR(a,b)"], flag_names=ref.flag_names(entries),
+                    pseudo_senses={20 + i: nm for i, nm in enumerate(ref.PSEUDO)}, reference_vector="refDx, refDy = senses 1 and 2 (the player's offset) in this build; h = sign(refDx), or the facing when zero",
+                    flag_vector=S["brainFlags"], flag_vector_bytes=n, active_list=S["brainActive"], active_count=S["brainActiveCount"], values=S["brainVals"], values_bytes=29),
+        live=dict(predicted_output=S["brainOutput"], resolved_action=S["brainAction"], h_right=S["brainH"], applied_action="sensePack+16 (the applied action of the frame being packed)", applied_action_address=S["sensePack"] + 16,
+                  taught_action=S["brainTaught"], taught_raw=S["brainTaughtRaw"], predicted_at_lesson=S["brainPredicted"], lesson_taken=S["brainLearned"], kind_now=S["brainKindNow"],
+                  think_count=S["brainThinks"], think_count_bytes=2, accumulators=S["brainAcc"], accumulators_layout="ten signed 16-bit little-endian, acc[o] at 2o", score_gap=S["brainGap"],
+                  senses=S["cloneSenses"], senses_bytes=20, senses_frame=S["cloneSensesFrame"], senses_layout="one byte per sense, the signed nibble in the low four bits (8..15 negative)", think_input=S["brainIn"],
+                  clone_x=S["cloneX"], clone_y=S["cloneY"], clone_state=S["cloneState"], player_x=S["physPlayerX"], player_y=S["physPlayerY"], player_state=S["physPlayerState"], bricks=S["buildCount"],
+                  flash_frames=S["cloneFlash"], flash_colour=S["cloneFlashColour"], flash_colours={1: "white: a lesson", 2: "red: a lesson refused, the ring is full"}, teach_mode=S["teachMode"], teach_hold=S["teachHold"],
+                  shadow_request=S["shadowRequest"], shadow_restore_request=S["shadowRestoreRequest"], shadow_valid=S["shadowValid"], shadow_at=S["TEACH_SHADOW"], shadow_bytes=10 * n,
+                  raster_max=S["bodyRasterMax"], overruns=S.get("bodyOverruns"), frames=S["bodyFrames"], seed_bytes="the parameter block: 32 seed bytes after the MURAL02 marker (tools/stamp_mural.py)", mural_marker=S.get("muralMarker")),
+        profiler=dict(think=S["profThink"], think_max=S["profThinkMax"], lesson=S["profLesson"], lesson_max=S["profLessonMax"], shadow=S["profShadow"], shadow_max=S["profShadowMax"], drain=S["profDrain"], drain_max=S["profDrainMax"],
+                      think_pure=S["profThinkPure"], think_pure_max=S["profThinkPureMax"], lesson_pure=S["profLessonPure"], lesson_pure_max=S["profLessonPureMax"], unit="CPU cycles, 16-bit; the live counts include interrupts, the pure ones (test hooks) do not",
+                      gap_min=S["gapMin"], gap_max=S["gapMax"], gap_sum=S["gapSum"], gap_count=S["gapCount"]),
+        lessons=dict(marker="LESSON2\\0", marker_address=S["lessonMarker"], block_bytes=32 + 11 * 300, write_seq=S["lessonWriteSeq"], read_seq=S["lessonReadSeq"], capacity=S["lessonCap"], capacity_default=300, entry_size=S["lessonSize"], entry_bytes=11,
+                     status=S["lessonStatus"], status_bits={0: "full, learning paused", 1: "last ack rejected: stale range", 2: "last ack rejected: bad checksum", 3: "last ack rejected: a chord hold in progress", 7: "last ack accepted"},
+                     ack_seq=S["lessonAckSeq"], ack_sum=S["lessonAckSum"], ack_request=S["lessonAckRequest"], drains=S["lessonDrains"], cum_write=S["lessonCumWrite"], cum_read=S["lessonCumRead"], data=S["lessonData"],
+                     entry_layout="bytes 0..9: the twenty sense nibbles, nibble i in byte i/2, the low nibble for even i; byte 10: the taught absolute action in the low nibble, the predicted raw output in the high nibble",
+                     slot_rule="the lesson with sequence s is at data + (s mod capacity) * 11; unread lessons are [read_seq, write_seq)",
+                     drain_procedure=["read read_seq, write_seq", "read the entries [read_seq, write_seq)", "sum every byte of those entries modulo 65536", "write ack_seq = write_seq, ack_sum = the sum, then ack_request = 1", "wait one frame; read status: bit 7 accepted (read_seq == write_seq), else bits 1..3 say why; re-read and retry on a stale range"],
+                     replay="per lesson: unpack the senses, derive the flags with the retina table, the taught raw index (translate the absolute action with h of the block under the relative vocabulary), apply the rule; the result must equal the machine's weights and education count"),
+        test_hooks=dict(test_in=S["brainTestIn"], test_mode=S["brainTestMode"], test_run=S["brainTestRun"], test_flags=S["brainTestFlags"], test_acc=S["brainTestAcc"], test_output=S["brainTestOutput"], test_action=S["brainTestAction"], test_h=S["brainTestH"],
+                        learn_run=S["brainLearnRun"], learn_t=S["brainLearnTestT"], learn_p=S["brainLearnTestP"], learn_took=S["brainLearnTestTook"], learn_trel=S["brainLearnTestTrel"], note="research only: the hooks run the machine's own retina, forward pass and rule on supplied inputs; they change the slot's weights and education count when a lesson is taken"),
+        access=dict(
+            observation="everything above may be read at any time; read write_seq before and after a read of the weights to know no lesson intervened",
+            research_control=dict(teach_mode="0/1: the same as the chord", ack_fields="ack_seq, ack_sum, ack_request: the drain handshake", capacity="may be lowered at boot before any lesson (research only)",
+                                  slot="the whole slot may be written at boot to load a saved brain (marker, header, weights, mood); zeroing the weights and the education count and kind 0 is a reset", seed_bytes="the parameter block, at boot",
+                                  test_hooks="research only, absent from production semantics"),
+            cognition="the retina, the forward pass, the resolution, the rule and the lesson recording run only in the machine; the host never computes a prediction, chooses an action, derives a flag for him or writes a weight outside a load or reset"),
+        session_trace=dict(observe_per_frame=["frames", "teach_mode", "clone_x", "clone_y", "clone_state", "player_x", "player_y", "player_state", "applied_action", "predicted_output", "resolved_action", "write_seq", "flash_colour"],
+                           observe_per_lesson=["the new ring entry (senses, taught, predicted)", "education_count", "the weights that changed (a diff of the two rows)"],
+                           events=["teach on/off (by the chord or the flag)", "drain (ack accepted, the batch and its replay result)", "brain load", "brain reset", "capacity change"],
+                           derived=["wall-clock to first visible improvement", "active teaching time", "lessons per minute", "deliberate edges (applied action changes)", "corrections (lessons whose predicted output differed from the taught index)", "aliasing (the same senses taught two actions)", "lag (press against state change)", "competence on release", "competence after reload"]))
+    return d
+if __name__ == "__main__" and sys.argv[1] == "descriptor":
+    b = Build(sys.argv[2]); commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    outdir = os.path.join(ROOT, "deliverables/bakeoff/workbench"); os.makedirs(outdir, exist_ok=True)
+    d = descriptor(b, commit); json.dump(d, open(os.path.join(outdir, f"{b.name}.json"), "w"), indent=1); print(f"wrote {outdir}/{b.name}.json")

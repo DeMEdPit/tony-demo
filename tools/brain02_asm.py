@@ -495,6 +495,13 @@ bodyThink: {
         beq !+
         jsr teachLesson
         jsr brainCheck
+        lda brainLessonRan              // the lesson evaluated this block already (the retina, the mood-free
+        beq !+                          // forward pass, the resolution): that is the think; the override drives
+        lda brainKindNow                // him while teaching, so the pre-lesson choice is only telemetry
+        beq !+
+        cmp #2
+        beq !+
+        jmp thought
     !:
     lda brainKindNow
     bne !+
@@ -802,6 +809,7 @@ brainTaught:        .byte 0             // the taught absolute action (or the ra
 brainTaughtRaw:     .byte 0
 brainPredicted:     .byte 0
 brainLearned:       .byte 0
+brainLessonRan:     .byte 0             // 1: brainLearn evaluated brainIn this pass (the think is done)
 brainNoMood:        .byte 0
 learnRaw:           .byte 0             // 1: the flags and the taught index are given (the hook's mode 1)
 brainLearnRun:      .byte 0
@@ -816,6 +824,7 @@ brainLearn: {
     haveFlags:
     lda #1
     sta brainNoMood
+    sta brainLessonRan
     jsr brainForward
     lda #0
     sta brainNoMood
@@ -941,6 +950,7 @@ portRaw:     .byte 0
 cloneFlash:  .byte 0                 // frames left of the lesson's flash
 cloneFlashColour: .byte 1            // the flash: 1 white, a lesson; 2 red, a lesson refused (the ring is full)
 lessonWriteSlot: .word 0             // the slot of the next lesson, 0..299
+lessonNotPaired: .word 0             // lessons lost because the block's next frame was not packed in time (telemetry)
 lessonWritePtr:  .word 0             // its address
 """
 
@@ -981,6 +991,8 @@ lessonInit: {
     sta shadowValid
     sta shadowRequest
     sta shadowRestoreRequest
+    sta lessonNotPaired
+    sta lessonNotPaired + 1
     lda #1
     sta cloneFlashColour
     jsr profInit
@@ -1065,6 +1077,8 @@ teachShadowRestore: {
     lda lessonStatus                    // the ring cannot be full after a rewind
     and #%11111110
     sta lessonStatus
+    lda #0                              // and the next think decides with the restored weights
+    sta brainAction
     rts
 }
 // B02_WEIGHT_BYTES bytes from rd to wr (the operands set by the caller)
@@ -1159,6 +1173,8 @@ BRAIN02_TEACH_LESSON_ASM = r"""
 // the two frames are not consecutive, while a snapshot or a restore is pending, or while the ring is
 // full (learning pauses: the clone flashes red, the status says so).
 teachLesson: {
+    lda #0
+    sta brainLessonRan
     clc
     lda brainInFrame
     adc #1
@@ -1171,6 +1187,10 @@ teachLesson: {
     cmp sensePackFrame
     beq next
     notNext:
+        inc lessonNotPaired             // a pack was missed (the main loop ran long): no lesson from this block
+        bne !+
+            inc lessonNotPaired + 1
+        !:
         lda #0
         sta brainLearned
         rts
@@ -1357,12 +1377,19 @@ def brain02_apply(src, retina_name, vocab):
     old = ("            lda shadowValid                 // and the lessons the press taught, if any, are forgotten\n"
            "            beq !+\n            jsr teachShadowRestore\n            !:\n")
     assert src.count(old) == 1; src = src.replace(old, ("            lda #0                          // a snapshot still pending means no lesson happened: nothing to undo\n"
-                                                        "            sta shadowRequest\n            lda shadowValid                 // and the lessons the press taught, if any, are forgotten (the main loop restores)\n"
+                                                        "            sta shadowRequest\n"
+                                                        "            sta brainAction                 // the last think was the hold-time brain: idle until the next think, after the restore\n"
+                                                        "            sta macroStep                   // a build macro in progress is dropped with it\n"
+                                                        "            lda shadowValid                 // and the lessons the press taught, if any, are forgotten (the main loop restores)\n"
                                                         "            beq !+\n            lda #1\n            sta shadowRestoreRequest\n            !:\n"))
     # 7. the shadow copies and the lesson
     rep("teachShadowSave: {\n", "    lda shadowPtr + 1\n    sta lessonPtr + 1\n    rts\n}\n", BRAIN02_SHADOW_ASM)
     rep("teachLesson: {\n", "    pair:    .byte 0\n    wr2byte: .byte 0\n    nextLo:  .byte 0\n}\n", BRAIN02_TEACH_LESSON_ASM)
-    # 8. the flash's colour
+    # 8. the clone's turn does nothing while a restore is pending: a think already in flight at the toggle would
+    # otherwise hand the decoder the hold's choice before the main loop has put the weights back
+    old = "cloneDecode: {\n    lda macroStep\n    bne macro\n"
+    assert src.count(old) == 1; src = src.replace(old, "cloneDecode: {\n    lda shadowRestoreRequest            // BRAIN02: a restore pending: nothing until the next think decides with the restored weights\n    beq !+\n        lda #0\n        sta macroStep\n        jmp emit\n    !:\n    lda macroStep\n    bne macro\n")
+    # 9. the flash's colour
     old = "    lda muralColour                 // the clone's colour: the parameter block's, white for a lesson's flash\n    ldx cloneFlash\n    beq !+\n        dec cloneFlash\n        lda #1\n    !:\n"
     assert src.count(old) == 1; src = src.replace(old, "    lda muralColour                 // the clone's colour: the parameter block's; a lesson's flash white, a refused one red\n    ldx cloneFlash\n    beq !+\n        dec cloneFlash\n        lda cloneFlashColour\n    !:\n")
     # the comment that describes the old lesson block's placement is gone with its labels; the guard stands
