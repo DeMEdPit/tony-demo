@@ -76,7 +76,10 @@ TERRAIN_ASM = r"""
         sta sensePack + 25
         sta sensePack + 26
 
-        // 20 tSafeRun: columns toward him with support at his own floor row, before the first without
+        // 20 tSafeRun: columns toward him with support at his own floor row, before the first without.
+        // His floor row is the row for this scan and the two that follow it, so it is set once.
+        lda tRs
+        jsr tRowSet
         lda tCe
         sta tCol
         lda #0
@@ -85,10 +88,12 @@ TERRAIN_ASM = r"""
             lda tN
             cmp #7
             beq safeFull
-            jsr tNext
+            lda tCol
+            clc
+            adc tU
+            sta tCol        // one column toward the reference: tU is 1 or $ff, so one add walks either way
             ldx tCol
-            lda tRs
-            jsr tSolid
+            jsr tAt
             beq safeStop                // tCol stands on the first unsupported column
             inc tN
             jmp safeLoop
@@ -111,10 +116,12 @@ TERRAIN_ASM = r"""
             cmp #7
             beq gapEnd                  // one further would be the eighth: the rule stops here
             inc tI
-            jsr tNext
+            lda tCol
+            clc
+            adc tU
+            sta tCol        // one column toward the reference: tU is 1 or $ff, so one add walks either way
             ldx tCol
-            lda tRs
-            jsr tSolid
+            jsr tAt
             beq gapLoop
         // supported: tCol is the far side
         lda tW
@@ -127,10 +134,12 @@ TERRAIN_ASM = r"""
             lda tN
             cmp #7
             beq farEnd
-            jsr tNext
+            lda tCol
+            clc
+            adc tU
+            sta tCol        // one column toward the reference: tU is 1 or $ff, so one add walks either way
             ldx tCol
-            lda tRs
-            jsr tSolid
+            jsr tAt
             bne farLoop
         farEnd:
         lda tN
@@ -142,6 +151,8 @@ TERRAIN_ASM = r"""
 
         // 23 tObstH and 24 tObstTop: the first column toward him blocked at his foot row
         obstacle:
+        lda tRf                         // his foot row, for this scan
+        jsr tRowSet
         lda tCe
         sta tCol
         lda #0
@@ -151,10 +162,12 @@ TERRAIN_ASM = r"""
             lda tN
             cmp #8
             beq head                    // nothing in his way within seven columns
-            jsr tNext
+            lda tCol
+            clc
+            adc tU
+            sta tCol        // one column toward the reference: tU is 1 or $ff, so one add walks either way
             ldx tCol
-            lda tRf
-            jsr tSolid
+            jsr tAt
             beq obstLoop
         lda tRf
         sta tRow
@@ -164,9 +177,10 @@ TERRAIN_ASM = r"""
             lda tN
             cmp #7
             beq stackEnd
+            lda tRow                    // this scan walks a column, so the row moves with it
+            jsr tRowSet
             ldx tCol
-            lda tRow
-            jsr tSolid
+            jsr tAt
             beq stackEnd
             inc tN
             dec tRow
@@ -180,9 +194,10 @@ TERRAIN_ASM = r"""
             lda tN
             cmp #7
             beq topEnd
-            ldx tCol
             lda tRow
-            jsr tSolid
+            jsr tRowSet
+            ldx tCol
+            jsr tAt
             bne topEnd
             inc tN
             dec tRow
@@ -211,6 +226,8 @@ TERRAIN_ASM = r"""
         sta sensePack + 25
 
         // 26 tBackRoom: the columns away from the reference that are clear at his foot row
+        lda tRf
+        jsr tRowSet
         lda tCa
         sta tCol
         lda #0
@@ -219,10 +236,12 @@ TERRAIN_ASM = r"""
             lda tN
             cmp #7
             beq backEnd
-            jsr tPrev
+            lda tCol
+            sec
+            sbc tU
+            sta tCol        // one column away from it
             ldx tCol
-            lda tRf
-            jsr tSolid
+            jsr tAt
             bne backEnd
             inc tN
             jmp backLoop
@@ -233,6 +252,7 @@ TERRAIN_ASM = r"""
 
         // IN: X a column, tRow0 the first row. OUT: tN the clear rows going up, capped at seven
         tClearUp: {
+            stx tColUp
             lda tRow0
             sta tRow
             lda #0
@@ -242,7 +262,9 @@ TERRAIN_ASM = r"""
                 cmp #7
                 beq done
                 lda tRow
-                jsr tSolid
+                jsr tRowSet
+                ldx tColUp
+                jsr tAt
                 bne done
                 inc tN
                 dec tRow
@@ -250,20 +272,7 @@ TERRAIN_ASM = r"""
             done:
             rts
         }
-        tNext: {                        // tU is 1 or $ff, so one add walks either way
-            lda tCol
-            clc
-            adc tU
-            sta tCol
-            rts
-        }
-        tPrev: {
-            lda tCol
-            sec
-            sbc tU
-            sta tCol
-            rts
-        }
+        tColUp: .byte 0
         tU:    .byte 0
         tCe:   .byte 0
         tCa:   .byte 0
@@ -276,24 +285,40 @@ TERRAIN_ASM = r"""
         tW:    .byte 0
         tI:    .byte 0
     }
-    // IN: X a column (signed), A a row. OUT: A 1 when the cell carries wall, 0 when it does not; the
-    // flags follow A. Off the sides and below the floor reads as wall, above the ceiling as open, which
-    // is the same rule the offline model uses. X is kept; A and Y are not.
-    tSolid: {
-        sta tsRow
+    // The probe's two halves. A scan that walks one row sets that row once (tRowSet) and then asks only
+    // about columns (tAt); a scan that walks a column sets the row each step. Off the sides and below the
+    // floor reads as wall, above the ceiling as open, which is the rule the offline model uses.
+    // IN: A a row. Sets the row every following tAt asks about.
+    tRowSet: {
+        bmi allOpen                     // above the ceiling
+        cmp #25
+        bcs allWall                     // below the floor
+        tay
+        lda chamberLines.lo, y
+        sta tAt.rd + 1
+        lda chamberLines.hi, y
+        sta tAt.rd + 2
+        lda #0
+        sta tRowBad
+        rts
+        allWall:
+            lda #1
+            sta tRowBad
+            rts
+        allOpen:
+            lda #2
+            sta tRowBad
+            rts
+    }
+    // IN: X a column (signed). OUT: A 1 when the cell carries wall, 0 when it does not; the flags follow
+    // A. X is kept; A and Y are not.
+    tAt: {
+        lda tRowBad
+        bne fixed
         txa
         bmi wall                        // left of the screen
         cmp #40
         bcs wall                        // right of it
-        lda tsRow
-        bmi open                        // above it
-        cmp #25
-        bcs wall                        // below it
-        tay
-        lda chamberLines.lo, y
-        sta rd + 1
-        lda chamberLines.hi, y
-        sta rd + 2
         rd: lda $ffff, x
         tay
         lda roomMaterialsBuffer, y
@@ -305,8 +330,13 @@ TERRAIN_ASM = r"""
         open:
             lda #0
             rts
-        tsRow: .byte 0
+        fixed:
+            lsr                         // 1 -> wall, 2 -> open
+            beq wall
+            lda #0
+            rts
     }
+    tRowBad: .byte 0
 """
 
 # ------------------------------------------------------------------- the keyboard teaching toggle
@@ -357,6 +387,27 @@ teachKey: {
 }
 teachKeyWas:   .byte 0                  // the key's state last frame, for the edge
 teachKeyEdges: .byte 0                  // how many times it has toggled, for the tests
+
+// A test hook, never used in play: run the terrain probe once with the interrupts held off, so its own
+// cost is measured rather than its wall-clock span, which on the live path carries whatever raster work
+// happened to fall inside it.
+terrainTestRun: .byte 0
+terrainTest: {
+    lda terrainTestRun
+    bne go
+    rts
+    go:
+    lda #0
+    sta terrainTestRun
+    php
+    sei
+    jsr profBegin
+    jsr senseCompute.senseTerrain
+    ldx #PROF_TERRAIN_PURE
+    jsr profEnd
+    plp
+    rts
+}
 """
 
 # ------------------------------------------------------------------------------ the block transforms
@@ -370,6 +421,14 @@ def _slot_asm(vocab):
     s = s.replace("brainVals:      .fill 29, 0             // the twenty sign-extended, then the nine pseudo-senses (indices 20..28)",
                   f"brainVals:      .fill {NV}, 0             // twenty sign-extended, nine pseudo-senses (20..28), seven terrain (29..35)")
     s = s.replace("brainTestIn:    .fill 20, 0", f"brainTestIn:    .fill {SC}, 0")
+    # a profiler slot of its own for the terrain probe: the sense packer's new work, measured not guessed
+    s = s.replace(".label PROF_LESSON_PURE = 20", ".label PROF_LESSON_PURE = 20\n.label PROF_TERRAIN = 24\n.label PROF_TERRAIN_PURE = 28")
+    s = s.replace("profStart:      .word 0",
+                  "profTerrain:    .word 0                 // BRAIN02.5: the terrain probe in the live path, wall-clock\n"
+                  "profTerrainMax: .word 0\n"
+                  "profTerrainPure: .word 0                // and through the hook with the interrupts held off: its own work\n"
+                  "profTerrainPureMax: .word 0\n"
+                  "profStart:      .word 0")
     old = "    sta brainVals + 28\n    // the table\n"
     assert s.count(old) == 1, "the retina's adx store moved"
     s = s.replace(old, "    sta brainVals + 28\n"
@@ -447,7 +506,11 @@ def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, sp
     sub1("    sei\n    .for (var i = 0; i < 20; i++) {\n        lda cloneSenses + i\n        sta brainIn + i\n    }",
          f"    sei\n    .for (var i = 0; i < {SC}; i++) {{\n        lda cloneSenses + i\n        sta brainIn + i\n    }}")
     # --- the probe itself, inside senseCompute where top, leftCol and rightCol live
-    sub1("    stillDone:\n    stx sensePack + 17\n    rts\n", "    stillDone:\n    stx sensePack + 17\n    jsr senseTerrain            // BRAIN02.5: the seven terrain quantities, at sensePack + 20..26\n    rts\n")
+    sub1("    stillDone:\n    stx sensePack + 17\n    rts\n",
+         "    stillDone:\n    stx sensePack + 17\n"
+         "    jsr profBegin               // BRAIN02.5: the terrain probe, timed by the machine's own counter\n"
+         "    jsr senseTerrain            // the seven terrain quantities, at sensePack + 20..26\n"
+         "    ldx #PROF_TERRAIN\n    jsr profEnd\n    rts\n")
     sub1("    d:        .word 0\n    neg:      .byte 0\n", TERRAIN_ASM + "    d:        .word 0\n    neg:      .byte 0\n")
 
     # --- a blank Tony is blank: no follow rule behind the brain
@@ -470,7 +533,7 @@ def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, sp
                      "    // toggled by the T key (teachKey, in the main loop) or by the workbench writing teachMode.\n"
                      "    lda #0\n    sta teachHold\n    route:\n") + src[j + len("    notHeld:\n    lda #0\n    sta teachHold\n    route:\n"):]
     sub1("        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n",
-         "        jsr teachKey                // BRAIN02.5: the teaching toggle, its own key\n        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n")
+         "        jsr teachKey                // BRAIN02.5: the teaching toggle, its own key\n        jsr terrainTest             // and the probe's own cost, when a test asks for it\n        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n")
 
     # --- BRAIN02's own substitutions, at the wider shapes
     rep('.align 256\nbrainMarker:    .text "BRAIN01"', "brainMul:       .fill 256, ((((i >> 4) >= 8) ? (i >> 4) - 16 : (i >> 4)) * (((i & 15) >= 8) ? (i & 15) - 16 : (i & 15))) & 255\n", _slot_asm(vocab))

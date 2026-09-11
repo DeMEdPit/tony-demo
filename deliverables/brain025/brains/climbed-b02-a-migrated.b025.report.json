@@ -1,0 +1,79 @@
+{
+ "fields": {
+  "kind": [
+   1,
+   1
+  ],
+  "period": [
+   4,
+   4
+  ],
+  "lineage": [
+   0,
+   0
+  ],
+  "rule": [
+   2,
+   2
+  ],
+  "vocabulary": [
+   1,
+   1
+  ],
+  "education": [
+   33,
+   33
+  ],
+  "mood": [
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  ]
+ },
+ "inputs": [
+  64,
+  80
+ ],
+ "layout": [
+  2,
+  3
+ ],
+ "retina_id": [
+  2,
+  5
+ ],
+ "weights_copied": true,
+ "appended_zero": true,
+ "hash_before": "be9b0a98a6427eb63df4da1d65ce4bc8c479530eb4bdfeec9d63f770e3005547",
+ "hash_after": "ce9a30cdcdea1507e446075edbb0c08b77fad9712bdae2c7e75a5e23ac66b6de",
+ "source": "climbed-tony-b02-a.bin",
+ "source_sha256": "6cd2e079298980b10d0692d1cf501f8c39ef83021de7de832cb9c872cf9432e6",
+ "migrated_sha256": "fb1b659a1f0471546a5b1ef033bbd1e9366d7db1667b73715237b8ca78bdbefa",
+ "source_bytes": 674,
+ "migrated_bytes": 834,
+ "blocks": 1424,
+ "terrains": 8,
+ "predictions_checked": 11392,
+ "prediction_mismatches": 0
+}

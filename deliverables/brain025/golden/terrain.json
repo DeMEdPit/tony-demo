@@ -1,0 +1,5258 @@
+{
+ "quantities": [
+  "tSafeRun",
+  "tGapW",
+  "tFarRun",
+  "tObstH",
+  "tObstTop",
+  "tHead",
+  "tBackRoom"
+ ],
+ "cap": 7,
+ "cases": [
+  {
+   "name": "flat|floor_far",
+   "bricks": [],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "flat|floor_far|m",
+   "bricks": [],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "flat|floor_near",
+   "bricks": [],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "flat|floor_near|m",
+   "bricks": [],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "flat|ladder_low",
+   "bricks": [],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "flat|ladder_high",
+   "bricks": [],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "flat_near_wall|floor_far",
+   "bricks": [],
+   "col": 5,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "flat_near_wall|floor_far|m",
+   "bricks": [],
+   "col": 32,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    1
+   ]
+  },
+  {
+   "name": "flat_near_wall|floor_near",
+   "bricks": [],
+   "col": 5,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "flat_near_wall|floor_near|m",
+   "bricks": [],
+   "col": 32,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    1
+   ]
+  },
+  {
+   "name": "flat_near_wall|ladder_low",
+   "bricks": [],
+   "col": 5,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "flat_near_wall|ladder_high",
+   "bricks": [],
+   "col": 5,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "obst1|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst3|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    6,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst3|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    6,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst3|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    6,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst3|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    6,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst3|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    6,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst3|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    6,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst5|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     9,
+     15
+    ],
+    [
+     9,
+     13
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    7,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst5|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ],
+    [
+     29,
+     17
+    ],
+    [
+     29,
+     15
+    ],
+    [
+     29,
+     13
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    7,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst5|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     9,
+     15
+    ],
+    [
+     9,
+     13
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    7,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst5|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ],
+    [
+     29,
+     17
+    ],
+    [
+     29,
+     15
+    ],
+    [
+     29,
+     13
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    7,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst5|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     9,
+     15
+    ],
+    [
+     9,
+     13
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    7,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst5|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     17
+    ],
+    [
+     9,
+     15
+    ],
+    [
+     9,
+     13
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    7,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_open|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_open|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_open|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_open|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_open|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_open|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_covered|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_covered|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_covered|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_covered|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_covered|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_covered|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_open|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_open|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_open|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_open|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_open|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_open|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_covered|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     15
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_covered|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ],
+    [
+     29,
+     15
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_covered|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     15
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_covered|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ],
+    [
+     29,
+     15
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_covered|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     15
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_covered|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ],
+    [
+     9,
+     15
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    2,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "ledge|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "ledge|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge_high|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge_high|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     31,
+     19
+    ]
+   ],
+   "col": 30,
+   "row": 15,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "ledge_high|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge_high|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     31,
+     19
+    ]
+   ],
+   "col": 30,
+   "row": 15,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "ledge_high|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "ledge_high|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap1|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap1|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap1|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap1|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap1|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap1|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap2|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    4,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap2|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    3,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap2|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    4,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap2|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    3,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap2|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    4,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap2|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    4,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap3|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     15,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    6,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap3|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     23,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    5,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap3|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     15,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    6,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap3|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     23,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    5,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap3|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     15,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    6,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap3|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     15,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    6,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_level|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_level|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_level|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_level|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_level|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_level|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_up|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_up|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ],
+    [
+     27,
+     19
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    2,
+    2,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_up|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_up|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ],
+    [
+     27,
+     19
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    2,
+    2,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_up|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_up|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    2,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_down|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_down|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     31,
+     19
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 15,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_down|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_down|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     31,
+     19
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 15,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_down|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_down|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     7,
+     19
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 15,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_none|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_none|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_none|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_none|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "gap_none|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "gap_none|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "pocket|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     29,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     29,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket_deep|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket_deep|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket_deep|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket_deep|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     33,
+     19
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     29,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket_deep|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket_deep|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     5,
+     19
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     9,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    0
+   ]
+  },
+  {
+   "name": "pocket_covered|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "pocket_covered|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     33,
+     17
+    ],
+    [
+     31,
+     17
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "pocket_covered|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "pocket_covered|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     33,
+     17
+    ],
+    [
+     31,
+     17
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "pocket_covered|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "pocket_covered|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    2,
+    0,
+    0
+   ]
+  },
+  {
+   "name": "corridor|floor_far",
+   "bricks": [
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "name": "corridor|floor_far|m",
+   "bricks": [
+    [
+     33,
+     17
+    ],
+    [
+     31,
+     17
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    3
+   ]
+  },
+  {
+   "name": "corridor|floor_near",
+   "bricks": [
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "name": "corridor|floor_near|m",
+   "bricks": [
+    [
+     33,
+     17
+    ],
+    [
+     31,
+     17
+    ],
+    [
+     29,
+     17
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    3
+   ]
+  },
+  {
+   "name": "corridor|ladder_low",
+   "bricks": [
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "name": "corridor|ladder_high",
+   "bricks": [
+    [
+     5,
+     17
+    ],
+    [
+     7,
+     17
+    ],
+    [
+     9,
+     17
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2
+   ]
+  },
+  {
+   "name": "step_then_gap|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_gap|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_gap|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_gap|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_gap|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_gap|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_wall|floor_far",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_wall|floor_far|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     27,
+     21
+    ],
+    [
+     27,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_wall|floor_near",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_wall|floor_near|m",
+   "bricks": [
+    [
+     29,
+     21
+    ],
+    [
+     27,
+     21
+    ],
+    [
+     27,
+     19
+    ]
+   ],
+   "col": 31,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_wall|ladder_low",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "step_then_wall|ladder_high",
+   "bricks": [
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far2|floor_far",
+   "bricks": [
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far2|floor_far|m",
+   "bricks": [
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "obst1_far2|floor_near",
+   "bricks": [
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far2|floor_near|m",
+   "bricks": [
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "obst1_far2|ladder_low",
+   "bricks": [
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far2|ladder_high",
+   "bricks": [
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far3|floor_far",
+   "bricks": [
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far3|floor_far|m",
+   "bricks": [
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "obst1_far3|floor_near",
+   "bricks": [
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far3|floor_near|m",
+   "bricks": [
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "obst1_far3|ladder_low",
+   "bricks": [
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst1_far3|ladder_high",
+   "bricks": [
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    2,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_far2|floor_far",
+   "bricks": [
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_far2|floor_far|m",
+   "bricks": [
+    [
+     27,
+     21
+    ],
+    [
+     27,
+     19
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "obst2_far2|floor_near",
+   "bricks": [
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_far2|floor_near|m",
+   "bricks": [
+    [
+     27,
+     21
+    ],
+    [
+     27,
+     19
+    ]
+   ],
+   "col": 30,
+   "row": 19,
+   "toward": -1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "obst2_far2|ladder_low",
+   "bricks": [
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "obst2_far2|ladder_high",
+   "bricks": [
+    [
+     11,
+     21
+    ],
+    [
+     11,
+     19
+    ]
+   ],
+   "col": 7,
+   "row": 19,
+   "toward": 1,
+   "terrain": [
+    7,
+    0,
+    0,
+    4,
+    7,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far2|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    4,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far2|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    4,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "hole_far2|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    4,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far2|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     27,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    1,
+    4,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "hole_far2|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    4,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far2|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     11,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    2,
+    4,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far3|floor_far",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    2,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far3|floor_far|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    1,
+    2,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "hole_far3|floor_near",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    2,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far3|floor_near|m",
+   "bricks": [
+    [
+     33,
+     21
+    ],
+    [
+     31,
+     21
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     25,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    1,
+    2,
+    2,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "hole_far3|ladder_low",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    2,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "hole_far3|ladder_high",
+   "bricks": [
+    [
+     5,
+     21
+    ],
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     13,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    2,
+    2,
+    2,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_edge|floor_far",
+   "bricks": [
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_edge|floor_far|m",
+   "bricks": [
+    [
+     31,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "on_top_edge|floor_near",
+   "bricks": [
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_edge|floor_near|m",
+   "bricks": [
+    [
+     31,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "on_top_edge|ladder_low",
+   "bricks": [
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_edge|ladder_high",
+   "bricks": [
+    [
+     7,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    0,
+    7,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_flat|floor_far",
+   "bricks": [
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    4,
+    3,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_flat|floor_far|m",
+   "bricks": [
+    [
+     31,
+     21
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    3,
+    4,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "on_top_flat|floor_near",
+   "bricks": [
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    4,
+    3,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_flat|floor_near|m",
+   "bricks": [
+    [
+     31,
+     21
+    ],
+    [
+     29,
+     21
+    ],
+    [
+     27,
+     21
+    ]
+   ],
+   "col": 30,
+   "row": 17,
+   "toward": -1,
+   "terrain": [
+    3,
+    4,
+    0,
+    0,
+    0,
+    7,
+    3
+   ]
+  },
+  {
+   "name": "on_top_flat|ladder_low",
+   "bricks": [
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    4,
+    3,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  },
+  {
+   "name": "on_top_flat|ladder_high",
+   "bricks": [
+    [
+     7,
+     21
+    ],
+    [
+     9,
+     21
+    ],
+    [
+     11,
+     21
+    ]
+   ],
+   "col": 7,
+   "row": 17,
+   "toward": 1,
+   "terrain": [
+    4,
+    3,
+    0,
+    0,
+    0,
+    7,
+    2
+   ]
+  }
+ ]
+}
