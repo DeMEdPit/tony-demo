@@ -1,0 +1,813 @@
+{
+ "quantities": [
+  "tSafeRun",
+  "tGapW",
+  "tDropH",
+  "tFarH",
+  "tFarRun",
+  "tObstD",
+  "tObstH",
+  "tObstTop",
+  "tHead",
+  "tBackH",
+  "tBackRoom"
+ ],
+ "published": [
+  "tSafeRun",
+  "tGapW",
+  "tFarRun",
+  "tObstH",
+  "tObstTop",
+  "tHead",
+  "tBackRoom"
+ ],
+ "omitted": [
+  "tDropH",
+  "tFarH",
+  "tObstD",
+  "tBackH"
+ ],
+ "design": [
+  [
+   "tSafeRun",
+   "GE",
+   1
+  ],
+  [
+   "tSafeRun",
+   "GE",
+   3
+  ],
+  [
+   "tGapW",
+   "GE",
+   3
+  ],
+  [
+   "tGapW",
+   "GE",
+   4
+  ],
+  [
+   "tGapW",
+   "GE",
+   6
+  ],
+  [
+   "tFarRun",
+   "GE",
+   1
+  ],
+  [
+   "tFarRun",
+   "GE",
+   3
+  ],
+  [
+   "tObstH",
+   "GE",
+   1
+  ],
+  [
+   "tObstH",
+   "GE",
+   3
+  ],
+  [
+   "tObstH",
+   "GE",
+   5
+  ],
+  [
+   "tObstTop",
+   "GE",
+   1
+  ],
+  [
+   "tObstTop",
+   "GE",
+   3
+  ],
+  [
+   "tHead",
+   "GE",
+   1
+  ],
+  [
+   "tHead",
+   "GE",
+   4
+  ],
+  [
+   "tBackRoom",
+   "GE",
+   2
+  ],
+  [
+   "tBackRoom",
+   "GE",
+   4
+  ]
+ ],
+ "design_names": [
+  "tSafeRun>=1",
+  "tSafeRun>=3",
+  "tGapW>=3",
+  "tGapW>=4",
+  "tGapW>=6",
+  "tFarRun>=1",
+  "tFarRun>=3",
+  "tObstH>=1",
+  "tObstH>=3",
+  "tObstH>=5",
+  "tObstTop>=1",
+  "tObstTop>=3",
+  "tHead>=1",
+  "tHead>=4",
+  "tBackRoom>=2",
+  "tBackRoom>=4"
+ ],
+ "greedy": [
+  "tObstTop>=3",
+  "tGapW>=4",
+  "tBackRoom>=2",
+  "tSafeRun>=1",
+  "tGapW>=6",
+  "tFarRun>=3",
+  "tGapW>=3",
+  "tHead>=1",
+  "tObstH>=3"
+ ],
+ "greedy_trace": [
+  {
+   "name": "(none)",
+   "splits_left": 34,
+   "conflicts_left": 636
+  },
+  {
+   "name": "tObstTop>=3",
+   "splits_left": 34,
+   "conflicts_left": 418
+  },
+  {
+   "name": "tGapW>=4",
+   "splits_left": 37,
+   "conflicts_left": 248
+  },
+  {
+   "name": "tBackRoom>=2",
+   "splits_left": 21,
+   "conflicts_left": 152
+  },
+  {
+   "name": "tSafeRun>=1",
+   "splits_left": 19,
+   "conflicts_left": 84
+  },
+  {
+   "name": "tGapW>=6",
+   "splits_left": 15,
+   "conflicts_left": 48
+  },
+  {
+   "name": "tFarRun>=3",
+   "splits_left": 12,
+   "conflicts_left": 28
+  },
+  {
+   "name": "tGapW>=3",
+   "splits_left": 8,
+   "conflicts_left": 14
+  },
+  {
+   "name": "tHead>=1",
+   "splits_left": 1,
+   "conflicts_left": 4
+  },
+  {
+   "name": "tObstH>=3",
+   "splits_left": 0,
+   "conflicts_left": 0
+  }
+ ],
+ "candidates": [
+  "tSafeRun>=1",
+  "tSafeRun>=2",
+  "tSafeRun>=3",
+  "tSafeRun>=4",
+  "tSafeRun>=5",
+  "tSafeRun>=6",
+  "tSafeRun>=7",
+  "tGapW>=1",
+  "tGapW>=2",
+  "tGapW>=3",
+  "tGapW>=4",
+  "tGapW>=5",
+  "tGapW>=6",
+  "tGapW>=7",
+  "tDropH<=-4",
+  "tDropH<=-3",
+  "tDropH<=-2",
+  "tDropH<=-1",
+  "tFarH>=1",
+  "tFarH>=2",
+  "tFarRun>=1",
+  "tFarRun>=2",
+  "tFarRun>=3",
+  "tFarRun>=4",
+  "tObstD>=1",
+  "tObstD>=2",
+  "tObstD>=3",
+  "tObstD>=4",
+  "tObstD>=5",
+  "tObstH>=1",
+  "tObstH>=2",
+  "tObstH>=3",
+  "tObstH>=4",
+  "tObstH>=5",
+  "tObstH>=6",
+  "tObstH>=7",
+  "tObstTop>=1",
+  "tObstTop>=2",
+  "tObstTop>=3",
+  "tObstTop>=4",
+  "tObstTop>=5",
+  "tObstTop>=6",
+  "tObstTop>=7",
+  "tHead>=1",
+  "tHead>=2",
+  "tHead>=3",
+  "tHead>=4",
+  "tHead>=5",
+  "tHead>=6",
+  "tHead>=7",
+  "tBackH>=1",
+  "tBackH>=2",
+  "tBackH>=3",
+  "tBackH>=4",
+  "tBackH>=5",
+  "tBackH>=6",
+  "tBackH>=7",
+  "tBackRoom>=1",
+  "tBackRoom>=2",
+  "tBackRoom>=3"
+ ],
+ "before": {
+  "observations": 21,
+  "consequential_classes": 17,
+  "splits": 34,
+  "conflicts": 636
+ },
+ "after": {
+  "observations": 93,
+  "splits": 0,
+  "conflicts": 0,
+  "still_shared": [
+   [
+    "obst1",
+    "obst1_open",
+    "step_then_gap",
+    "step_then_wall"
+   ],
+   [
+    "obst1",
+    "obst1_open",
+    "step_then_gap",
+    "step_then_wall"
+   ],
+   [
+    "obst1",
+    "obst1_open",
+    "step_then_gap",
+    "step_then_wall"
+   ],
+   [
+    "obst1",
+    "obst1_open",
+    "step_then_gap",
+    "step_then_wall"
+   ],
+   [
+    "obst2",
+    "obst2_open"
+   ],
+   [
+    "obst2",
+    "obst2_open"
+   ],
+   [
+    "obst2",
+    "obst2_open"
+   ],
+   [
+    "obst2",
+    "obst2_open"
+   ],
+   [
+    "gap_none",
+    "ledge",
+    "on_top_edge"
+   ],
+   [
+    "gap_none",
+    "ledge",
+    "on_top_edge"
+   ],
+   [
+    "gap_none",
+    "ledge",
+    "on_top_edge"
+   ],
+   [
+    "gap_none",
+    "ledge",
+    "on_top_edge"
+   ],
+   [
+    "gap_down",
+    "ledge_high"
+   ],
+   [
+    "gap_down",
+    "ledge_high"
+   ],
+   [
+    "gap_down",
+    "ledge_high"
+   ],
+   [
+    "gap_down",
+    "ledge_high"
+   ],
+   [
+    "gap1",
+    "gap_level"
+   ],
+   [
+    "gap1",
+    "gap_level"
+   ],
+   [
+    "gap1",
+    "gap_level"
+   ],
+   [
+    "gap1",
+    "gap_level"
+   ],
+   [
+    "obst1_far2",
+    "obst1_far3"
+   ],
+   [
+    "obst1_far2",
+    "obst1_far3"
+   ],
+   [
+    "obst1_far2",
+    "obst1_far3"
+   ]
+  ]
+ },
+ "active": {
+  "terrain_min": 3,
+  "terrain_mean": 6.645833333333333,
+  "terrain_max": 10
+ },
+ "load_bearing": {
+  "tSafeRun>=1": 20,
+  "tSafeRun>=3": 0,
+  "tGapW>=3": 8,
+  "tGapW>=4": 0,
+  "tGapW>=6": 6,
+  "tFarRun>=1": 0,
+  "tFarRun>=3": 20,
+  "tObstH>=1": 0,
+  "tObstH>=3": 4,
+  "tObstH>=5": 0,
+  "tObstTop>=1": 0,
+  "tObstTop>=3": 40,
+  "tHead>=1": 0,
+  "tHead>=4": 0,
+  "tBackRoom>=2": 70,
+  "tBackRoom>=4": 0
+ },
+ "terrain_by_geometry": {
+  "flat": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "flat_near_wall": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 7,
+   "tBackRoom": 0
+  },
+  "obst1": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst2": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 4,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst3": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 6,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst5": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 7,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst1_open": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst1_covered": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 2,
+   "tObstTop": 2,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst2_open": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 4,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst2_covered": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 4,
+   "tObstTop": 2,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "ledge": {
+   "tSafeRun": 0,
+   "tGapW": 7,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "ledge_high": {
+   "tSafeRun": 0,
+   "tGapW": 7,
+   "tDropH": -4,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "gap1": {
+   "tSafeRun": 0,
+   "tGapW": 2,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 2,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "gap2": {
+   "tSafeRun": 0,
+   "tGapW": 4,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 2,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "gap3": {
+   "tSafeRun": 0,
+   "tGapW": 6,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 2,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "gap_level": {
+   "tSafeRun": 0,
+   "tGapW": 2,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 2,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "gap_up": {
+   "tSafeRun": 0,
+   "tGapW": 2,
+   "tDropH": -2,
+   "tFarH": 2,
+   "tFarRun": 2,
+   "tObstD": 3,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "gap_down": {
+   "tSafeRun": 0,
+   "tGapW": 7,
+   "tDropH": -4,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "gap_none": {
+   "tSafeRun": 0,
+   "tGapW": 7,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "pocket": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 2,
+   "tBackRoom": 0
+  },
+  "pocket_deep": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 4,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 4,
+   "tBackRoom": 0
+  },
+  "pocket_covered": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 2,
+   "tObstTop": 2,
+   "tHead": 0,
+   "tBackH": 2,
+   "tBackRoom": 0
+  },
+  "corridor": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 0,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "step_then_gap": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "step_then_wall": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 1,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst1_far2": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 3,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst1_far3": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 5,
+   "tObstH": 2,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "obst2_far2": {
+   "tSafeRun": 7,
+   "tGapW": 0,
+   "tDropH": 0,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 3,
+   "tObstH": 4,
+   "tObstTop": 7,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "hole_far2": {
+   "tSafeRun": 0,
+   "tGapW": 2,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 4,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "hole_far3": {
+   "tSafeRun": 2,
+   "tGapW": 2,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 2,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "on_top_edge": {
+   "tSafeRun": 0,
+   "tGapW": 7,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  },
+  "on_top_flat": {
+   "tSafeRun": 4,
+   "tGapW": 3,
+   "tDropH": -2,
+   "tFarH": 0,
+   "tFarRun": 0,
+   "tObstD": 0,
+   "tObstH": 0,
+   "tObstTop": 0,
+   "tHead": 7,
+   "tBackH": 0,
+   "tBackRoom": 2
+  }
+ }
+}

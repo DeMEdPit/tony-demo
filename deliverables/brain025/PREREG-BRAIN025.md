@@ -310,3 +310,25 @@ J. STOP.
 Checkpoints are committed after each stage that succeeds. If a major hypothesis fails it is reported
 as a failure; the architecture is not redesigned around it. At J: no Solidity, nothing merged over
 BRAIN02, nothing deployed, and no claim that BRAIN02.5 is the final Chamber v2 architecture.
+
+---
+
+## Amendment 1, before any census result exists
+
+Made after the rollout calibration on the frozen Candidate A build and before a single scenario of the
+census was measured or recorded. Nothing here is chosen with knowledge of a result; the calibration
+measured only how far Tony travels per decision, on flat floor, a one-high step and a two-high wall.
+
+1. **The rollout holds the chosen output for two think periods, not one.** The think period is four
+   frames, and one period displaces Tony by four to eight pixels, less than the eight-pixel character
+   column the outcome rules are stated in. Two periods (eight frames) put the displacement above the
+   resolution of the measurement. The neutral continuation is fifty-two frames of idle, enough for a
+   jump arc and its landing. Every scenario and every action gets exactly the same rollout.
+2. **Two outcome classes are added** to the four of section 8, for completeness rather than as new
+   ideas: `RETREAT`, supported and at least one column away from the reference, and `AIRBORNE`, ending
+   neither on ground nor on a ladder. `DROP` keeps priority over both.
+3. **The pose is placed at the surface's natural resting Y** (the floor's is 206, a brick top's is
+   sixteen pixels above it), so that no scenario begins with a settling transient that the rollout
+   would then measure.
+
+The calibration output that motivated 1 and 3 is in `census-calibration.txt`.

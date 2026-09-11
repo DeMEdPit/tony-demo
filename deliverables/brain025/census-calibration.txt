@@ -1,0 +1,44 @@
+column mapping: a brick at column c registers as the wall ahead when c is the column past his box
+   brick at column  6: X 72, box columns 7-8, wallAheadFoot 0, wallAheadHead 0, buildable 7
+   brick at column  7: X 72, box columns 7-8, wallAheadFoot 0, wallAheadHead 0, buildable 7
+   brick at column  8: X 72, box columns 7-8, wallAheadFoot 7, wallAheadHead 0, buildable 0
+   brick at column  9: X 74, box columns 7-8, wallAheadFoot 7, wallAheadHead 0, buildable 0
+   brick at column 10: X 74, box columns 7-8, wallAheadFoot 0, wallAheadHead 0, buildable 0
+   brick at column 11: X 74, box columns 7-8, wallAheadFoot 0, wallAheadHead 0, buildable 7
+   brick at column 12: X 74, box columns 7-8, wallAheadFoot 0, wallAheadHead 0, buildable 7
+   brick at column 13: X 74, box columns 7-8, wallAheadFoot 0, wallAheadHead 0, buildable 7
+
+rollout: the forced output held 8 frames, then idle for 52
+   flat floor: from column 7, row 19
+      idle         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      toward       X 74->90 (col 7->9)  Y 206->206 (row 19->19)  floorBelow 7
+      away         X 74->58 (col 7->5)  Y 206->206 (row 19->19)  floorBelow 7
+      up           X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      down         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      jump         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      jump toward  X 74->124 (col 7->13)  Y 206->206 (row 19->19)  floorBelow 7
+      jump away    X 74->56 (col 7->5)  Y 206->206 (row 19->19)  floorBelow 7
+      build toward X 74->91 (col 7->9)  Y 206->190 (row 19->17)  floorBelow 7
+      build away   X 74->59 (col 7->5)  Y 206->190 (row 19->17)  floorBelow 7
+   a one-high step ahead: from column 7, row 19
+      idle         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      toward       X 74->78 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      away         X 74->58 (col 7->5)  Y 206->206 (row 19->19)  floorBelow 7
+      up           X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      down         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      jump         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      jump toward  X 74->120 (col 7->13)  Y 206->206 (row 19->19)  floorBelow 7
+      jump away    X 74->56 (col 7->5)  Y 206->206 (row 19->19)  floorBelow 7
+      build toward X 74->91 (col 7->9)  Y 206->190 (row 19->17)  floorBelow 7
+      build away   X 74->59 (col 7->5)  Y 206->190 (row 19->17)  floorBelow 7
+   a two-high wall ahead: from column 7, row 19
+      idle         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      toward       X 74->78 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      away         X 74->58 (col 7->5)  Y 206->206 (row 19->19)  floorBelow 7
+      up           X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      down         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      jump         X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      jump toward  X 74->78 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      jump away    X 74->56 (col 7->5)  Y 206->206 (row 19->19)  floorBelow 7
+      build toward X 74->74 (col 7->7)  Y 206->206 (row 19->19)  floorBelow 7
+      build away   X 74->59 (col 7->5)  Y 206->190 (row 19->17)  floorBelow 7
