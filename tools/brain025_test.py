@@ -284,7 +284,9 @@ def migrate_gate(b, old_prg=None, quick=False):
         check(r["weights_copied"] and r["appended_zero"], f"{nm}: the 64 weights copied in order per row, {b.n - ob.n} zero weights appended, fields {', '.join(f'{k} {v[0]}->{v[1]}' for k, v in r['fields'].items() if k != 'mood')}")
         # the old machine's choice
         s = f"wait:300,poke:{ob['brainTestMode']:X}:00," + po(ob["brainMarker"], old)
-        for x in sel: s += po(ob["brainTestIn"], xb(x)) + f"poke:{ob['brainTestRun']:X}:01,wait:2,sync," + pk(ob["brainTestAction"]) + pk(ob["brainTestOutput"])
+        # the same generous wait on both builds: two frames is sometimes short of one hook pass even at
+        # sixty-four inputs, and a short wait reads the previous block's answer rather than this one's
+        for x in sel: s += po(ob["brainTestIn"], xb(x)) + f"poke:{ob['brainTestRun']:X}:01,wait:{WAIT},sync," + pk(ob["brainTestAction"]) + pk(ob["brainTestOutput"])
         va, _ = ob.run(s)
         # the new machine's, with the migrated brain, under each terrain
         for t in terrains:
@@ -613,3 +615,81 @@ def gate_resources(b, outdir):
     return ok
 
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "resources": sys.exit(0 if gate_resources(Build(sys.argv[2]), OUT) else 1)
+
+# --------------------------------------------------------------------------- the workbench descriptor
+def descriptor(b, commit):
+    """a machine-readable descriptor of the BRAIN02.5 study build, in the shape BRAIN02's descriptor has,
+    with a schema identifier of its own so neither can be mistaken for the other"""
+    S = b.sym; n = b.n; entries = ref.table_T1()
+    d = dict(
+        schema="tony-brain025-descriptor/1", filename=os.path.basename(b.prg), sha256=b.sha, prg_size=b.size, engine_commit=commit,
+        study="BRAIN02.5: BRAIN02's learner with seven local terrain quantities added to the sensed state and sixteen inputs appended at 64..79",
+        derived_from=dict(brain="BRAIN02 Candidate A", prg="tony-b02-a.prg", sha256="ae6ce5244478532c5ec581c9e24a30bea0743c68b2dd7cc7ff9f3017bc3e594d", engine_commit="3e12f0e19d69f9d37e1b95beafa9aa3368511cd0"),
+        load_address=0x0801, machine="Commodore 64 PAL; Minimal64 and VICE; a plain PRG",
+        brain=dict(marker="BRAIN025", marker_address=S["brainMarker"], slot_bytes=S["BRAIN_BLOCK_SIZE"], layout=3, rule_version=2, inputs=n, outputs=10, vocabulary=b.vocab, retina_id=b.retina,
+                   note="layout 3 and the marker BRAIN025 make a BRAIN02 slot malformed here and a BRAIN02.5 slot malformed there; neither loads into the other",
+                   header=dict(kind=S["brainKind"], layout=S["brainLayout"], inputs=S["brainInputCount"], hidden=S["brainHiddenCount"], outputs=S["brainOutputCount"], period=S["brainPeriod"],
+                               lineage=S["brainLineage"], rule=S["brainRule"], vocabulary=S["brainVocab"], retina_id=S["brainRetinaId"], education_count=S["brainEducation"], education_bytes=2),
+                   weights=S["brainWeights"], weight_bytes=10 * n, weight_layout="row o at weights + o * inputs, one signed byte per input (two's complement)", mood=S["brainMood"], mood_bytes=10,
+                   default_kind=1, blank_behaviour="zero weights give every accumulator the same value; the existing first-largest tie picks output 0, IDLE. There is no follow rule behind the brain in this build.",
+                   hash_domains=dict(behavioural="bytes 8..12, 16..17 and the weights, in slot order, SHA-256", provenance="lineage, rule version, education count", timing_render="period, mood")),
+        retina=dict(id=b.retina, name="T1", table_address=S["retinaTable"], table_bytes=1 + 3 * n, table_layout="count, then ops[n], operands a[n], k-or-b[n]",
+                    inputs_0_63="R1b's, entry for entry, unchanged in meaning and in order", inputs_64_79="the sixteen appended thresholds over the seven terrain quantities",
+                    flag_names=ref.flag_names(entries), pseudo_senses={20 + i: nm for i, nm in enumerate(ref.PSEUDO)},
+                    terrain_values={29 + i: nm for i, nm in enumerate(ref.TERRAIN)},
+                    terrain_frame="the toward frame: h = sign(refDx), or the clone's facing when refDx is zero, from the same published block the retina reads",
+                    flag_vector=S["brainFlags"], flag_vector_bytes=n, active_list=S["brainActive"], active_count=S["brainActiveCount"], values=S["brainVals"], values_bytes=29 + len(ref.TERRAIN)),
+        senses=dict(address=S["cloneSenses"], count=b.senses, frame=S["cloneSensesFrame"],
+                    layout="one byte per sense, the signed nibble in the low four bits (8..15 negative); senses 0..19 are BRAIN02's, unchanged",
+                    terrain={20 + i: nm for i, nm in enumerate(ref.TERRAIN)},
+                    terrain_meanings=dict(tSafeRun="columns toward the reference with support at his own floor row, before the first without",
+                                          tGapW="from that first unsupported column, how many in a row lack support",
+                                          tFarRun="how many supported columns in a row the far side of that gap offers",
+                                          tObstH="the height in rows of the first column toward him blocked at his foot row",
+                                          tObstTop="the clear rows above that block's top", tHead="the clear rows above his own head, over both his columns",
+                                          tBackRoom="how many columns away from the reference are clear at his foot row"),
+                    terrain_cap=ref.CAP, terrain_probe=S["senseTerrain"]),
+        live=dict(predicted_output=S["brainOutput"], resolved_action=S["brainAction"], h_right=S["brainH"], taught_action=S["brainTaught"], taught_raw=S["brainTaughtRaw"],
+                  predicted_at_lesson=S["brainPredicted"], lesson_taken=S["brainLearned"], kind_now=S["brainKindNow"], think_count=S["brainThinks"], accumulators=S["brainAcc"],
+                  score_gap=S["brainGap"], think_input=S["brainIn"], clone_x=S["cloneX"], clone_y=S["cloneY"], clone_state=S["cloneState"],
+                  player_x=S["physPlayerX"], player_y=S["physPlayerY"], player_state=S["physPlayerState"], bricks=S["buildCount"],
+                  flash_frames=S["cloneFlash"], flash_colour=S["cloneFlashColour"], flash_colours={1: "white: a lesson", 2: "red: a lesson refused, the ring is full"},
+                  teach_mode=S["teachMode"], teach_key="T (keyboard matrix row 2, column bit 6); the toggle acts on the press edge",
+                  teach_key_edges=S["teachKeyEdges"], teach_key_state=S["teachKeyWas"],
+                  shadow_request=S["shadowRequest"], shadow_restore_request=S["shadowRestoreRequest"], shadow_valid=S["shadowValid"], shadow_at=S["TEACH_SHADOW"], shadow_bytes=10 * n,
+                  raster_max=S["bodyRasterMax"], overruns=S.get("bodyOverruns"), frames=S["bodyFrames"], spawn=dict(x=72, columns=[7, 8], note="the study spawn, by the far left pillar, clear of the ladder at columns 33-34")),
+        profiler=dict(think=S["profThink"], think_max=S["profThinkMax"], lesson=S["profLesson"], lesson_max=S["profLessonMax"], shadow=S["profShadow"], shadow_max=S["profShadowMax"],
+                      drain=S["profDrain"], drain_max=S["profDrainMax"], think_pure=S["profThinkPure"], think_pure_max=S["profThinkPureMax"],
+                      lesson_pure=S["profLessonPure"], lesson_pure_max=S["profLessonPureMax"], terrain=S["profTerrain"], terrain_max=S["profTerrainMax"],
+                      terrain_pure=S["profTerrainPure"], terrain_pure_max=S["profTerrainPureMax"], terrain_test_run=S["terrainTestRun"],
+                      unit="CPU cycles, 16-bit; the live counts include whatever interrupt work fell inside them, the pure ones (hooks, interrupts held off) do not",
+                      gap_min=S["gapMin"], gap_max=S["gapMax"], gap_sum=S["gapSum"], gap_count=S["gapCount"]),
+        lessons=dict(marker="LESSON25", marker_address=S["lessonMarker"], version=ref.LESSON_VERSION, write_seq=S["lessonWriteSeq"], read_seq=S["lessonReadSeq"],
+                     capacity=S["lessonCap"], capacity_default=180, entry_size=S["lessonSize"], entry_bytes=ref.LESSON_SIZE, status=S["lessonStatus"],
+                     status_bits={0: "full, learning paused", 1: "last ack rejected: stale range", 2: "last ack rejected: bad checksum", 3: "last ack rejected: a hold in progress", 7: "last ack accepted"},
+                     ack_seq=S["lessonAckSeq"], ack_sum=S["lessonAckSum"], ack_request=S["lessonAckRequest"], drains=S["lessonDrains"], cum_write=S["lessonCumWrite"], cum_read=S["lessonCumRead"], data=S["lessonData"],
+                     entry_layout=f"bytes 0..{ref.LESSON_SIZE - 2}: the {b.senses} sense nibbles, nibble i in byte i/2, the low nibble for even i, so the last nibble sits alone in byte {ref.LESSON_SIZE - 2} with a zero high half; byte {ref.LESSON_SIZE - 1}: the taught absolute action in the low nibble, the predicted raw output in the high nibble",
+                     slot_rule=f"the lesson with sequence s is at data + (s mod capacity) * {ref.LESSON_SIZE}; unread lessons are [read_seq, write_seq)",
+                     completeness="every input, old and new, is reconstructible from the entry alone: the terrain quantities are in the block, so a replay never needs the room",
+                     drain_procedure=["read read_seq, write_seq", "read the entries [read_seq, write_seq)", "sum every byte of those entries modulo 65536",
+                                      "write ack_seq = write_seq, ack_sum = the sum, then ack_request = 1", "wait one frame; read status: bit 7 accepted, else bits 1..3 say why"],
+                     replay="per lesson: unpack the twenty-seven nibbles, derive the eighty inputs with the retina table, translate the taught absolute action with h of the block under the relative vocabulary, apply the rule"),
+        test_hooks=dict(test_in=S["brainTestIn"], test_mode=S["brainTestMode"], test_run=S["brainTestRun"], test_flags=S["brainTestFlags"], test_acc=S["brainTestAcc"],
+                        test_output=S["brainTestOutput"], test_action=S["brainTestAction"], test_h=S["brainTestH"], learn_run=S["brainLearnRun"], learn_t=S["brainLearnTestT"],
+                        learn_p=S["brainLearnTestP"], learn_took=S["brainLearnTestTook"], terrain_test_run=S["terrainTestRun"],
+                        note="research only: the hooks run the machine's own retina, forward pass, rule and terrain probe on supplied inputs"),
+        access=dict(observation="everything above may be read at any time; read write_seq before and after a read of the weights to know no lesson intervened",
+                    research_control=dict(teach_mode="0/1, the same as the key", ack_fields="ack_seq, ack_sum, ack_request", capacity="may be lowered at boot before any lesson",
+                                          slot="the whole slot may be written at boot to load a saved brain", test_hooks="research only"),
+                    cognition="the terrain probe, the retina, the forward pass, the resolution, the rule and the lesson recording all run in the machine; the host never computes an input, a prediction or an action for him"),
+        session_trace=dict(observe_per_frame=["frames", "teach_mode", "teach_key_edges", "clone_x", "clone_y", "clone_state", "player_x", "player_y", "predicted_output", "resolved_action", "write_seq", "flash_colour", "the seven terrain quantities"],
+                           observe_per_lesson=["the new ring entry", "education_count", "the two weight rows that changed"],
+                           events=["teach on/off (the key or the flag)", "drain", "brain load", "brain reset", "capacity change"],
+                           derived=["lessons to competence on a course", "corrections", "aliasing (the same eighty inputs taught two actions)", "competence after reload", "how often a terrain input was the only thing that changed between two decisions"]))
+    return d
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "descriptor":
+    b = Build(sys.argv[2]); commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    os.makedirs(os.path.join(OUT, "workbench"), exist_ok=True)
+    d = descriptor(b, commit); json.dump(d, open(os.path.join(OUT, "workbench", f"{b.name}.json"), "w"), indent=1)
+    print(f"wrote deliverables/brain025/workbench/{b.name}.json ({len(json.dumps(d))} bytes of JSON)")

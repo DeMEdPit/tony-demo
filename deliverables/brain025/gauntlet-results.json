@@ -1,0 +1,221 @@
+{
+ "builds": {
+  "candidate_a": {
+   "prg": "tony-b02-a.prg",
+   "sha256": "ae6ce5244478532c5ec581c9e24a30bea0743c68b2dd7cc7ff9f3017bc3e594d",
+   "inputs": 64,
+   "senses": 20,
+   "retina": 2
+  },
+  "brain025": {
+   "prg": "b025-a.prg",
+   "sha256": "2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423",
+   "inputs": 80,
+   "senses": 27,
+   "retina": 5
+  }
+ },
+ "scenarios": 180,
+ "geometries": 20,
+ "per_build": {
+  "candidate_a": {
+   "aliases": {
+    "observations": 37,
+    "classes_over_one_geometry": 12,
+    "conflicting": 1,
+    "conflicting_detail": [
+     {
+      "members": [
+       "step2_near|floor_far|+2",
+       "step4_near|floor_far|+2",
+       "pocket3|floor_far",
+       "pocket3|floor_near"
+      ],
+      "geometries": [
+       "pocket3",
+       "step2_near",
+       "step4_near"
+      ],
+      "good_sets": [
+       [],
+       [
+        9
+       ]
+      ],
+      "conflicting": true
+     }
+    ]
+   },
+   "representability": {
+    "status": "feasible",
+    "scenarios": 170,
+    "no_good_action": 10
+   },
+   "competence": {
+    "lessons": 882,
+    "passes_to_competence": null,
+    "lessons_to_competence": null,
+    "right": 167,
+    "of": 170,
+    "accuracy": 0.9823529411764705
+   },
+   "retention": {
+    "applied": 208,
+    "accuracy_after": 0.5352941176470588
+   },
+   "shepherding": {
+    "taught_far_lessons": 75,
+    "far_subset_representable": "feasible",
+    "accuracy_far": 1.0,
+    "accuracy_near": 1.0,
+    "accuracy_ladder": 0.6666666666666666
+   },
+   "still_wrong": [
+    "pocket1|floor_far|+2",
+    "pocket3|floor_far|+1",
+    "pocket3|floor_far|+2"
+   ],
+   "by_geometry": {
+    "step1_near": 1.0,
+    "step2_near": 1.0,
+    "step4_near": 1.0,
+    "stair2": 1.0,
+    "stair_down": 1.0,
+    "edge_here": 1.0,
+    "edge_two": 1.0,
+    "edge_high": 1.0,
+    "gap_small_wide_landing": 1.0,
+    "gap_small_thin_landing": 1.0,
+    "gap_wide": 1.0,
+    "gap_land_up": 1.0,
+    "gap_land_down": 1.0,
+    "notch": 1.0,
+    "pocket1": 0.8888888888888888,
+    "pocket3": 0.5,
+    "roof_low": 1.0,
+    "roof_and_step": 1.0,
+    "step_then_gap": 1.0,
+    "gap_then_step": 1.0
+   },
+   "spawn_variation": {
+    "step1_near": 1.0,
+    "step2_near": 1.0,
+    "step4_near": 1.0,
+    "stair2": 1.0,
+    "stair_down": 1.0,
+    "edge_here": 1.0,
+    "edge_two": 1.0,
+    "edge_high": 1.0,
+    "gap_small_wide_landing": 1.0,
+    "gap_small_thin_landing": 1.0,
+    "gap_wide": 1.0,
+    "gap_land_up": 1.0,
+    "gap_land_down": 1.0,
+    "notch": 1.0,
+    "pocket1": 0.75,
+    "pocket3": 0.5,
+    "roof_low": 1.0,
+    "roof_and_step": 1.0,
+    "step_then_gap": 1.0,
+    "gap_then_step": 1.0
+   }
+  },
+  "brain025": {
+   "aliases": {
+    "observations": 99,
+    "classes_over_one_geometry": 22,
+    "conflicting": 0,
+    "conflicting_detail": []
+   },
+   "representability": {
+    "status": "feasible",
+    "scenarios": 170,
+    "no_good_action": 10
+   },
+   "competence": {
+    "lessons": 74,
+    "passes_to_competence": 9,
+    "lessons_to_competence": 74,
+    "right": 170,
+    "of": 170,
+    "accuracy": 1.0
+   },
+   "retention": {
+    "applied": 208,
+    "accuracy_after": 0.7235294117647059
+   },
+   "shepherding": {
+    "taught_far_lessons": 74,
+    "far_subset_representable": "feasible",
+    "accuracy_far": 1.0,
+    "accuracy_near": 1.0,
+    "accuracy_ladder": 1.0
+   },
+   "still_wrong": [],
+   "by_geometry": {
+    "step1_near": 1.0,
+    "step2_near": 1.0,
+    "step4_near": 1.0,
+    "stair2": 1.0,
+    "stair_down": 1.0,
+    "edge_here": 1.0,
+    "edge_two": 1.0,
+    "edge_high": 1.0,
+    "gap_small_wide_landing": 1.0,
+    "gap_small_thin_landing": 1.0,
+    "gap_wide": 1.0,
+    "gap_land_up": 1.0,
+    "gap_land_down": 1.0,
+    "notch": 1.0,
+    "pocket1": 1.0,
+    "pocket3": 1.0,
+    "roof_low": 1.0,
+    "roof_and_step": 1.0,
+    "step_then_gap": 1.0,
+    "gap_then_step": 1.0
+   },
+   "spawn_variation": {
+    "step1_near": 1.0,
+    "step2_near": 1.0,
+    "step4_near": 1.0,
+    "stair2": 1.0,
+    "stair_down": 1.0,
+    "edge_here": 1.0,
+    "edge_two": 1.0,
+    "edge_high": 1.0,
+    "gap_small_wide_landing": 1.0,
+    "gap_small_thin_landing": 1.0,
+    "gap_wide": 1.0,
+    "gap_land_up": 1.0,
+    "gap_land_down": 1.0,
+    "notch": 1.0,
+    "pocket1": 1.0,
+    "pocket3": 1.0,
+    "roof_low": 1.0,
+    "roof_and_step": 1.0,
+    "step_then_gap": 1.0,
+    "gap_then_step": 1.0
+   }
+  }
+ },
+ "ground_truth": {
+  "measured_on": "candidate_a",
+  "scenarios": 180,
+  "own_measurements_agree": 100,
+  "own_measurements_differ": 80,
+  "note": "the good-action sets are taken from Candidate A's rollouts for both builds; BRAIN02.5's own rollouts agreed on 100 of 180"
+ },
+ "regressions": [],
+ "gains": [
+  "pocket1|floor_far|+2",
+  "pocket3|floor_far|+1",
+  "pocket3|floor_far|+2"
+ ],
+ "like_for_like": {
+  "comparable": 170,
+  "not_comparable": 0,
+  "not_comparable_names": [],
+  "candidate_a_right": 167,
+  "brain025_right": 170
+ }
+}
