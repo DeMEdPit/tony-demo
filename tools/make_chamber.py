@@ -80,6 +80,8 @@ DIM_NO_CANDLE = True       # a room without a candle has medium grey stone (the 
 BUILD_DEMO = False         # --build-demo: a separate PRG for the owner to play; the base is untouched
 BODY = False               # --body: the clone's body on top of the build demo (tony-body.prg)
 BRAIN_KIND = 0             # --brain-kind: the slot's kind byte as assembled (tony-body-builder.prg is 2)
+BRAIN02 = None             # --brain02 R0|R1b|R0s|R1s|p128: the research brain in place of BRAIN01 (tools/brain02_asm.py)
+VOCAB = "rel"              # --vocab rel|abs: the action vocabulary byte of a --brain02 build
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -92,6 +94,8 @@ while _args:
     elif _flag == "--build-demo": BUILD_DEMO = True
     elif _flag == "--body": BODY = True
     elif _flag == "--brain-kind": BRAIN_KIND = int(_args.pop(0)); assert 0 <= BRAIN_KIND <= 2
+    elif _flag == "--brain02": BRAIN02 = _args.pop(0); assert BRAIN02 in ("R0", "R1b", "R0s", "R1s", "p128")
+    elif _flag == "--vocab": VOCAB = _args.pop(0); assert VOCAB in ("rel", "abs")
     else: raise SystemExit("unknown option " + _flag)
 assert BUILD_DEMO or not BODY, "--body needs --build-demo"
 _sid = open(MUSIC, "rb").read()
@@ -3676,6 +3680,9 @@ def body(src):
     j = src.index("\n}\n", src.index("buildColumnWall: {", i)) + 3
     src = src[:i] + src[j:]
     src = sub(src, ".segment Movable\n", BODY_CODE_ASM + "\n.segment Movable\n")
+    if BRAIN02:
+        exec(open("tools/brain02_asm.py").read(), globals())
+        src = brain02_apply(src, BRAIN02, VOCAB)
     src = sub(src, "brainKind:      .byte 0                 // +8\n", f"brainKind:      .byte {BRAIN_KIND}                 // +8  (--brain-kind)\n")
     return src
 

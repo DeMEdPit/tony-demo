@@ -624,7 +624,7 @@ if __name__ == "__main__":
         else: phase2b(args or None, workers=workers or 2)
     elif cmd == "budget":
         for r in budget(): print(r)
-    elif cmd == "explore": pass                                   # dispatched below, after explore() is defined
+    elif cmd in ("explore", "prestep"): pass                      # dispatched below, after they are defined
     else: print(__doc__)
 
 # ----------------------------------------------------------------- exploratory, after the pre-registration
@@ -655,3 +655,34 @@ def explore(workers=4):
     json.dump(out, open(os.path.join(OUT, "explore-R0s.json"), "w"), indent=1)
     return out
 if __name__ == "__main__" and sys.argv[1:2] == ["explore"]: explore()
+
+def prestep(workers=4):
+    """PREREG-PHASE3.md section 1: R1s (R0s plus R1b's eight facts, 69 inputs) through 1b and 2b at 8
+    bits in both vocabularies, with R0s's margins for the comparison; writes prestep-R1s.json"""
+    D = sets(); out = {}
+    ARMS = {"R1s": (lambda x: bin61(x) + six(x) + lastrel(x), 69), "R0s": (bin61, 61), "R1b": (lambda x: bin56(x) + six(x) + lastrel(x), 64)}
+    for name, (enc, n) in ARMS.items():
+        Z = {x: np.array(enc(list(x)), dtype=np.int64) for x in D["s1424"]}
+        for vocab in ("abs", "rel"):
+            for setname in ("s231", "s474", "s1424"):
+                lab = D[setname] if vocab == "abs" else relabel(D[setname]); items = list(lab.items())
+                key = f"{name}|{vocab}|{setname}|8"
+                if name != "R1s" and (setname != "s1424" or vocab != "rel"): continue     # the others: only the union margin under V is missing
+                f = cpsat_feasible(items, Z, n, BOXES[8], time_limit=300, workers=workers)
+                r = dict(status=f["status"], seconds=f["seconds"], feasible=f.get("feasible"))
+                if f.get("feasible"):
+                    m = cpsat(items, Z, n, BOXES[8], time_limit=300, margin=True, workers=workers, hint=f["weights"])
+                    r.update(margin=m.get("margin"), margin_bound=m.get("margin_bound"), margin_status=m["status"])
+                else:
+                    m = cpsat(items, Z, n, BOXES[8], time_limit=300, workers=workers, cut=(len(items) - 1 if f["feasible"] is False else None))
+                    r.update(min_unfit=m.get("min_unfit"), min_unfit_between=m.get("min_unfit_between"), status=m["status"])
+                    if m.get("unfit"): r["unfit_named"] = name_states(m["unfit"], D, vocab)
+                out[key] = r; print(key, r, flush=True)
+            if name == "R1s":
+                lab, S = streams(D, vocab); union = D["s474"] if vocab == "abs" else relabel(D["s474"])
+                for sname, stream, labels, un in (("S1", S["S1"], lab, union), ("S2", S["S2"], lab, union), ("S2u", list(union.items()), union, lab)):
+                    r = learn_stream(Z, stream, labels, BOXES[8], union=un); r.pop("weights", None)
+                    out[f"R1s|{vocab}|8|{sname}"] = r; print(f"R1s|{vocab}|8|{sname}", "first", r["first_full_at_lessons"], "held", r["passes_at_full"], "best", r["best_agree"], "/", r["states"], "max|w|", r["max_abs_w_curve_max"], "union", r["union_best_agree"], flush=True)
+        json.dump(out, open(os.path.join(OUT, "prestep-R1s.json"), "w"), indent=1)
+    return out
+if __name__ == "__main__" and sys.argv[1:2] == ["prestep"]: prestep()
