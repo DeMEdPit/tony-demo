@@ -1,0 +1,24 @@
+{
+ "sessions": [
+  {
+   "session": 1,
+   "lessons": 18,
+   "taught_to_y": null,
+   "alone_y": 206,
+   "alone_x": 206,
+   "climbs": false
+  },
+  {
+   "session": 2,
+   "lessons": 19,
+   "taught_to_y": null,
+   "alone_y": 56,
+   "alone_x": 284,
+   "climbs": true
+  }
+ ],
+ "lessons_to_climb": [
+  2,
+  37
+ ]
+}

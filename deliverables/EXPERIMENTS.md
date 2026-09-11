@@ -1183,3 +1183,28 @@ pre-registration, outside the selection: a binary retina whose dx flags are a si
 inputs) represents every set in both vocabularies at 4-bit weights and learns the 231 in 276 lessons
 and the 474 from its own stream under the absolute vocabulary, so the residual was the dx encoding;
 it goes to the next pre-registration. No BRAIN02 was built and no PRG changed.
+
+## E27 — BRAIN02 on the machine: byte weights, a published retina, the relative vocabulary, the lesson ring · built (2026-09-11)
+
+Phase 3 of Chamber v2 (`deliverables/bakeoff/PREREG-PHASE3.md`, `PHASE3.md`, `WORKBENCH-INTEGRATION.md`):
+the research brain in the generator (`make_chamber.py --brain02 RETINA --vocab rel|abs`,
+`tools/brain02_asm.py`), four playable PRGs (A: R1b, B: R0s, the R0 vocabulary pair) and a 128-input
+parity build. The slot has a 24-byte header with the vocabulary, the retina id and a lifetime education
+count; the retina is a published table interpreted on the 6502 over the twenty senses and nine named
+pseudo-senses; the forward pass adds the weights of the set flags into 16-bit accumulators; the rule is
+the symmetric step at the byte box; a relative action is resolved once per think from the block's own
+reference vector and facing; the LESSON2 ring records every applied lesson, pauses learning when full,
+and reclaims only a range the host acknowledges with the right checksum; the teaching shadow is taken
+and put back by the main loop, never interleaved with a lesson; CIA 2 timer A measures the machine's
+own cycles. Every gate passes on every candidate: the retina byte for byte on all 1,424 recorded blocks,
+the golden sets at every width (the 16-bit extremes at 128 inputs), the vocabulary's 40 cases, the
+malformed-slot fallback, Phase 2b's learned brains reproduced on all 474 teacher-visited blocks; think
+and lesson inside a frame (about 11,000 to 19,000 cycles), raster maximum 174 with no overruns; TEACH
+end to end with 33 lessons to climb on A and the climbed brain
+climbing again after export and reload; three and more ring cycles with byte-exact replays, the
+full-ring pause, refused acknowledgements, and the recorded sequence replayed uninterrupted giving the
+same brain. Two mechanics were found and fixed on the way: lessons were being lost whenever the main
+loop fell behind a frame (a per-frame ring of applied actions now makes the pairing independent of the
+main loop's pace: 79 lessons in 99 chattering ticks against 33 before), and the deferred restore
+had a one-frame window (closed in the clone's turn). Stopped at Checkpoint C for the owner's first
+human session; the sealed Phase 4 sweep is not run.
