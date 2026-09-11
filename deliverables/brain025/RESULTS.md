@@ -116,6 +116,19 @@ terrain probe inside the packer, a blank brain with no fallback, a keyboard togg
   rather than hidden.
 * **Deliverable 11 is outstanding** because the 300-lesson human brain is not in this repository.
 
+## BRAIN02 is unchanged, and checked
+
+The pre-registration requires the existing tests to keep passing. Re-run at the end of the experiment:
+
+* `tools/brain02_ref.py check` — ALL OK.
+* the four gates on `tony-b02-a.prg` — parity 6 checks, resources 4, teach 11, drain 7, **no failures**.
+* the five BRAIN02 PRGs, `tony-chamber.prg` and `tony-build.prg` — every hash unchanged.
+* Candidate A rebuilt from the modified generator — byte for byte
+  `ae6ce5244478532c5ec581c9e24a30bea0743c68b2dd7cc7ff9f3017bc3e594d`, so the one change made to the
+  generator (a default that BRAIN02.5 needs) alters nothing for BRAIN02.
+* `git diff 3e12f0e..HEAD` over `deliverables/bakeoff/`, the three BRAIN02 tools and the five BRAIN02
+  PRGs — empty.
+
 ## What was not done, deliberately
 
 No hidden layer, no recurrence, no memory, no reward, no planner, no pathfinding, no second room, no

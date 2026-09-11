@@ -1208,3 +1208,66 @@ loop fell behind a frame (a per-frame ring of applied actions now makes the pair
 main loop's pace: 79 lessons in 99 chattering ticks against 33 before), and the deferred restore
 had a one-frame window (closed in the clone's turn). Stopped at Checkpoint C for the owner's first
 human session; the sealed Phase 4 sweep is not run.
+
+## E28 — BRAIN02.5: more eyes, not more brain · built (2026-09-11)
+
+A person played freely, built arbitrary obstacle courses for a blank Tony, and came back with a reading:
+the limit is not the size of the brain but how little of the terrain he can see. This experiment asks
+the one question that follows. **How much more reliably can the same learner be taught, when the
+smallest useful increase in local terrain observability is added to the sensed state?** Nothing about
+the learner changes: the ten reference-relative outputs, the byte weights, the symmetric rule at the
+byte box, the first-largest tie, and inputs 0 to 63 with the meanings and the order R1b gave them.
+
+Branch `claude/brain025-terrain-observability`, beside BRAIN02, which is frozen and untouched: its PRGs
+still hash the same, its four gates still pass, and Candidate A rebuilds byte for byte from the modified
+generator.
+
+**The census (step C).** 192 scenarios over 32 local terrains, measured on the frozen Candidate A build,
+collapse to **21 distinct observations**, and 17 of those are consequential aliases: the world acts
+differently inside them and BRAIN02 cannot tell which world it is in. The largest single observation
+covers eleven geometries in which walking toward Tony drops the clone off an edge in nine of them and is
+safe in two. Consequence was measured, not asserted: the brain was made to choose each output in turn by
+its bias weight, so the decoder, the macros and the vocabulary all ran as in play, and the outcome was
+read from Tony's own position.
+
+**The design (step D).** Eleven candidate terrain quantities were defined and scored; a search that
+removes the most conflicting scenario pairs per input reached zero after nine thresholds. The published
+design is the smallest ordinal thermometers containing all nine: **sixteen inputs over seven quantities**
+(`tSafeRun`, `tGapW`, `tFarRun`, `tObstH`, `tObstTop`, `tHead`, `tBackRoom`), appended at 64 to 79 and
+measured in the toward frame the vocabulary already uses. Over the same scenarios the distinct
+observations rise from 21 to 93, and both the 34 consequential splits and the 636 conflicting pairs fall
+to zero.
+
+**On the machine.** `tony-b025-a.prg`, 52,092 bytes, sha256 `2a547ebf...`: marker `BRAIN025`, layout 3,
+80 inputs, a 27-nibble sense block, a 15-byte lesson record in a ring of 180, a terrain probe inside the
+sense packer that equals its offline model on all 192 census scenarios, a blank Tony with no follow rule
+behind him, and a teaching toggle on the T key so the joystick keeps every verb it had.
+
+**The gauntlet (step H),** on twenty fresh courses that had no part in choosing the design, both builds
+judged against one measurement of what the world does:
+
+| | Candidate A, 64 | BRAIN02.5, 80 |
+|---|---|---|
+| lessons to competence | never: 98% after 882 | **74 lessons, 9 passes, 100%** |
+| distinct observations over 180 situations | 37 | 99 |
+| representable at all | yes | yes |
+| retention after unrelated teaching | 98% → 54% | 100% → 72% |
+| taught far off, right on the ladder | 67% | 100% |
+| regressions | — | 0 |
+
+Both brains can express the behaviour; only one can be taught it. Migration is exactly clean: zero
+prediction mismatches, 711 on the machine and 12,816 off it.
+
+Two findings do not flatter the design and are reported with the same weight. **Teaching still
+interferes with itself**: an unrelated later stream costs BRAIN02.5 28 points of accuracy and BRAIN02
+44, and more eyes do not cure it. And **at eighty inputs the think and the lesson no longer fit inside
+one frame** of main-loop time (24,129 and 26,747 against 19,656), though both finish inside the
+four-frame think period with no overruns and a raster maximum of 141 against BRAIN02's 174.
+
+Three of the seven pre-registered predictions were wrong, and are scored as such in `RESULTS.md`: the
+most valuable single input was the standing room above an obstacle, not the gap ahead; obstacle height
+above the head row was not consequential on its own; and the machine did not hold the one-frame bound.
+
+Everything is in `deliverables/brain025/`. The 300-lesson human brain is not in this repository, so the
+one deliverable that needs it stays outstanding with the command and the expected result written down.
+This is a research build: not a production architecture, nothing deployed, nothing merged over BRAIN02.
