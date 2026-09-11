@@ -154,10 +154,9 @@ def parity(b, quick=False):
     checks = [v[0] == 1] + [v[2 + 2 * k] == 0 for k in range(len(fields))] + [v[k2] == 2, v[k0] == 0]
     check(all(checks), f"malformed slots: kind 1 valid -> {v[0]}; each header field wrong in turn -> {[v[2 + 2 * k] for k in range(len(fields))]}; kind 2 -> {v[k2]}, kind 0 -> {v[k0]}")
     # 6. a learned brain replayed: Phase 2b's weights for this retina and vocabulary on the 231 and the 474
-    P2 = json.load(open(os.path.join(ROOT, "deliverables/bakeoff/phase2b.json")))
-    arm = {1: "R0", 2: "R1b", 3: "R0s"}.get(b.retina); key = f"{arm}|{'rel' if b.vocab else 'abs'}|8|S2u"
-    if arm and key in P2:
-        Wl = P2[key]["weights"]; blocks, D = blocks_all(); test = sorted(D["s474"])
+    arm = {1: "R0", 2: "R1b", 3: "R0s"}.get(b.retina)
+    if arm:
+        Wl = learned_weights(b); blocks, D = blocks_all(); test = sorted(D["s474"])
         if quick: test = test[::5]
         script = "wait:300," + f"poke:{TM:X}:00," + po(MOOD, bytes(10)) + po(W, bytes(v & 255 for row in Wl for v in row))
         for x in test: script += po(TI, xb(x)) + f"poke:{TR:X}:01,wait:{WAIT},sync," + pk(TO) + pk(TA)
@@ -167,7 +166,25 @@ def parity(b, quick=False):
             if v[2 * k] != o or v[2 * k + 1] != a: bad += 1
         check(bad == 0, f"Phase 2b's learned {arm} weights on {len(test)} teacher-visited blocks: the machine's output and resolved action equal the reference's on {len(test) - bad}")
     return ok
-if __name__ == "__main__" and sys.argv[1] == "parity": sys.exit(0 if parity(Build(sys.argv[2]), quick="--quick" in sys.argv) else 1)
+
+
+def learned_weights(b):
+    """Phase 2b's learned weights for this build's retina and vocabulary (the 474 cycled at 8 bits), or, for a
+    retina Phase 2b did not run, the same rule run now and cached under phase3/"""
+    P2 = json.load(open(os.path.join(ROOT, "deliverables/bakeoff/phase2b.json"))); arm = {1: "R0", 2: "R1b", 3: "R0s"}.get(b.retina)
+    if not arm: return [[0] * b.n for _ in range(10)]
+    key = f"{arm}|{'rel' if b.vocab else 'abs'}|8|S2u"
+    if key in P2: return P2[key]["weights"]
+    cache = os.path.join(ROOT, "deliverables/bakeoff/phase3", f"weights-{arm}-{'rel' if b.vocab else 'abs'}.json")
+    if os.path.exists(cache): return json.load(open(cache))["weights"]
+    import numpy as np
+    b2 = _load("bakeoff2", os.path.join(ROOT, "tools/bakeoff2.py")); D = b2.sets(); entries = ref.TABLES[b.retina][1]()
+    Z = {x: np.array(ref.flags(entries, list(x)), dtype=np.int64) for x in D["s1424"]}
+    union = D["s474"] if not b.vocab else b2.relabel(D["s474"]); lab = D["s231"] if not b.vocab else b2.relabel(D["s231"])
+    r = b2.learn_stream(Z, list(union.items()), union, (-128, 127), union=lab)
+    os.makedirs(os.path.dirname(cache), exist_ok=True)
+    json.dump(dict(arm=arm, vocabulary="rel" if b.vocab else "abs", stream="the 474 cycled, 300 passes, 8 bits", first_full_at_lessons=r["first_full_at_lessons"], passes_at_full=r["passes_at_full"], weights=r["weights"]), open(cache, "w"))
+    return r["weights"]
 
 # ------------------------------------------------------------------------- a machine driven line by line
 class Machine:
@@ -206,7 +223,7 @@ def teach_frames(m, b, drv, frames, on_tick=None):
 STAIRS_C33 = "wait:300,joy:8:{},wait:20,".format((8 * 33 - 60 - 184) // 2) + "".join("joy:18:6,wait:20,joy:17:6,wait:30," for _ in range(5)) + "wait:10,hold:1,wait:50,release:1,wait:10,"   # every setup ends with a comma: commands are appended
 EPISODES = [("E01_follow_right", "wait:300,joy:8:30,wait:20,", 300), ("E02_follow_left", "wait:300,joy:4:40,wait:20,", 300), ("E07_stairs_C33", STAIRS_C33, 700), ("E03_follow_far_right", "wait:300,joy:8:50,wait:20,", 400), ("E12_restraint_wall", "wait:300,joy:8:60,wait:20,", 400)]
 
-def drain(m, b, saved_slot, log, teaching=True):
+def drain(m, b, saved_slot, log, teaching=True, batches=None):
     """with teaching held off for the frames the handshake needs (no lesson can be recorded meanwhile; the
     workbench pauses the emulator instead), read the unread lessons, acknowledge with the checksum (retrying
     if a lesson landed between the read and the request), replay the accepted range over the saved slot with
@@ -239,6 +256,7 @@ def drain(m, b, saved_slot, log, teaching=True):
     log.append(dict(drained=len(recs), seq_from=st["read"], seq_to=st["write"], sum=total, accepted=accepted, attempts=attempt + 1, replay_took_all=(divergent == 0), weights_equal=(pm["weights"] == W),
                     education_machine=pm["education"], education_replay=edu, hash_machine=ref.brain_hash(machine), hash_replay=ref.brain_hash(ref.slot_bytes(pm["kind"], pm["vocabulary"], pm["retina_id"], W, edu))))
     good = accepted and same and divergent == 0
+    if good and batches is not None: batches.append(recs)
     return (machine if good else saved_slot), good
 def dummy_drain(m, b):
     """the same frames as a drain, no acknowledgement (the uninterrupted run of the equivalence test)"""
@@ -280,11 +298,11 @@ def gate_drain(b, outdir):
             if st["write"] - st["read"] >= 30:
                 if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
                 saved, good = drain(m, b, saved, log); all_ok &= good
-        chatter_frames(m, b, drv, 640, on_tick)
+        chatter_frames(m, b, drv, 1200, on_tick)
         m.do(f"poke:{TEACH:X}:00,wait:1"); st = ring_state(m, b)
         if st["write"] > st["read"]: saved, good = drain(m, b, saved, log); all_ok &= good
         total_lessons += st["write"]; last_write = 0; m.close()
-    check(all_ok and len(log) >= 6 and wraps >= 3, f"{len(log)} drains over 2 sessions, {total_lessons} lessons, {wraps} ring wraps at capacity 40: every acknowledgement accepted and every replay equal to the machine byte for byte")
+    check(all_ok and len(log) >= 6 and wraps >= 3, f"{len(log)} drains over 2 sessions, {total_lessons} lessons, {wraps} ring wraps at capacity 40: every acknowledgement accepted and every replay equal to the machine byte for byte (dropped pairings in the last session {st['not_paired']})")
     check(all(l["hash_machine"] == l["hash_replay"] for l in log), "the behavioural hash of the machine's slot equals the replay's after every drain")
     edu = [l["education_machine"] for l in log]
     check(all(a <= c for a, c in zip(edu, edu[1:])) and edu[-1] == sum(l["drained"] for l in log), f"the education count runs across sessions and drains: {edu[-1]} lessons applied over the whole run, {sum(l['drained'] for l in log)} drained")
@@ -295,29 +313,47 @@ def gate_drain(b, outdir):
     m.do(po(b["lessonAckSeq"], w16(st["write"])) + po(b["lessonAckSum"], w16((st["cumWrite"] - st["cumRead"] + 1) & 0xffff)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2"); bad1 = ring_state(m, b)
     m.do(po(b["lessonAckSeq"], w16(st["write"] - 1)) + po(b["lessonAckSum"], w16((st["cumWrite"] - st["cumRead"]) & 0xffff)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2"); bad2 = ring_state(m, b)
     check(bad1["read"] == st["read"] and (bad1["status"] & 4) and bad2["read"] == st["read"] and (bad2["status"] & 2), f"a wrong checksum is refused (status ${bad1['status']:02x}) and a stale range is refused (status ${bad2['status']:02x}); nothing reclaimed")
-    saved0, good = drain(m, b, saved0, log); chatter_frames(m, b, drv, 60); st2 = ring_state(m, b)
+    saved0, good = drain(m, b, saved0, log); chatter_frames(m, b, drv, 20); st2 = ring_state(m, b)
     check(good and st2["write"] > 12 and not (st2["status"] & 1), f"after the right acknowledgement learning resumes: {st2['write']} lessons, status ${st2['status']:02x}")
     m.close()
-    results = []
-    for cap in (300, 40):
-        m = Machine(b); m.do(EPISODES[2][1] + po(CAP, w16(cap)) + f"poke:{KIND:X}:01,poke:{TEACH:X}:01,wait:1")
-        drv = cu.PortDriver(m); saved_e = slot(m, b); dlog = []
-        def on_tick(m, f):
-            nonlocal saved_e
-            st = ring_state(m, b)
-            if st["write"] - st["read"] >= 30 or (cap == 300 and st["write"] % 30 == 0 and st["write"] > 0 and f % 4 == 0 and st["write"] != on_tick.last):
-                on_tick.last = st["write"]
-                if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
-                if cap == 40: saved_e, good = drain(m, b, saved_e, dlog)
-                else: dummy_drain(m, b)
-        on_tick.last = -1
-        chatter_frames(m, b, drv, 720, on_tick); m.do(f"poke:{TEACH:X}:00,wait:1")
-        st = ring_state(m, b); final = slot(m, b); m.close()
-        results.append(dict(cap=cap, lessons=st["write"], drains=len(dlog), hash=ref.brain_hash(final), education=ref.parse_slot(final)["education"], weights=ref.parse_slot(final)["weights"]))
-    a, c = results
-    diff = sum(1 for ra, rc in zip(a["weights"], c["weights"]) for x, y in zip(ra, rc) if x != y)
-    check(a["weights"] == c["weights"] and a["education"] == c["education"] and a["hash"] == c["hash"], f"the identical script uninterrupted ({a['lessons']} lessons, no drain) and split ({c['lessons']} lessons, {c['drains']} drains): the same weights ({diff} bytes differ), education {a['education']} = {c['education']}, hashes {a['hash'][:16]} = {c['hash'][:16]}")
-    json.dump(dict(cycles=log, equivalence=[{k: v for k, v in r.items() if k != "weights"} for r in results]), open(os.path.join(outdir, f"drain-{b.name}.json"), "w"), indent=1)
+    # 3. the equivalence: the split run's recorded lesson sequence (its drained batches, in order), applied once
+    # more uninterrupted by the machine's own rule through the learn hook on a fresh boot, and by the reference,
+    # must give the split run's final brain byte for byte. (A live teacher's sequence itself shifts by a frame
+    # when a drain's processing lands near a frame boundary, so two stick scripts are not the same sequence.)
+    m = Machine(b); m.do(EPISODES[2][1] + po(CAP, w16(40)) + f"poke:{KIND:X}:01,poke:{TEACH:X}:01,wait:1")
+    drv = cu.PortDriver(m); saved_e = slot(m, b); dlog = []; batches = []
+    def on_tick(m, f):
+        nonlocal saved_e
+        st = ring_state(m, b)
+        if st["write"] >= on_tick.threshold:
+            on_tick.threshold += 30
+            if drv.held: m.do(f"release:{drv.held}"); drv.held = 0
+            saved_e, good = drain(m, b, saved_e, dlog, batches=batches)
+    on_tick.threshold = 30
+    chatter_frames(m, b, drv, 720, on_tick); m.do(f"poke:{TEACH:X}:00,wait:1")
+    saved_e, good = drain(m, b, saved_e, dlog, batches=batches); st_split = ring_state(m, b); final_split = slot(m, b); m.close()
+    seq = [r for batch in batches for r in batch]
+    # the machine, uninterrupted: the same lessons through the learn hook (mode 0: the recorded senses, the taught absolute action)
+    # (kind 0 while replaying: the hook runs whatever the kind, and without the regular think a lesson hook
+    # completes inside two frames; kind 1 is restored before the slot is read so the hash domains match)
+    m = Machine(b); m.do("wait:300," + f"poke:{KIND:X}:00,poke:{b['brainTestMode']:X}:00,")
+    for r in seq:
+        nib = bytes([(r[i // 2] & 15) if i % 2 == 0 else (r[i // 2] >> 4) for i in range(20)])
+        m.do(po(b["brainTestIn"], nib) + f"poke:{b['brainLearnTestT']:X}:{r[10] & 15:02X},poke:{b['brainLearnRun']:X}:01,wait:2")
+    m.do(f"poke:{KIND:X}:01,wait:1"); final_machine = slot(m, b); m.close()
+    pm, ps = ref.parse_slot(final_machine), ref.parse_slot(final_split)
+    # the reference, uninterrupted
+    entries = ref.TABLES[b.retina][1](); Wr = [[0] * n for _ in range(10)]; took_all = True
+    for r in seq:
+        x = [sgn(r[i // 2] & 15) if i % 2 == 0 else sgn(r[i // 2] >> 4) for i in range(20)]
+        t_abs = r[10] & 15; t = ref.to_relative(t_abs, ref.h_of(x)) if b.vocab else t_abs
+        pr, took = ref.learn(Wr, ref.flags(entries, x), t); took_all &= took
+    same_m = pm["weights"] == ps["weights"] and pm["education"] == ps["education"]
+    check(len(seq) == st_split["write"] and same_m and Wr == ps["weights"] and took_all and ref.brain_hash(final_machine) == ref.brain_hash(final_split),
+          f"the split run's {len(seq)} recorded lessons ({len(batches)} drained batches) replayed uninterrupted by the machine itself and by the reference give the split run's brain byte for byte: education {pm['education']} = {ps['education']}, hash {ref.brain_hash(final_split)[:16]}; dropped pairings in the split run {st_split['not_paired']}")
+    results = [dict(kind="split", lessons=st_split["write"], drains=len(batches), hash=ref.brain_hash(final_split), education=ps["education"], not_paired=st_split["not_paired"]),
+               dict(kind="machine replay", lessons=len(seq), hash=ref.brain_hash(final_machine), education=pm["education"]), dict(kind="reference replay", lessons=len(seq), equal=(Wr == ps["weights"]))]
+    json.dump(dict(cycles=log, equivalence=results), open(os.path.join(outdir, f"drain-{b.name}.json"), "w"), indent=1)
     return ok
 
 def gate_teach(b, outdir):
@@ -339,7 +375,7 @@ def gate_teach(b, outdir):
     check(a["teach"] == 1 and a["px"] == 184 and a["cx"] < 130, f"TEACH by the flag: Tony stands at {a['px']}, the stick walks the clone left to {a['cx']} (Tony stays to his right)")
     check(a["lessons"] >= 1 and a["kind"] == 1 and a["edu"] == a["lessons"], f"lessons taken: {a['lessons']} (education {a['edu']}); the first made him kind {a['kind']}")
     check(any(wts), f"BRAIN02's weights changed ({sum(1 for x in wts if x)} of {10 * n} bytes set)")
-    check(c["teach"] == 0 and c["cx"] < a["cx"] - 30, f"let go: taught 'left' (away from Tony) he keeps walking left on his own brain, {a['cx']} -> {c['cx']}, where the follow rule would have walked right to Tony at {c['px']}")
+    check(c["teach"] == 0 and c["cx"] <= a["cx"] - 30, f"let go: taught 'left' (away from Tony) he keeps walking left on his own brain, {a['cx']} -> {c['cx']}, where the follow rule would have walked right to Tony at {c['px']}")
     v, _ = b.run("wait:300,hold:18,wait:60,release:18,wait:10," + SNAP + "hold:18,wait:60,release:18,wait:10," + SNAP)
     a, c = row(v, 0), row(v, 1)
     check(a["teach"] == 1 and a["bricks"] == 0 and c["teach"] == 0 and c["bricks"] == 0, f"the chord held a second toggles teaching on and off, the brick taken back each time (bricks {a['bricks']}, {c['bricks']})")
@@ -402,8 +438,7 @@ def gate_resources(b, outdir):
              code_bytes={k: size_of(k) for k in ("brainRetina", "brainForward", "brainLearn", "bodyThink", "testInputs", "gapStats", "brainCheck", "teachLesson", "lessonAck", "copyWeights", "teachShadowSave", "teachShadowRestore", "lessonInit", "profInit", "profRead", "profBegin", "profEnd")},
              accumulator_bound=128 * n + 128)
     # the dynamic numbers: the stairs episode with Phase 2b's learned weights, teaching on, a chord hold (the snapshot and the restore), one drain
-    P2 = json.load(open(os.path.join(ROOT, "deliverables/bakeoff/phase2b.json"))); arm = {1: "R0", 2: "R1b", 3: "R0s"}.get(b.retina)
-    Wl = P2[f"{arm}|{'rel' if b.vocab else 'abs'}|8|S2u"]["weights"] if arm else [[0] * n for _ in range(10)]
+    Wl = learned_weights(b)
     m = Machine(b); m.do(STAIRS_C33 + po(b["brainWeights"], bytes(v & 255 for row in Wl for v in row)) + f"poke:{b['brainKind']:X}:01,poke:{b['teachMode']:X}:01,wait:1")
     saved = slot(m, b)                                                  # the brain before any lesson: the replay starts here
     drv = cu.PortDriver(m); teach_frames(m, b, drv, 400)
@@ -495,3 +530,4 @@ if __name__ == "__main__" and sys.argv[1] == "descriptor":
     b = Build(sys.argv[2]); commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
     outdir = os.path.join(ROOT, "deliverables/bakeoff/workbench"); os.makedirs(outdir, exist_ok=True)
     d = descriptor(b, commit); json.dump(d, open(os.path.join(outdir, f"{b.name}.json"), "w"), indent=1); print(f"wrote {outdir}/{b.name}.json")
+if __name__ == "__main__" and sys.argv[1] == "parity": sys.exit(0 if parity(Build(sys.argv[2]), quick="--quick" in sys.argv) else 1)

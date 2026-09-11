@@ -951,6 +951,11 @@ cloneFlash:  .byte 0                 // frames left of the lesson's flash
 cloneFlashColour: .byte 1            // the flash: 1 white, a lesson; 2 red, a lesson refused (the ring is full)
 lessonWriteSlot: .word 0             // the slot of the next lesson, 0..299
 lessonNotPaired: .word 0             // lessons lost because the block's next frame was not packed in time (telemetry)
+joyRing:     .fill 8, 0              // the frame path's record of the last eight frames: the joystick byte applied,
+stateRing:   .fill 8, 0              // the clone's state (bit 7 the facing), and the frame's low byte, at frame & 7,
+frameRing:   .fill 8, 0              // so a lesson pairs the published block with the next frame's action whatever the main loop's pace
+joyByte:     .byte 0
+stateByte:   .byte 0
 lessonWritePtr:  .word 0             // its address
 """
 
@@ -1175,16 +1180,14 @@ BRAIN02_TEACH_LESSON_ASM = r"""
 teachLesson: {
     lda #0
     sta brainLessonRan
-    clc
-    lda brainInFrame
+    clc                                 // the action applied in the frame after the block's, from the ring the frame
+    lda brainInFrame                    // path fills: the pairing no longer depends on the main loop keeping pace
     adc #1
     sta nextLo
-    lda brainInFrame + 1
-    adc #0
-    cmp sensePackFrame + 1
-    bne notNext
-    lda nextLo
-    cmp sensePackFrame
+    and #7
+    tax
+    lda frameRing, x
+    cmp nextLo
     beq next
     notNext:
         inc lessonNotPaired             // a pack was missed (the main loop ran long): no lesson from this block
@@ -1195,6 +1198,10 @@ teachLesson: {
         sta brainLearned
         rts
     next:
+    lda joyRing, x
+    sta joyByte
+    lda stateRing, x
+    sta stateByte
     lda shadowRequest
     ora shadowRestoreRequest
     beq !+
@@ -1224,7 +1231,7 @@ teachLesson: {
         sta brainLearned
         rts
     notFull:
-    lda sensePack + 16
+    jsr actionOf                        // the applied action of that frame (as sense 16 derives it)
     sta brainTaught
     jsr profBegin
     jsr brainLearn
@@ -1338,6 +1345,54 @@ teachLesson: {
     dLo:    .byte 0
     nextLo: .byte 0
 }
+// IN: joyByte, stateByte (a frame's applied joystick byte and the clone's state) -> A: the action index, as the
+// packer derives sense 16 (0 idle, 1 left, 2 right, 3 up, 4 down, 5 jump, 6 jump left, 7 jump right, 8/9 build the way he faces)
+actionOf: {
+    lda joyByte
+    and #%01100000
+    beq notBuild
+        ldx #8
+        lda stateByte
+        bpl !+
+            inx
+        !:
+        jmp known
+    notBuild:
+    lda joyByte
+    and #%00010000
+    beq notFire
+        ldx #6
+        lda joyByte
+        and #%00000100
+        bne known
+        ldx #7
+        lda joyByte
+        and #%00001000
+        bne known
+        ldx #5
+        jmp known
+    notFire:
+    ldx #1
+    lda joyByte
+    and #%00000100
+    bne known
+    ldx #2
+    lda joyByte
+    and #%00001000
+    bne known
+    ldx #3
+    lda joyByte
+    and #%00000001
+    bne known
+    ldx #4
+    lda joyByte
+    and #%00000010
+    bne known
+    ldx #0
+    known:
+    txa
+    rts
+}
 """
 
 def _span(src, start, end_marker, include_end=True):
@@ -1385,6 +1440,12 @@ def brain02_apply(src, retina_name, vocab):
     # 7. the shadow copies and the lesson
     rep("teachShadowSave: {\n", "    lda shadowPtr + 1\n    sta lessonPtr + 1\n    rts\n}\n", BRAIN02_SHADOW_ASM)
     rep("teachLesson: {\n", "    pair:    .byte 0\n    wr2byte: .byte 0\n    nextLo:  .byte 0\n}\n", BRAIN02_TEACH_LESSON_ASM)
+    # 7b. the frame path records each frame's applied joystick byte and state by frame, for the lesson pairing
+    old = "    lda bodyFrames\n    sta rawFrame\n    lda bodyFrames + 1\n    sta rawFrame + 1\n    lda sensePacked\n    bne !+\n        rts\n    !:\n"
+    assert src.count(old) == 1; src = src.replace(old, ("    lda bodyFrames\n    sta rawFrame\n    lda bodyFrames + 1\n    sta rawFrame + 1\n"
+                                                        "    lda bodyFrames                  // BRAIN02: this frame's joystick byte and state, by frame, for the lesson pairing\n    and #7\n    tax\n"
+                                                        "    lda rawJoy\n    sta joyRing, x\n    lda rawState\n    sta stateRing, x\n    lda bodyFrames\n    sta frameRing, x\n"
+                                                        "    lda sensePacked\n    bne !+\n        rts\n    !:\n"))
     # 8. the clone's turn does nothing while a restore is pending: a think already in flight at the toggle would
     # otherwise hand the decoder the hold's choice before the main loop has put the weights back
     old = "cloneDecode: {\n    lda macroStep\n    bne macro\n"
