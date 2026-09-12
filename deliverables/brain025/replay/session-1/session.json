@@ -1,0 +1,30 @@
+{
+ "build": "tony-b025-a.prg",
+ "prg_sha256": "2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423",
+ "inputs": 80,
+ "sense_nibbles": 27,
+ "retina_id": 5,
+ "vocabulary": 1,
+ "lesson_entry_bytes": 15,
+ "ring_capacity_during_recording": 40,
+ "drains": 9,
+ "lessons": 244,
+ "ring_fills": 6.1,
+ "education_final": 244,
+ "start": {
+  "bytes": 834,
+  "sha256": "b522c1e5af90799f7876c1d0f8268fa3e6fc6091e9899e66f228cbeab71cff05",
+  "brain_hash": "f88f9b61ba5098250bea8eeae2617bb8778bacb14a289ce5cee464d78c096aba",
+  "education": 0
+ },
+ "lessons_file": {
+  "bytes": 3660,
+  "sha256": "af0822dd22510f6867e0ab6364ec8c291471d65c19419306bb0e516c484d4cef"
+ },
+ "final": {
+  "bytes": 834,
+  "sha256": "07e254224a4a33e822e07cd3ad883cd86ca2f9d64ba7f07713c4df9d0f8a3675",
+  "brain_hash": "5a6ce11734830cc76f091615576528dfb499c4e4e11beb402e85c35c8a95202e"
+ },
+ "note": "recorded on the machine: a blank BRAIN025 slot, the ordered LESSON25 entries as drained in sequence order across ring reuse, and the machine's own exported final slot"
+}

@@ -3,7 +3,7 @@
  "filename": "tony-b025-a.prg",
  "sha256": "2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423",
  "prg_size": 52092,
- "engine_commit": "cacde3c1c7a53ef388ff42c75db98aa25b3c96eb",
+ "engine_commit": "348798faa32fc8a9a704c72b71f3f149539e8fbe",
  "study": "BRAIN02.5: BRAIN02's learner with seven local terrain quantities added to the sensed state and sixteen inputs appended at 64..79",
  "derived_from": {
   "brain": "BRAIN02 Candidate A",
@@ -270,6 +270,7 @@
   "marker": "LESSON25",
   "marker_address": 38208,
   "version": 2,
+  "sense_nibbles": 27,
   "write_seq": 38216,
   "read_seq": 38218,
   "capacity": 38220,
@@ -301,7 +302,17 @@
    "write ack_seq = write_seq, ack_sum = the sum, then ack_request = 1",
    "wait one frame; read status: bit 7 accepted, else bits 1..3 say why"
   ],
-  "replay": "per lesson: unpack the twenty-seven nibbles, derive the eighty inputs with the retina table, translate the taught absolute action with h of the block under the relative vocabulary, apply the rule"
+  "replay": "per lesson: unpack the twenty-seven nibbles, derive the eighty inputs with the retina table, translate the taught absolute action with h of the block under the relative vocabulary, apply the rule",
+  "reference_implementation": {
+   "canonical": [
+    "tools/brain025_ref.py",
+    "tools/brain02_ref.py"
+   ],
+   "invocation": "python3 tools/brain025_ref.py replay START.slot LESSONS.bin --out FINAL.slot [--expect MACHINE.slot]",
+   "manifest": "deliverables/brain025/replay/MANIFEST.json",
+   "document": "deliverables/brain025/REPLAY.md",
+   "note": "both files together: brain025_ref.py holds the retina table, the formats and the replay; brain02_ref.py holds the rule, the forward pass, the vocabulary and the first sixty-four retina entries"
+  }
  },
  "test_hooks": {
   "test_in": 31040,

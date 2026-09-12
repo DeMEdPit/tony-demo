@@ -664,7 +664,9 @@ def descriptor(b, commit):
                       terrain_pure=S["profTerrainPure"], terrain_pure_max=S["profTerrainPureMax"], terrain_test_run=S["terrainTestRun"],
                       unit="CPU cycles, 16-bit; the live counts include whatever interrupt work fell inside them, the pure ones (hooks, interrupts held off) do not",
                       gap_min=S["gapMin"], gap_max=S["gapMax"], gap_sum=S["gapSum"], gap_count=S["gapCount"]),
-        lessons=dict(marker="LESSON25", marker_address=S["lessonMarker"], version=ref.LESSON_VERSION, write_seq=S["lessonWriteSeq"], read_seq=S["lessonReadSeq"],
+        lessons=dict(marker="LESSON25", marker_address=S["lessonMarker"], version=ref.LESSON_VERSION,
+                     sense_nibbles=b.senses,          # published explicitly so a host never has to infer it from the entry size
+                     write_seq=S["lessonWriteSeq"], read_seq=S["lessonReadSeq"],
                      capacity=S["lessonCap"], capacity_default=180, entry_size=S["lessonSize"], entry_bytes=ref.LESSON_SIZE, status=S["lessonStatus"],
                      status_bits={0: "full, learning paused", 1: "last ack rejected: stale range", 2: "last ack rejected: bad checksum", 3: "last ack rejected: a hold in progress", 7: "last ack accepted"},
                      ack_seq=S["lessonAckSeq"], ack_sum=S["lessonAckSum"], ack_request=S["lessonAckRequest"], drains=S["lessonDrains"], cum_write=S["lessonCumWrite"], cum_read=S["lessonCumRead"], data=S["lessonData"],
@@ -673,7 +675,11 @@ def descriptor(b, commit):
                      completeness="every input, old and new, is reconstructible from the entry alone: the terrain quantities are in the block, so a replay never needs the room",
                      drain_procedure=["read read_seq, write_seq", "read the entries [read_seq, write_seq)", "sum every byte of those entries modulo 65536",
                                       "write ack_seq = write_seq, ack_sum = the sum, then ack_request = 1", "wait one frame; read status: bit 7 accepted, else bits 1..3 say why"],
-                     replay="per lesson: unpack the twenty-seven nibbles, derive the eighty inputs with the retina table, translate the taught absolute action with h of the block under the relative vocabulary, apply the rule"),
+                     replay="per lesson: unpack the twenty-seven nibbles, derive the eighty inputs with the retina table, translate the taught absolute action with h of the block under the relative vocabulary, apply the rule",
+                     reference_implementation=dict(canonical=["tools/brain025_ref.py", "tools/brain02_ref.py"],
+                                                   invocation="python3 tools/brain025_ref.py replay START.slot LESSONS.bin --out FINAL.slot [--expect MACHINE.slot]",
+                                                   manifest="deliverables/brain025/replay/MANIFEST.json", document="deliverables/brain025/REPLAY.md",
+                                                   note="both files together: brain025_ref.py holds the retina table, the formats and the replay; brain02_ref.py holds the rule, the forward pass, the vocabulary and the first sixty-four retina entries")),
         test_hooks=dict(test_in=S["brainTestIn"], test_mode=S["brainTestMode"], test_run=S["brainTestRun"], test_flags=S["brainTestFlags"], test_acc=S["brainTestAcc"],
                         test_output=S["brainTestOutput"], test_action=S["brainTestAction"], test_h=S["brainTestH"], learn_run=S["brainLearnRun"], learn_t=S["brainLearnTestT"],
                         learn_p=S["brainLearnTestP"], learn_took=S["brainLearnTestTook"], terrain_test_run=S["terrainTestRun"],
@@ -693,3 +699,66 @@ if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "descriptor":
     os.makedirs(os.path.join(OUT, "workbench"), exist_ok=True)
     d = descriptor(b, commit); json.dump(d, open(os.path.join(OUT, "workbench", f"{b.name}.json"), "w"), indent=1)
     print(f"wrote deliverables/brain025/workbench/{b.name}.json ({len(json.dumps(d))} bytes of JSON)")
+
+# ------------------------------------------------------------- recording a session for the replay
+def gate_session(b, outdir):
+    """Record one real teaching session as three files, so the canonical replay can be proved against
+    the machine rather than against another copy of the same Python. The ring capacity is lowered so the
+    session wraps and has to be drained several times: the ordered stream then spans reuse cycles, which
+    is the case a replay is most likely to get wrong."""
+    global ok
+    d = os.path.join(outdir, "replay", "session-1"); os.makedirs(d, exist_ok=True)
+    print(f"{b.name}: recording a session into deliverables/brain025/replay/session-1")
+    CAP = 40
+    m = Machine(b); m.do(SETUP_WALK + po(b["lessonCap"], w16(CAP)) + f"poke:{b['brainKind']:X}:01,poke:{b['teachMode']:X}:01,wait:1")
+    start = slot(m, b)
+    p0 = ref.parse_slot(start)
+    check(p0["education"] == 0 and set(p0["weights"][0]) == {0}, f"the session starts from a blank brain: education {p0['education']}, every weight zero, {len(start)} bytes")
+    stream = bytearray(); drains = 0
+    def take(mm):
+        """read the unread entries in sequence order, acknowledge the exact range, keep the bytes"""
+        nonlocal drains
+        mm.do(f"poke:{b['teachMode']:X}:00,wait:2")
+        st = ring_state(mm, b); recs = []
+        for sq in range(st["read"], st["write"]):
+            base = b["lessonData"] + (sq % st["cap"]) * ref.LESSON_SIZE
+            recs.append(bytes(mm.do("".join(f"peek:{base + i:X}," for i in range(ref.LESSON_SIZE)))))
+        total = sum(sum(r) for r in recs) & 0xffff
+        mm.do(po(b["lessonAckSeq"], w16(st["write"])) + po(b["lessonAckSum"], w16(total)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2")
+        st2 = ring_state(mm, b)
+        accepted = (st2["status"] & 0x80) != 0 and st2["read"] == st["write"]
+        mm.do(f"poke:{b['teachMode']:X}:01")
+        if accepted and recs: stream.extend(b"".join(recs)); drains += 1
+        return accepted
+    drv = cu.PortDriver(m); every = [0]
+    def on_tick(mm, f):
+        st = ring_state(mm, b)
+        if st["write"] - st["read"] >= CAP - 10:
+            if drv.held: mm.do(f"release:{drv.held}"); drv.held = 0
+            take(mm)
+    chatter_frames(m, b, drv, 1400, on_tick)
+    m.do(f"poke:{b['teachMode']:X}:00,wait:2")
+    st = ring_state(m, b)
+    if st["write"] > st["read"]: take(m)
+    final = slot(m, b); fin = ring_state(m, b); m.close()
+    n = len(stream) // ref.LESSON_SIZE
+    pf = ref.parse_slot(final)
+    check(n > CAP and drains >= 3, f"{n} lessons recorded over {drains} drains at capacity {CAP}: the stream spans {n / CAP:.1f} ring fills, so it crosses reuse cycles")
+    check(pf["education"] == n and fin["not_paired"] == 0, f"the machine applied every recorded lesson and no others: education {pf['education']}, entries {n}, dropped pairings {fin['not_paired']}")
+    open(os.path.join(d, "start.slot"), "wb").write(start)
+    open(os.path.join(d, "lessons.bin"), "wb").write(bytes(stream))
+    open(os.path.join(d, "final.slot"), "wb").write(final)
+    meta = dict(build=os.path.basename(b.prg), prg_sha256=b.sha, inputs=b.n, sense_nibbles=b.senses, retina_id=b.retina,
+                vocabulary=b.vocab, lesson_entry_bytes=ref.LESSON_SIZE, ring_capacity_during_recording=CAP, drains=drains,
+                lessons=n, ring_fills=round(n / CAP, 2), education_final=pf["education"],
+                start=dict(bytes=len(start), sha256=hashlib.sha256(start).hexdigest(), brain_hash=ref.brain_hash(start), education=p0["education"]),
+                lessons_file=dict(bytes=len(stream), sha256=hashlib.sha256(bytes(stream)).hexdigest()),
+                final=dict(bytes=len(final), sha256=hashlib.sha256(final).hexdigest(), brain_hash=ref.brain_hash(final)),
+                note="recorded on the machine: a blank BRAIN025 slot, the ordered LESSON25 entries as drained in sequence order across ring reuse, and the machine's own exported final slot")
+    json.dump(meta, open(os.path.join(d, "session.json"), "w"), indent=1)
+    print(f"  start.slot   {len(start)} bytes, brain hash {ref.brain_hash(start)[:16]}")
+    print(f"  lessons.bin  {len(stream)} bytes, {n} entries, sha256 {meta['lessons_file']['sha256'][:16]}")
+    print(f"  final.slot   {len(final)} bytes, brain hash {ref.brain_hash(final)}")
+    return ok
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "session": sys.exit(0 if gate_session(Build(sys.argv[2]), OUT) else 1)

@@ -261,8 +261,135 @@ def write_golden():
               open(os.path.join(OUT, "golden/terrain.json"), "w"), indent=1)
     print(f"golden written: retina-5 {len(ret)} cases, forward {len(fwd)}, lessons {len(les)}, terrain {len(rows)}")
 
+# ------------------------------------------------------------------------------------ the replay
+# The canonical replay: an explicit starting slot plus the ordered LESSON25 entries in, the final slot
+# and its behavioural hash out. It reinterprets nothing. Every structural field of the slot and every
+# length is checked first, and anything that does not match this reference's own shape is refused with
+# the reason, rather than being read as if it were something else.
+class Incompatible(Exception): pass
+
+def check_slot(b, where="the starting slot"):
+    """fail closed on a slot that is not a BRAIN02.5 slot of exactly this reference's shape"""
+    if len(b) < 24: raise Incompatible(f"{where}: {len(b)} bytes, too short to hold a 24-byte header")
+    if b[:8] != MARKER:
+        if b[:8] == b02.MARKER: raise Incompatible(f"{where}: this is a BRAIN02 slot (marker {b[:8]!r}). Migrate it first with tools/brain025_migrate.py; replay will not reinterpret it")
+        raise Incompatible(f"{where}: marker is {b[:8]!r}, not {MARKER!r}")
+    if b[9] != LAYOUT: raise Incompatible(f"{where}: layout byte is {b[9]}, not {LAYOUT}")
+    if b[17] not in TABLES: raise Incompatible(f"{where}: retina id {b[17]} is unknown to this reference (known: {sorted(TABLES)})")
+    entries = TABLES[b[17]][1](); n = b[10]
+    if n != len(entries): raise Incompatible(f"{where}: header says {n} inputs but retina {b[17]} has {len(entries)} entries")
+    if b[11] != 0: raise Incompatible(f"{where}: hidden count is {b[11]}, not 0")
+    if b[12] != 10: raise Incompatible(f"{where}: output count is {b[12]}, not 10")
+    if b[15] != 2: raise Incompatible(f"{where}: rule version is {b[15]}, not 2")
+    if b[16] > 1: raise Incompatible(f"{where}: vocabulary byte is {b[16]}, not 0 (absolute) or 1 (reference-relative)")
+    if b[8] > 2: raise Incompatible(f"{where}: kind byte is {b[8]}, above the 0..2 the machine's own check allows")
+    want = 24 + 10 * n + 10
+    if len(b) != want: raise Incompatible(f"{where}: {len(b)} bytes, but {n} inputs need exactly {want} (24 header + 10 x {n} weights + 10 mood)")
+    return entries
+
+def check_lessons(raw):
+    """fail closed on a lesson stream that is not a whole number of LESSON25 entries"""
+    if len(raw) % LESSON_SIZE: raise Incompatible(f"the lesson stream is {len(raw)} bytes, not a multiple of the {LESSON_SIZE}-byte LESSON25 entry ({len(raw) // LESSON_SIZE} whole entries and {len(raw) % LESSON_SIZE} bytes over)")
+    out = []
+    for i in range(0, len(raw), LESSON_SIZE):
+        e = raw[i:i + LESSON_SIZE]; x, t, pred = unpack_lesson(e)
+        if t > 9: raise Incompatible(f"lesson {i // LESSON_SIZE}: taught action {t} is not one of the ten outputs")
+        out.append((x, t, pred))
+    return out
+
+def replay(start_slot, lesson_bytes):
+    """the whole of it: the rule applied to each entry in the order the machine recorded them.
+    Returns (the final slot, a record of what happened)."""
+    entries = check_slot(start_slot); lessons = check_lessons(lesson_bytes)
+    p = parse_slot(start_slot); W = [row[:] for row in p["weights"]]; edu = p["education"]
+    applied = 0; no_change = 0; predictions = []
+    for x, t_abs, _pred in lessons:
+        z = flags(entries, x)
+        t = to_relative(t_abs, h_of(x[:20])) if p["vocabulary"] else t_abs
+        pr, took = learn(W, z, t, LO, HI)
+        predictions.append(pr)
+        if took: applied += 1; edu += 1
+        else: no_change += 1
+    final = slot_bytes(p["kind"], p["vocabulary"], W, education=edu, mood=p["mood"], period=p["period"],
+                       lineage=p["lineage"], rule=p["rule"], retina_id=p["retina_id"])
+    return final, dict(inputs=p["inputs"], retina_id=p["retina_id"], vocabulary=p["vocabulary"], lessons=len(lessons),
+                       applied=applied, no_change=no_change, education_before=p["education"], education_after=edu,
+                       hash_before=brain_hash(start_slot), hash_after=brain_hash(final), predictions=predictions)
+
+def _cmd_replay(argv):
+    start_path, lessons_path = argv[0], argv[1]
+    out_path = next((argv[i + 1] for i, a in enumerate(argv) if a == "--out"), None)
+    expect_path = next((argv[i + 1] for i, a in enumerate(argv) if a == "--expect"), None)
+    start = open(start_path, "rb").read(); raw = open(lessons_path, "rb").read()
+    try:
+        final, r = replay(start, raw)
+    except Incompatible as e:
+        print(f"REFUSED: {e}"); return 2
+    print(f"  starting slot   {start_path}: {len(start)} bytes, {r['inputs']} inputs, retina {r['retina_id']}, vocabulary {'reference-relative' if r['vocabulary'] else 'absolute'}, education {r['education_before']}")
+    print(f"  lesson stream   {lessons_path}: {len(raw)} bytes, {r['lessons']} entries of {LESSON_SIZE}")
+    print(f"  applied         {r['applied']} lessons; {r['no_change']} left the weights alone")
+    print(f"  education       {r['education_before']} -> {r['education_after']}")
+    print(f"  brain hash      {r['hash_before'][:16]} -> {r['hash_after']}")
+    if out_path: open(out_path, "wb").write(final); print(f"  written         {out_path}: {len(final)} bytes")
+    if expect_path:
+        want = open(expect_path, "rb").read()
+        same = want == final
+        print(f"  against {expect_path}: {'IDENTICAL byte for byte' if same else 'DIFFERENT'}"
+              + ("" if same else f" (expected hash {brain_hash(want) if want[:8] == MARKER else 'unparseable'})"))
+        if not same:
+            for i in range(min(len(want), len(final))):
+                if want[i] != final[i]: print(f"    first difference at byte {i}: expected ${want[i]:02x}, replay gave ${final[i]:02x}"); break
+            if len(want) != len(final): print(f"    lengths differ: expected {len(want)}, replay gave {len(final)}")
+            return 1
+    if r["no_change"]:
+        print(f"  NOTE: {r['no_change']} entries changed nothing. The machine records a lesson only when it takes one,"
+              f" so a stream straight off the machine should show zero here.")
+    return 0
+
+# ---------------------------------------------------------------------- the provenance manifest
+CANONICAL = ["tools/brain025_ref.py", "tools/brain02_ref.py"]
+MANIFEST = "deliverables/brain025/replay/MANIFEST.json"
+
+def _sha(path): return hashlib.sha256(open(os.path.join(ROOT, path), "rb").read()).hexdigest()
+def _blob(path, commit):
+    import subprocess
+    r = subprocess.run(["git", "rev-parse", f"{commit}:{path}"], capture_output=True, text=True, cwd=ROOT)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+def _cmd_manifest(argv):
+    import subprocess
+    commit = argv[0] if argv else subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    m = dict(schema="tony-brain025-replay-manifest/1", pinned_commit=commit,
+             note="tools/ is canonical. These two files together are the BRAIN02.5 replay reference: brain025_ref.py "
+                  "holds the retina table, the slot and lesson formats and the replay; brain02_ref.py holds the rule, "
+                  "the forward pass, the vocabulary, the nine pseudo-senses and the first sixty-four retina entries.",
+             files=[dict(path=p, sha256=_sha(p), git_blob=_blob(p, commit)) for p in CANONICAL])
+    os.makedirs(os.path.dirname(os.path.join(ROOT, MANIFEST)), exist_ok=True)
+    json.dump(m, open(os.path.join(ROOT, MANIFEST), "w"), indent=1)
+    print(f"wrote {MANIFEST} pinned at {commit}")
+    for f in m["files"]: print(f"  {f['path']}  sha256 {f['sha256']}  blob {f['git_blob']}")
+    return 0
+
+def _cmd_verify(argv):
+    path = os.path.join(ROOT, MANIFEST)
+    if not os.path.exists(path): print(f"REFUSED: no manifest at {MANIFEST}; run 'manifest' first"); return 2
+    m = json.load(open(path)); bad = 0
+    print(f"manifest {MANIFEST}, pinned at {m['pinned_commit']}")
+    for f in m["files"]:
+        now = _sha(f["path"]); ok = now == f["sha256"]
+        print(f"  {'ok  ' if ok else 'DRIFT'} {f['path']}  {now}" + ("" if ok else f"  manifest says {f['sha256']}"))
+        bad += not ok
+    print("the canonical replay reference is byte for byte what the manifest pinned" if not bad else f"{bad} file(s) have changed since the manifest was written")
+    return 0 if not bad else 1
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "check"
+    if cmd == "replay":
+        if len(sys.argv) < 4:
+            print("usage: brain025_ref.py replay START.slot LESSONS.bin [--out FINAL.slot] [--expect MACHINE.slot]"); sys.exit(2)
+        sys.exit(_cmd_replay(sys.argv[2:]))
+    if cmd == "manifest": sys.exit(_cmd_manifest(sys.argv[2:]))
+    if cmd == "verify": sys.exit(_cmd_verify(sys.argv[2:]))
     if cmd == "check": sys.exit(0 if check() else 1)
     if cmd == "golden": write_golden()
     if cmd == "table":
