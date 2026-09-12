@@ -3,7 +3,7 @@
  "filename": "tony-b025-a-vis4.prg",
  "sha256": "355645a687dc244257a6e53be2a652b19a9f81a8ad9d6abc4e042a9e5ca4ea62",
  "prg_size": 52104,
- "engine_commit": "d219e58e2e38ce80d3754040cf42bbe2ae8c3c3c",
+ "engine_commit": "210fa005daf7462a786e68ca9d3a1f88a8ad42e5",
  "study": "BRAIN02.5: BRAIN02's learner with seven local terrain quantities added to the sensed state and sixteen inputs appended at 64..79",
  "derived_from": {
   "brain": "BRAIN02 Candidate A",

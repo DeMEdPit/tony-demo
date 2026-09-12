@@ -53,11 +53,17 @@ offset (falling back to the clone's facing when that offset is zero). So a singl
 LEFT, RIGHT, UP, DOWN, JUMP, JUMP-LEFT, JUMP-RIGHT, BUILD-LEFT, BUILD-RIGHT.
 
 **800 signed learned weights in an 834-byte BRAIN025 slot.** Layout: a 24-byte header (marker
-`BRAIN025`, kind, layout version 3, input count 80, retina id 5, education count, vocabulary byte),
-then 10x80 = **800 signed weight bytes**, then **10 mood bytes**. The mood is read by the forward pass
-(it adds its nibble times sixteen to each accumulator) but is **not learned**: it is zero throughout this
-generation and nothing in the learning path writes it. Only the 800 weight bytes and the education count
-change with teaching.
+`BRAIN025`, kind, layout version 3, input count 80, retina id 5, education count, vocabulary byte) at
+offsets 0-23, then 10x80 = **800 signed weight bytes** at 24-823, then **10 mood bytes** at 824-833. Only
+the 800 weight bytes and the education count change with teaching.
+
+**The mood is frozen to zero and is outside this generation's cognitive design.** Each of the ten mood
+bytes is a **signed per-output bias**: `brainForward` writes it straight into that output's accumulator
+as the starting value, sign-extended - it is *not* a nibble scaled by sixteen, and it is *not* timing.
+(The name was carried over from the Chamber's mural, where the render's mood lengthens the rests. In a
+brain slot it means something else entirely.) Because it is added to the accumulator it shifts the
+argmax, so it changes the action. See Section 5 for the invariant, why it is required, and the hash
+semantics that follow from it.
 
 **Online human-supervised learning, on the machine.** TEACH mode (the T key, or the host's flag) routes
 the joystick to the clone; each lesson pairs the 27-nibble observation of one frame with the action
@@ -106,6 +112,11 @@ descriptor) and can write a bounded set of research controls: the TEACH flag, th
 acknowledgement fields, the ring capacity at boot, a whole saved brain into the slot, and the research
 test hooks. It performs **no** inference and **no** learning of its own. "Observational only" would be
 imprecise; "no browser-side cognition" is exact.
+
+Everything the Workbench draws is a **rendering of bytes the machine published**. Its material-bits
+grid, for example, is a host-derived visualisation of the live `roomMaterialsBuffer` and the screen
+matrix that the descriptor points it at - the semantics are the machine's, the picture is the host's.
+It is not a second world model and it is not browser-side cognition.
 
 **A four-frame cognition period.** `brainPeriod` is 4: the clone decides once every four frames, about
 12.5 decisions a second on PAL. The think costs up to 40,836 cycles and a lesson up to 40,066 - each
@@ -234,9 +245,87 @@ play produces the same brain - whether a given frame yields a lesson at all depe
 timing, and a missed pairing is counted rather than guessed at (`lessonNotPaired`). Provenance rests on
 the recorded lesson stream, not on reproducing a human's hands.
 
+**The education count is not an authority.** It is a counter, and it is **not inherently monotonic under
+every historical control path**: the teaching shadow's restore rewinds it along with the weights and the
+ring's write side, which is exactly what a chord toggle in the older Candidate A build did by design
+(measured: education 1, then 0, with the weight block byte-identical to before). **Replay authority is
+the ordered lesson stream**, against a named starting slot - never the counter alone. Read the education
+count as a label on a brain, not as a proof of how it got there.
+
 ---
 
-## 5. Status
+## 5. Canonical state and hash semantics
+
+The Workbench found, and this was reproduced on the machine, that two slots can report the **same
+learned-policy hash while producing different actions** if their mood bytes differ. One byte at slot
+offset 833 turned a resolved IDLE into BUILD-LEFT with the policy hash unchanged. The resolution for
+Perception Chamber:
+
+### The zero-mood invariant
+
+**A valid Perception Chamber canonical brain has `brainMood[0..9] == 0`** - all ten bytes, at slot
+offsets 824-833. **No Perception Chamber contract or runtime should inject or stamp a nonzero mood.**
+
+Two independent reasons, both verified:
+
+1. **The learner and the actor must be the same function.** `brainLearn` raises `brainNoMood` around its
+   own forward pass, so the prediction a lesson corrects is computed **mood-free**, while the live think
+   is not. With a nonzero mood the machine learns against a prediction it never acts on. Measured with
+   `mood[9] = 127`: the mood-free prediction was output 1 while the live output was 9.
+2. **Without it the policy hash is not a behavioural statement.** Same measurement: identical policy
+   hash, different action.
+
+Freezing the mood to zero **conflicts with nothing implemented.** Learning never writes it (verified:
+zero after teaching, after a drain and across a room change). The load image ships it zero. Every
+existing artifact - the canonical replay session's start and final slots, the preserved brains - has it
+zero. The only thing deferred is a *designed-but-unused hook*: the slot's original comment reserved the
+mood for a per-block "nudge" a contract could stamp at render. Nothing has ever stamped one. **It may be
+reconsidered in a future generation; in this one it is deliberately inactive.**
+
+### The two hashes, and which one Solidity should use
+
+| | domain | answers |
+|---|---|---|
+| **canonical state hash** | sha256 over **all 834 slot bytes** | *Is this the same artifact?* **Use this for byte identity and provenance.** |
+| **learned-policy hash** | sha256 over header shape, vocabulary, retina and the 800 weights (807 bytes) | *Do these two brains implement the same learned policy?* |
+
+**Recommendation for Solidity: commit the canonical state hash.** It is the only one that is a complete
+commitment to what the machine will do. Two slots with the same canonical hash are the same artifact and
+behave identically. Two slots with the same **policy** hash need not - they may differ in mood (which
+changes behaviour), in education count, or in lineage.
+
+The learned-policy hash remains useful, and is what the replay reports, but it must be described
+honestly: it is a **policy-equivalence check, in the weight domain**, and it is a statement about
+behaviour **only for slots that satisfy the zero-mood invariant**. It was previously described as "the
+behavioural hash", and that wording is retired: it overstated the domain. The reference tool now exposes
+it as `policy_hash` (with `brain_hash` kept as an alias so pinned callers still work) and adds
+`canonical_hash`.
+
+### Where the invariant is enforced
+
+* **`canonical_violations()`** in `tools/brain025_ref.py` lists every reason a slot is not admissible,
+  including a nonzero mood by name and offset. This is the **admission** predicate for a host or a
+  contract.
+* **`check_slot()`**, which gates replay, now **fails closed** on a nonzero-mood starting slot rather
+  than reinterpreting it.
+* **`malformed()` deliberately does NOT consult the mood.** That predicate exists to mirror the
+  machine's own `brainCheck`, and the machine **does** accept a nonzero-mood slot and run it
+  (`brainKindNow` 1, measured). Keeping the two in step is what the parity gate checks; the canonical
+  rule belongs at the boundary where slots are admitted, not inside a machine-parity mirror.
+* **The `mood` gate** proves the machine keeps the mood zero through teaching, a drain and a room
+  change, that one mood byte changes the decision, that the policy hash cannot see it, and that the
+  canonical hash can.
+
+**No PRG change was made for this, and none is needed.** The invariant is already satisfied by the
+engine: nothing in play or in the learner can produce a nonzero mood. Only a host deliberately writing
+those ten bytes can - and a host able to write the mood can equally write the 800 weights, so an
+on-machine guard would not create a trust boundary that does not already exist. It would cost bytes and
+a new PRG hash to defend against something outside the contract. If a future generation wants the
+machine itself to refuse such a slot, that is a `brainCheck` extension and a new freeze.
+
+---
+
+## 6. Status
 
 Perception Chamber engine development is **stopped** at the commit and hash above, pending Workbench
 integration and human QA. The next architectural research question is **retention and interference**.

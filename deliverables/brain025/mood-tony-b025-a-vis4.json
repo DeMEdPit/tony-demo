@@ -1,0 +1,61 @@
+{
+ "name": "tony-b025-a-vis4",
+ "sha256": "355645a687dc244257a6e53be2a652b19a9f81a8ad9d6abc4e042a9e5ca4ea62",
+ "mood_offset": 824,
+ "states": {
+  "boot": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "after_teaching": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "after_room_change": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "action_zero_mood": {
+   "raw": 1,
+   "resolved": 2
+  },
+  "action_bent_mood": {
+   "raw": 9,
+   "resolved": 8,
+   "kind_now": 1
+  },
+  "policy_hash": {
+   "zero": "9d0849452e59e0e5eb0918dc83efb489951ce78c8ddac218730b89829745d911",
+   "bent": "9d0849452e59e0e5eb0918dc83efb489951ce78c8ddac218730b89829745d911"
+  },
+  "canonical_hash": {
+   "zero": "8703e7478df77e4bb02ecc39cf9e3245ec52b4f813690e58b8c9f64fd8e5f1da",
+   "bent": "ed759ecbb65095f83f9d4f0849d931b45366f541f0058148c39ca79e562d0afb"
+  }
+ },
+ "design": "each mood byte is a signed per-output bias written into that output's accumulator; Perception Chamber freezes all ten to zero and admits no slot that violates it."
+}

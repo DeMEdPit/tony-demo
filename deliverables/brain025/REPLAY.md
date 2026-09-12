@@ -24,7 +24,7 @@ so the two together are the whole dependency.
 
 | | |
 |---|---|
-| reference pinned at commit | `e8c11a91a3910feb5b4ea8d2adb13668caf57f42` |
+| reference pinned at commit | `210fa005daf7462a786e68ca9d3a1f88a8ad42e5` |
 | build the session was recorded on | `tony-b025-a.prg`, 52,092 bytes, sha256 `2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423` |
 | that PRG first committed at | `348798f` |
 | manifest | `deliverables/brain025/replay/MANIFEST.json`, schema `tony-brain025-replay-manifest/1` |
@@ -35,6 +35,25 @@ Check the pinning before trusting a replay:
 
 It re-hashes both canonical files against the manifest and exits non-zero on any drift, naming the file
 and both hashes.
+
+## The hash the replay reports, named honestly
+
+The hash printed as `brain hash` is the **learned-policy hash**: sha256 over the header's shape bytes,
+the vocabulary, the retina id and the 800 weights - 807 bytes in all. It answers "do these two brains
+implement the same learned policy". It **excludes** the mood, the education count and the lineage, and
+it was previously called "the behavioural hash", which overstated its domain: two slots can share it
+and still act differently if their mood bytes differ.
+
+For byte identity and provenance use the **canonical state hash**, `canonical_hash()`: sha256 over all
+834 slot bytes. That is the commitment to make on-chain.
+
+Both are only meaningful for slots that satisfy the **zero-mood invariant** - all ten mood bytes zero,
+at slot offsets 824 to 833. `check_slot()` fails closed on a nonzero-mood starting slot, and
+`canonical_violations()` lists it by name. See `PERCEPTION-CHAMBER-SCOPE.md` section 5.
+
+Replay authority is the **ordered lesson stream against a named starting slot**, never the education
+count: the counter is not inherently monotonic under every historical control path, because the
+teaching shadow's restore rewinds it together with the weights.
 
 ## The invocation
 

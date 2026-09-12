@@ -76,3 +76,28 @@ capacity before any lesson. That is the whole of it.
 
 This is a research build for the terrain-observability study. It is **not** a production architecture,
 nothing here is deployed, and BRAIN02 remains the frozen baseline.
+
+## Canonical state, and the two hashes (added at the pre-Solidity freeze)
+
+**A valid canonical brain has all ten mood bytes zero**, at slot offsets 824 to 833. Each is a signed
+per-output bias written straight into that output's accumulator, so a nonzero one changes the action.
+No contract or runtime should inject or stamp a nonzero mood. `canonical_violations()` in
+`tools/brain025_ref.py` names the violation and its offset; `check_slot()` fails closed on a nonzero-mood
+starting slot.
+
+* **canonical state hash** - sha256 over all 834 slot bytes. Byte identity. **Commit this one.**
+* **learned-policy hash** - sha256 over the header's shape bytes, the vocabulary, the retina id and the
+  800 weights. A policy-equivalence check in the weight domain. It is a behavioural statement only for
+  slots that satisfy the zero-mood invariant. Previously called "the behavioural hash"; that name is
+  retired as overstating the domain.
+
+**Replay authority is the ordered lesson stream against a named starting slot, not the education
+count.** The counter is not inherently monotonic under every historical control path - the teaching
+shadow's restore rewinds it together with the weights and the ring's write side.
+
+**Everything the Workbench draws is a rendering of bytes the machine published.** The material-bits grid
+is a host-derived visualisation of the live `roomMaterialsBuffer` and the screen matrix that the
+descriptor points at: the semantics are the machine's, the picture is the host's. It is not a second
+world model and not browser-side cognition.
+
+Full statement: `PERCEPTION-CHAMBER-SCOPE.md`, section 5.

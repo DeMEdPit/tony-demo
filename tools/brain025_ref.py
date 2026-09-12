@@ -97,11 +97,62 @@ def parse_slot(b):
     n = b[10]; sx = lambda v: v - 256 if v >= 128 else v
     return dict(kind=b[8], layout=b[9], inputs=n, hidden=b[11], outputs=b[12], period=b[13], lineage=b[14], rule=b[15], vocabulary=b[16], retina_id=b[17],
                 education=b[18] | (b[19] << 8), weights=[[sx(b[24 + o * n + i]) for i in range(n)] for o in range(10)], mood=[sx(b[24 + 10 * n + o]) for o in range(10)])
+# --------------------------------------------------------------------------------- the hash domains
+# Two hashes, and they answer different questions. Getting this wrong is the mismatch the Workbench
+# found: the older docstring here described the mood as "timing", which it is NOT in a brain slot. The
+# name was carried over from the Chamber's mural, where the render's mood lengthens the rests. In the
+# slot each mood byte is a SIGNED PER-OUTPUT BIAS, written straight into that output's accumulator as
+# its starting value (sign-extended), so it shifts the argmax and therefore the action. It is behaviour.
+#
+#   policy_hash / brain_hash   the LEARNED-POLICY (weight-domain) hash: shape, vocabulary, retina and
+#                              the 800 weights. It answers "do these two brains implement the same
+#                              learned policy?" and it deliberately excludes the mood, the education
+#                              count and the lineage. It is a behavioural statement ONLY for slots that
+#                              satisfy the zero-mood invariant; with a nonzero mood it says nothing
+#                              about what the machine will do.
+#   canonical_hash             the CANONICAL STATE hash: sha256 over all 834 slot bytes. This is byte
+#                              identity - the one to commit for provenance. Two slots with the same
+#                              canonical hash are the same artifact and behave identically; two slots
+#                              with the same policy hash need not be.
 def behavioural_bytes(b):
-    """the same three domains BRAIN02 defines: behaviour is kind, layout, width, shape, vocabulary,
-    retina and the weights; the mood is timing, the education and lineage are provenance"""
+    """the weight domain: kind, layout, width, shape, vocabulary, retina and the 800 weights. NOT a
+    complete account of behaviour on its own - see canonical_hash and the zero-mood invariant."""
     n = b[10]; return bytes(b[8:13]) + bytes(b[16:18]) + bytes(b[24:24 + 10 * n])
 def brain_hash(b): return hashlib.sha256(behavioural_bytes(b)).hexdigest()
+policy_hash = brain_hash                     # the honest name; brain_hash stays for the pinned callers
+def canonical_hash(b): return hashlib.sha256(bytes(b)).hexdigest()
+
+# The zero-mood invariant. A valid Perception Chamber canonical brain has every mood byte zero, for two
+# independent reasons, both verified on the machine:
+#   1. the learner and the actor must be the same function. brainLearn raises brainNoMood around its own
+#      forward pass, so the prediction a lesson corrects is computed mood-free while the live think is
+#      not. With a nonzero mood the machine learns against a prediction it never acts on (measured:
+#      mood[9] = 127 gave a mood-free prediction of 1 and a live output of 9).
+#   2. the policy hash would otherwise not be a behavioural statement. Measured: one byte at slot offset
+#      833 turned a resolved IDLE into BUILD-LEFT while leaving the policy hash identical.
+# This is an ADMISSION rule for the host and the contract, not a machine-parity rule: malformed() below
+# must keep mirroring the machine's own brainCheck, which does accept a nonzero-mood slot and runs it.
+SLOT_BYTES = 24 + 10 * N + 10           # 834: a 24-byte header, 10 x 80 weights, 10 mood
+MOOD_OFFSET, MOOD_LEN = 24 + 10 * N, 10  # 824: the mood sits last in the slot
+def mood_of(b): return [v - 256 if v >= 128 else v for v in b[MOOD_OFFSET:MOOD_OFFSET + MOOD_LEN]]
+def mood_is_zero(b): return not any(b[MOOD_OFFSET:MOOD_OFFSET + MOOD_LEN])
+def canonical_violations(b, retina_id_of_build=None, n_of_build=None):
+    """every reason this slot is not an admissible Perception Chamber canonical brain, by name"""
+    out = []
+    if len(b) != SLOT_BYTES: out.append(f"slot is {len(b)} bytes, not {SLOT_BYTES}")
+    if b[:8] != MARKER: out.append("marker is not BRAIN025")
+    if len(b) >= 24:
+        if b[9] != LAYOUT: out.append(f"layout is {b[9]}, not {LAYOUT}")
+        if b[11] != 0: out.append(f"hidden units is {b[11]}, not 0")
+        if b[12] != 10: out.append(f"outputs is {b[12]}, not 10")
+        if b[15] != 2: out.append(f"rule is {b[15]}, not 2")
+        if b[16] > 1: out.append(f"vocabulary byte is {b[16]}")
+        if retina_id_of_build is not None and b[17] != retina_id_of_build: out.append(f"retina is {b[17]}, not {retina_id_of_build}")
+        if n_of_build is not None and b[10] != n_of_build: out.append(f"input count is {b[10]}, not {n_of_build}")
+    if len(b) == SLOT_BYTES and not mood_is_zero(b):
+        out.append(f"mood is not all zero: {mood_of(b)} at slot offset {MOOD_OFFSET} - a nonzero mood is a"
+                   f" per-output bias that changes the action, and Perception Chamber freezes it to zero")
+    return out
 def malformed(b, retina_id_of_build, n_of_build):
     return not (b[:8] == MARKER and b[9] == LAYOUT and b[8] < 3 and b[10] == n_of_build and b[11] == 0 and b[12] == 10 and b[15] == 2 and b[16] < 2 and b[17] == retina_id_of_build)
 
@@ -285,6 +336,12 @@ def check_slot(b, where="the starting slot"):
     if b[8] > 2: raise Incompatible(f"{where}: kind byte is {b[8]}, above the 0..2 the machine's own check allows")
     want = 24 + 10 * n + 10
     if len(b) != want: raise Incompatible(f"{where}: {len(b)} bytes, but {n} inputs need exactly {want} (24 header + 10 x {n} weights + 10 mood)")
+    if any(b[24 + 10 * n:24 + 10 * n + 10]):
+        raise Incompatible(f"{where}: the mood bytes are {mood_of(b)}, not all zero. Perception Chamber freezes the mood to"
+                           f" zero: each byte is a signed per-output bias written straight into that output's accumulator, so a"
+                           f" nonzero mood changes the action while leaving the learned-policy hash untouched - and brainLearn"
+                           f" computes its prediction mood-free, so the learner and the actor would not be the same function."
+                           f" Replay will not reinterpret it.")
     return entries
 
 def check_lessons(raw):

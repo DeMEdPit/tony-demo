@@ -866,6 +866,74 @@ def gate_shadow(b, outdir):
 
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "shadow": sys.exit(0 if gate_shadow(Build(sys.argv[2]), OUT) else 1)
 
+
+def gate_mood(b, outdir):
+    """The zero-mood invariant. Each of the ten mood bytes at slot offset 824 is a SIGNED PER-OUTPUT
+    BIAS: brainForward writes it straight into that output's accumulator as the starting value,
+    sign-extended. So it shifts the argmax and changes the action - while the learned-policy hash, which
+    covers only the header shape and the 800 weights, stays identical. Perception Chamber freezes the
+    mood to zero. This gate proves the machine keeps it there, and that the canonical (full-slot) hash
+    is the one that catches a violation."""
+    global ok
+    os.makedirs(outdir, exist_ok=True)
+    print(f"{b.name}: the zero-mood invariant")
+    MOOD = b["brainMood"]; SLOT = b["brainMarker"]
+    rec = {}
+    def slot_of(m, tag):
+        m.do(f"sync,dump:{SLOT:X}:342:{outdir}/mood-{b.name}-{tag}.bin")
+        return open(f"{outdir}/mood-{b.name}-{tag}.bin", "rb").read()
+    # 1. the machine never writes the mood: boot, teach, drain, a room change
+    m = Machine(b); m.do("wait:400")
+    boot = m.do("sync," + pk(MOOD, 10))
+    m.do(po(b["brainKind"], [1]) + po(b["teachMode"], [1]))
+    for _ in range(12): m.do("hold:8"); m.do("wait:4"); m.do("release:8"); m.do("wait:2")
+    m.do(po(b["teachMode"], [0])); m.do("wait:4")
+    taught = m.do("sync," + pk(MOOD, 10) + pk(b["brainEducation"], 2))
+    m.do(po(b["roomChangeDirection"], [1]) + po(b["roomChange"], [1])); m.do("wait:40")
+    m.do(po(b["roomChangeDirection"], [2]) + po(b["roomChange"], [0])); m.do("wait:40")
+    after = m.do("sync," + pk(MOOD, 10))
+    zero = slot_of(m, "zero")
+    v = m.do("sync," + pk(b["brainOutput"]) + pk(b["brainAction"]))
+    act_zero = (v[0], v[1])
+    m.close()
+    rec["boot"] = boot[:10]; rec["after_teaching"] = taught[:10]; rec["after_room_change"] = after[:10]
+    check(boot[:10] == [0] * 10, f"the load image ships the mood zero: {boot[:10]}")
+    check(taught[:10] == [0] * 10, f"and {taught[10] | taught[11] << 8} lessons leave it zero: the learning rule never writes it")
+    check(after[:10] == [0] * 10, f"and a room change leaves it zero: {after[:10]}")
+    check(ref.mood_is_zero(zero) and not ref.canonical_violations(zero, b.retina, b.n),
+          "the machine's own slot is an admissible canonical brain: no violations")
+    # 2. one mood byte changes the action, and only the canonical hash sees it
+    m = Machine(b); m.do("wait:400"); m.do(po(b["brainKind"], [1]) + po(b["teachMode"], [1]))
+    for _ in range(12): m.do("hold:8"); m.do("wait:4"); m.do("release:8"); m.do("wait:2")
+    m.do(po(b["teachMode"], [0])); m.do("wait:8")
+    base = slot_of(m, "base"); vb = m.do("sync," + pk(b["brainOutput"]) + pk(b["brainAction"]))
+    m.do(po(MOOD + 9, [127])); m.do("wait:12")
+    bent = slot_of(m, "bent"); vm = m.do("sync," + pk(b["brainOutput"]) + pk(b["brainAction"]) + pk(b["brainKindNow"]))
+    m.close()
+    rec["action_zero_mood"] = dict(raw=vb[0], resolved=vb[1])
+    rec["action_bent_mood"] = dict(raw=vm[0], resolved=vm[1], kind_now=vm[2])
+    rec["policy_hash"] = dict(zero=ref.policy_hash(base), bent=ref.policy_hash(bent))
+    rec["canonical_hash"] = dict(zero=ref.canonical_hash(base), bent=ref.canonical_hash(bent))
+    diff = [i for i in range(len(base)) if base[i] != bent[i]]
+    check((vm[0], vm[1]) != (vb[0], vb[1]),
+          f"one mood byte changes the decision: raw {vb[0]} -> {vm[0]}, resolved {vb[1]} -> {vm[1]}")
+    check(diff == [ref.MOOD_OFFSET + 9], f"and it is one byte, at slot offset {ref.MOOD_OFFSET + 9}: {diff}")
+    check(ref.policy_hash(base) == ref.policy_hash(bent),
+          f"the learned-policy hash CANNOT see it ({ref.policy_hash(base)[:16]} either way) - so it is a"
+          f" policy-equivalence statement, not a behavioural one")
+    check(ref.canonical_hash(base) != ref.canonical_hash(bent),
+          f"the canonical full-slot hash does see it: {ref.canonical_hash(base)[:16]} -> {ref.canonical_hash(bent)[:16]}")
+    check(ref.canonical_violations(bent, b.retina, b.n) and not ref.malformed(bent, b.retina, b.n),
+          "the reference refuses it as a canonical brain, while malformed() still mirrors the machine's"
+          f" brainCheck, which accepts it and runs it (brainKindNow {vm[2]})")
+    json.dump(dict(name=b.name, sha256=b.sha, mood_offset=ref.MOOD_OFFSET, states=rec,
+                   design="each mood byte is a signed per-output bias written into that output's accumulator;"
+                          " Perception Chamber freezes all ten to zero and admits no slot that violates it."),
+              open(os.path.join(outdir, f"mood-{b.name}.json"), "w"), indent=1)
+    return ok
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "mood": sys.exit(0 if gate_mood(Build(sys.argv[2]), OUT) else 1)
+
 # ------------------------------------------------------------- recording a session for the replay
 def gate_session(b, outdir):
     """Record one real teaching session as three files, so the canonical replay can be proved against
