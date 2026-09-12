@@ -810,8 +810,8 @@ def gate_visual(b, outdir):
     on = _frames_of_colour(b, f"wait:300,key:{KEY_T}:6,wait:6,", 48); h = _hist(on)
     rec["teach_on"] = h
     cyan = h.get(3, 0)
-    check(0.25 * len(on) <= cyan <= 0.45 * len(on) and h.get(1, 0) > 0 and not (set(h) - {1, 3}),
-          f"TEACH on: {_show(h, len(on))}, so the pulse is cyan for about three eighths of the time and white the rest")
+    check(0.04 * len(on) <= cyan <= 0.20 * len(on) and h.get(1, 0) > 0 and not (set(h) - {0, 1, 3}),
+          f"TEACH on: {_show(h, len(on))}, so cyan is a sprinkle of roughly one frame in eleven, over white, with the dropout still running")
     check({c for _, c in on} == {15}, "and the human Tony is untouched while teaching")
     # 3. an accepted lesson: a brief green flash
     m = Machine(b); m.do(f"wait:300,key:{KEY_T}:6,wait:6,hold:8")

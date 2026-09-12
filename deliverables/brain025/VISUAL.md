@@ -1,4 +1,65 @@
-# BRAIN02.5 vis1: the clone's visual state language
+# BRAIN02.5 vis1 and vis2: the clone's visual state language, and the rooms
+
+**vis2 is the current revision.** It keeps everything vis1 did, makes the cyan of teaching a sprinkle
+rather than a pulse, thins the lower room's back wall to the bricks the candle lights, and makes the
+room above bare and darker.
+
+| revision | PRG | sha256 |
+|---|---|---|
+| research, no visual pass | `tony-b025-a.prg` | `2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423` |
+| vis1 | `tony-b025-a-vis1.prg` | `4e22961ef55a5e29a80bdf65f8773301ced5e68904fc5417108bb543f1a7a708` |
+| **vis2** | `tony-b025-a-vis2.prg` | `117559716a3f529d35a887bac8f7e620adf250bbd3841d58edf10f837a614958` |
+
+## vis2, what changed from vis1
+
+**Teaching is a sprinkle, not a pulse.** Cyan was six frames of every sixteen, about 37 percent of the
+time. It is now three frames of every thirty-two, about 9 percent, measured at 3 of 48 frames. The
+dropout now runs in both states rather than being replaced while teaching, so teaching reads as white
+with an occasional cyan tick. The green of an accepted lesson is unchanged and is now the loudest thing
+on the clone by a wide margin, which was the point.
+
+**A lesson still outranks the pulse.** The flash is tested first, so an accepted lesson gets its full
+six green frames even if a cyan tick was due. Making cyan rarer does not weaken green; it makes green
+stand out more.
+
+**The lower room's back wall is thinned to what the candle lights.** A slot keeps its seeded brick only
+if it lies within three slots of the candle's niche, measured Manhattan in slot coordinates. On the
+default seed that takes the wall from 34 bricks to a small cluster hugging the candle, and leaves the
+rest of the room bare. A room whose seed gives no candle gets no bricks at all.
+
+This is a **gate in front of** the seeded density modes, not a replacement for them. `litRadius` is a
+labelled byte; at zero the gate is off and the wall renders exactly as the seed always said. So the
+Chamber's generative rule is untouched and this look is opt-in per build, which matters because
+`muralStamp` is the art a block number renders as.
+
+**The room above is bare and darker.** No bricks, no candle, and the stone in dark grey. All three reuse
+paths the game already had: mode 4 for a bare wall and colour 11 for dark stone are what the Glitch's
+blackout uses, and the candle already had a skip. They now also trigger on `currentChamberNumber` being
+non-zero. Only the background colour is darkened; the human Tony's own colour is set further down from
+`currentColor` and is deliberately left alone.
+
+## vis2, measured
+
+**Behaviour: identical.** The same script on the research build and vis2, 40 samples four frames apart:
+the behavioural fields, meaning both Tonys' positions and states, all 27 senses, the chosen action and
+raw output, the education count, the ring's write sequence, the think count and the brick count, are
+**identical on all 40 samples**. Two things do differ and neither is behaviour:
+
+* the frame counter is offset by exactly **one frame**, constant across every sample, because the room
+  draw is slightly longer at boot;
+* the raster maximum is **+3 lines**, 136 against 139 on that script and 138 against 141 on the
+  resources episode. The limit is 230 and overruns stay at **0**.
+
+The mural's bricks carry material 0, verified on the machine rather than assumed, so none of the room
+work is terrain: the probe, the senses and the brain cannot see any of it. The terrain gate agrees,
+192 of 192 scenarios equal to the model.
+
+**Gates:** smoke, blank, key, terrain, parity, migrate, teach, drain, resources and visual all pass on
+vis2 with no failures. PRG size is unchanged at 52,092 bytes.
+
+---
+
+# vis1: the clone's visual state language
 
 A presentation-only revision, in its own PRG. The research build `tony-b025-a.prg` is untouched and
 still hashes `2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423`; the replay and

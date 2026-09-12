@@ -433,15 +433,16 @@ VISUAL_COLOUR_ASM = """    lda cloneFlash                  // vis1: a lesson eve
     noFlash:
     lda teachMode
     beq idleGlitch
-        lda bodyFrames              // teaching: a slow cyan pulse, six frames of every sixteen
-        and #15
-        cmp #6
-        bcs whiteNow
+        lda bodyFrames              // teaching: a sprinkle of cyan, three frames of every thirty-two,
+        and #31                     // so the green of a lesson stays the loud signal
+        cmp #3
+        bcs idleGlitch
             lda #COL_TEACH
             jmp haveColour
     idleGlitch:
-        lda bodyFrames              // otherwise: one frame of dropout every thirty-two
+        lda bodyFrames              // the dropout runs in both states: one frame in thirty-two
         and #31
+        cmp #16
         bne whiteNow
             lda #COL_DROPOUT
             jmp haveColour
@@ -459,6 +460,92 @@ VISUAL_LABELS_ASM = """
 .label COL_REFUSE  = 2              // red
 .label COL_DROPOUT = 0              // black, for one frame
 """
+
+
+# ------------------------------------------------------------------- the rooms (vis1)
+# Two presentation changes to the room, both reusing machinery the game already has.
+#
+#   the room below   the seeded back wall is thinned to the bricks the candle lights: a slot keeps its
+#                    brick only if it is within LIT_RADIUS slots of the candle's niche, Manhattan. The
+#                    seeded density modes are untouched; this is a gate in front of them, so a build
+#                    that does not ask for it renders exactly as before.
+#   the room above   bare and darker: no bricks (mode 4, which the blackout already uses), no candle,
+#                    and the stone in dark grey (colour 11, which the blackout already uses).
+#
+# The mural's bricks carry material 0, so none of this is terrain: the probe, the senses and the brain
+# cannot see any of it. Verified on the machine, not assumed.
+ROOM_LIT_ASM = """
+    lda muralSeed + 30              // vis1: where the candle is, in slot coordinates, for the light's
+    and #3                          // reach. The same seed arithmetic the niche itself uses below.
+    beq noLight
+        lda muralSeed + 29
+        and #15
+        tax
+        lda kTable, x
+        sta litI
+        lda muralSeed + 29
+        lsr
+        lsr
+        lsr
+        lsr
+        and #7
+        tax
+        lda jTable, x
+        sta litJ
+        lda #1
+        sta litHave
+        jmp haveLight
+    noLight:
+        lda #0
+        sta litHave
+    haveLight:
+"""
+
+# IN: A the density decision, rowIndex the slot row, Y the slot's cell column.
+# OUT: A zero when this brick lies outside the candle's light. X, Y and rowIndex survive.
+ROOM_GATE_ASM = """
+    litGate: {
+        cmp #0
+        beq dark                    // the density streams said no brick anyway
+        lda litRadius
+        beq lit                     // radius zero: the gate is off, render as the seed says
+        lda litHave
+        beq dark                    // a room with no candle has no lit bricks
+        lda rowIndex                // |j - the candle's j|
+        sec
+        sbc litJ
+        bcs !+
+            eor #$ff
+            adc #1
+        !:
+        sta litD
+        tya                         // i = the cell column / 2
+        lsr
+        sec
+        sbc litI                    // |i - the candle's i|
+        bcs !+
+            eor #$ff
+            adc #1
+        !:
+        clc
+        adc litD                    // the Manhattan distance, in slots
+        cmp litRadius
+        beq lit
+        bcc lit
+        dark:
+            lda #0
+            rts
+        lit:
+            lda #1
+            rts
+    }
+    litI:      .byte 0
+    litJ:      .byte 0
+    litHave:   .byte 0
+    litD:      .byte 0
+    litRadius: .byte {{LIT_RADIUS}}         // in slots, Manhattan; 0 turns the light gate off
+"""
+LIT_RADIUS = 3
 
 # ------------------------------------------------------------------------------ the block transforms
 def _slot_asm(vocab):
@@ -589,6 +676,32 @@ def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, sp
     src = src[:i] + ("    // BRAIN02.5: no chord. Down with fire is the lay verb and nothing else; the teaching mode is\n"
                      "    // toggled by the T key (teachKey, in the main loop) or by the workbench writing teachMode.\n"
                      "    lda #0\n    sta teachHold\n    route:\n") + src[j + len("    notHeld:\n    lda #0\n    sta teachHold\n    route:\n"):]
+    # --- vis1: the rooms. The mural's bricks are material 0, so none of this is terrain.
+    if visual:
+        # the candle's slot position, worked out before the wall loop that needs it
+        sub1("    ldx #0\n    rowLoop:\n        lda muralRowA.lo, x\n",
+             ROOM_LIT_ASM.replace("{{LIT_RADIUS}}", str(LIT_RADIUS)) + "    ldx #0\n    rowLoop:\n        lda muralRowA.lo, x\n")
+        # the gate itself, in front of the seeded decision
+        sub1("            decide:\n            bne brick\n",
+             "            decide:\n            jsr litGate                 // vis1: only the bricks the candle lights survive\n            bne brick\n")
+        # the gate's code and its bytes, beside the tables it reads
+        sub1("    modeTable:   .byte 3, 3, 3, 0, 0, 1, 1, 2",
+             ROOM_GATE_ASM.replace("{{LIT_RADIUS}}", str(LIT_RADIUS)) + "    modeTable:   .byte 3, 3, 3, 0, 0, 1, 1, 2")
+        # the room above: bare
+        sub1("    lda muralBehaviour          // the Glitch's room is the blackout: no bricks at all\n    cmp #7\n    bne !+\n        lda #4\n        sta mode\n    !:\n",
+             "    lda muralBehaviour          // the Glitch's room is the blackout: no bricks at all\n    cmp #7\n    bne !+\n        lda #4\n        sta mode\n    !:\n"
+             "    lda currentChamberNumber    // vis1: and the room above is bare too\n    beq !+\n        lda #4\n        sta mode\n    !:\n")
+        # the room above: no candle
+        sub1("    // the candle: present three times in four, its niche chosen from the seed\n    lda muralBehaviour          // the blackout has no candle\n",
+             "    // the candle: present three times in four, its niche chosen from the seed\n"
+             "    lda currentChamberNumber    // vis1: the room above has no candle either\n    beq !+\n        jmp candleDone\n    !:\n"
+             "    lda muralBehaviour          // the blackout has no candle\n")
+        # the room above: darker stone. Only the background colour, which is the stone; the human Tony's
+        # own colour is set further down from currentColor and is deliberately left alone.
+        sub1("    ldy muralDim                // no candle: the stone in medium grey\n    beq !+\n        lda #12\n    !:\n    sta c64lib.BG_COL_0\n",
+             "    ldy muralDim                // no candle: the stone in medium grey\n    beq !+\n        lda #12\n    !:\n"
+             "    ldy currentChamberNumber    // vis1: the room above is darker stone, the blackout's own grey\n    beq !+\n        lda #11\n    !:\n"
+             "    sta c64lib.BG_COL_0\n")
     sub1("        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n",
          "        jsr teachKey                // BRAIN02.5: the teaching toggle, its own key\n        jsr terrainTest             // and the probe's own cost, when a test asks for it\n        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n")
 

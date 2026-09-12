@@ -1,0 +1,112 @@
+{
+ "name": "tony-b025-a-vis2",
+ "sha256": "117559716a3f529d35a887bac8f7e620adf250bbd3841d58edf10f837a614958",
+ "states": {
+  "idle": {
+   "1": 62,
+   "0": 2
+  },
+  "teach_on": {
+   "1": 43,
+   "0": 2,
+   "3": 3
+  },
+  "accepted": {
+   "green_frames": 6,
+   "education": 1,
+   "seen": [
+    1,
+    0,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    3,
+    3,
+    3,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "refused": {
+   "ring_full": true,
+   "flash_colour": 2,
+   "red_frames": 40,
+   "green_frames": 0,
+   "seen": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+   ]
+  },
+  "teach_off": {
+   "1": 62,
+   "0": 2
+  }
+ },
+ "palette": {
+  "white": 1,
+  "cyan": 3,
+  "green": 5,
+  "red": 2,
+  "dropout": 0,
+  "human_tony": 15
+ },
+ "design": "a pure function of bodyFrames, teachMode and the existing flash counter; only sprites 5 and 6 are written"
+}

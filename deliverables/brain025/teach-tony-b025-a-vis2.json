@@ -1,0 +1,23 @@
+{
+ "name": "tony-b025-a-vis2",
+ "taught": "come to me",
+ "sessions": [
+  {
+   "session": 1,
+   "education": 2,
+   "recorded": 2,
+   "not_paired": 0,
+   "alone_x": 280,
+   "alone_y": 206,
+   "player_x": 286,
+   "came": true
+  }
+ ],
+ "sessions_to_come": [
+  1,
+  2
+ ],
+ "alone_frames": 700,
+ "hash": "bd24bf80f1284df6c2fadcde631877323fec672f2c1b68dd5c83b93ba29f6225",
+ "education": 2
+}
