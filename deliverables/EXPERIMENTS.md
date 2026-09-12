@@ -1276,7 +1276,7 @@ This is a research build: not a production architecture, nothing deployed, nothi
 
 Four changes to the BRAIN02.5 playable candidate, in the order the owner asked for them. Written up in
 `deliverables/brain025/VIS3.md`; the PRG is `tony-b025-a-vis3.prg`, 52,098 bytes, sha256
-`41af4d661d3019cb7582f5f2072f5f40abe37599009fc8331ff4294335e66717`. The frozen research artifact and
+`a9efe9d00afd0cfc9453acbcb0fe6b0faa8fe6f7f83f43635c2bd4ee80ef12ec`. The frozen research artifact and
 both earlier visual candidates are untouched and still regenerate from the generator byte for byte.
 
 **The room transition is now an effect on purpose.** The redraw between rooms was always visible for
@@ -1299,7 +1299,13 @@ is chamber 1's compressed map. Two bytes of level data were being overwritten at
 often the white dropout comes - one frame in 16 untaught, then 32, 64, and 128 as a floor it never
 passes. An untaught copy flickers, a taught one is steady, and it never stops flickering entirely.
 
-Fifteen gates pass, 80 checks, no failures. Two existing gates had to change and both changes are
+The first build of vis3 got the bat guard's sink one byte too small, and the owner found it in a
+minute of play: the stores are indexed by y, so the right bat spilled onto `muralRowA` and the back wall
+stamped itself across the ceiling of both rooms. The same bug shape as the one being fixed, one label
+further along. It is two bytes now, and the gate that missed it - it checked the packed map and a fresh
+draw, never the ceiling after a round trip - checks that too.
+
+Fifteen gates pass, 81 checks, no failures. Two existing gates had to change and both changes are
 recorded rather than quietly made: `visual`'s dropout expectation moved with the behaviour, and
 `drain`'s acknowledgement handshake was given six frames instead of two after it scored a refusal the
 machine had never made. A third hazard was closed: `gate_session` was overwriting the hash-pinned

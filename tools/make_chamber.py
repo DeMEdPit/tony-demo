@@ -4247,9 +4247,16 @@ if BAT_STAMP_GUARD:
     // the left bat: path seed[24] & 7, column 2 + (seed[24] >> 3 & 7), row 2 + (seed[25] & 7)
     ldy #0
 """)
+    # TWO bytes, and the second one is the whole point: the stores are indexed, "sta writeX: $ffff, y"
+    # with ldy #0 for the left bat and iny for the right, so the sink is written at base+0 AND base+1.
+    # A one-byte sink sends the right bat's three stores one byte past it - onto muralRowA, the very next
+    # label, whose low byte is the mural's first row base. That put the back wall's top row at $C006,
+    # row 0 column 6, and stamped the wall across the ceiling of both rooms from the first transition on.
     MURAL = MURAL.replace("    colB: .byte 24, 25, 26, 27, 28, 29, 26, 28\n",
                           "    colB: .byte 24, 25, 26, 27, 28, 29, 26, 28\n"
-                          "    batSink: .byte 0            // --bat-stamp-guard: where a bat-less room's parameters go\n")
+                          "    batSink: .fill 2, 0         // --bat-stamp-guard: where a bat-less room's parameters go.\n"
+                          "                               // TWO bytes: the stores are indexed by y, 0 for the left bat\n"
+                          "                               // and 1 for the right. One byte would spill onto muralRowA.\n")
 MURAL = MURAL.replace("{DIM_CANDLE}", ("    bne !+\n        lda #1                      // no candle: remembered for the dim room\n"
                                        "        sta muralDim\n        jmp candleDone\n    !:\n") if DIM_NO_CANDLE else "    beq candleDone\n")
 src = sub(src, "nextColorScheme: {", MURAL)

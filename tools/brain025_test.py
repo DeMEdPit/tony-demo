@@ -1001,9 +1001,27 @@ def gate_roomdata(b, outdir):
     check(above == below,
           f"and the two rooms draw the same ceiling: below ${below[0]:02X} ${below[1]:02X}, above ${above[0]:02X} ${above[1]:02X}"
           f" (the map's ${want[0]:02X} ${want[1]:02X} through the room charset)")
+    # THE CHECK THIS GATE WAS MISSING. Verifying the packed map and the freshly drawn ceiling is not
+    # enough: the sink the stamp is redirected to is written at base+0 AND base+1, because the stores are
+    # indexed by y (0 for the left bat, 1 for the right). A sink one byte short spills onto muralRowA,
+    # whose low byte is the mural's first row base, and the back wall then stamps across row 0 of both
+    # rooms from the first transition onward - which no check on the packed map or on a first draw can
+    # see. So: draw the room, go up, come back, and require the whole top of the room to be unchanged.
+    dmp = os.path.join(outdir, f"roomdata-ceiling-{b.name}")
+    b.run("wait:400,sync," + f"dump:C000:80:{dmp}-a.bin," + po(b["roomChangeDirection"], [1]) + po(b["roomChange"], [1]) +
+          f"wait:40,sync,dump:C000:80:{dmp}-up.bin," + po(b["roomChangeDirection"], [2]) + po(b["roomChange"], [0]) +
+          f"wait:40,sync,dump:C000:80:{dmp}-b.bin,")
+    ca, cu_, cb = (open(f"{dmp}-{t}.bin", "rb").read() for t in ("a", "up", "b"))
+    moved = [i for i in range(128) if ca[i] != cb[i]]
+    check(not moved,
+          "the top of the room is the same after going up and coming back as it was at level start"
+          + (f"; {len(moved)} cells moved, at rows/columns "
+             + " ".join(f"r{i // 40}c{i % 40}(${ca[i]:02X}->${cb[i]:02X})" for i in moved[:16]) if moved else ""))
+    print(f"       the room above's own ceiling, for the record: {' '.join(f'${x:02X}' for x in cu_[:8])} …")
     json.dump(dict(name=b.name, sha256=b.sha, room_ptrs=[f"${a:04X}" for a in rooms], object_ptrs=[f"${a:04X}" for a in objs],
-                   object_sizes=sizes, intact=not bad,
-                   design="muralBatsStamp sends its parameter stores to a sink byte when the room carries no static objects."),
+                   object_sizes=sizes, intact=not bad, ceiling_stable=not moved,
+                   design="muralBatsStamp sends its parameter stores to a two-byte sink when the room carries no static"
+                          " objects. Two bytes because the stores are indexed by y: 0 for the left bat, 1 for the right."),
               open(os.path.join(outdir, f"roomdata-{b.name}.json"), "w"), indent=1)
     return ok
 

@@ -3279,7 +3279,9 @@ muralBatsStamp: {
     sta level_roomStates
     rts
     colB: .byte 24, 25, 26, 27, 28, 29, 26, 28
-    batSink: .byte 0            // --bat-stamp-guard: where a bat-less room's parameters go
+    batSink: .fill 2, 0         // --bat-stamp-guard: where a bat-less room's parameters go.
+                               // TWO bytes: the stores are indexed by y, 0 for the left bat
+                               // and 1 for the right. One byte would spill onto muralRowA.
 }
 muralRowA:  .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 5
 muralRowA1: .lohifill 10, SCREEN_MEM_0 + (2 + 2*i)*40 + 6

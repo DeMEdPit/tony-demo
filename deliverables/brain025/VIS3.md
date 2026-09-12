@@ -9,7 +9,7 @@ changes the owner asked for.
 | research, no visual pass | `tony-b025-a.prg` | 52,092 | `2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423` |
 | vis1 | `tony-b025-a-vis1.prg` | 52,092 | `4e22961ef55a5e29a80bdf65f8773301ced5e68904fc5417108bb543f1a7a708` |
 | vis2 | `tony-b025-a-vis2.prg` | 52,092 | `117559716a3f529d35a887bac8f7e620adf250bbd3841d58edf10f837a614958` |
-| **vis3** | `tony-b025-a-vis3.prg` | **52,098** | `41af4d661d3019cb7582f5f2072f5f40abe37599009fc8331ff4294335e66717` |
+| **vis3** | `tony-b025-a-vis3.prg` | **52,098** | `a9efe9d00afd0cfc9453acbcb0fe6b0faa8fe6f7f83f43635c2bd4ee80ef12ec` |
 
 All three earlier PRGs are untouched, and the generator still reproduces the two frozen ones exactly:
 regenerating `tony-b025-a` and `tony-build` from `tools/make_chamber.py` gives sources identical to what
@@ -183,10 +183,32 @@ happened to put the next label.
 ### The fix
 
 With no objects there is no bat to carry the parameters, so the stores have no reader. `--bat-stamp-guard`
-sends them to a sink byte instead, and leaves `muralBats` and the `level_roomStates` presence masking
-exactly as they were. Measured on vis3: chamber 1's packed map is **byte-identical to the load image**
-after a full round trip through both rooms, and the two rooms draw the same ceiling (`$06 $09` both).
-The `roomdata` gate pins this and **fails on vis2**, naming the two bytes.
+sends them to a sink instead, and leaves `muralBats` and the `level_roomStates` presence masking exactly
+as they were. Measured on vis3: chamber 1's packed map is **byte-identical to the load image** after a
+full round trip through both rooms, and the two rooms draw the same ceiling (`$06 $09` both). The
+`roomdata` gate pins this and **fails on vis2**, naming the two bytes.
+
+### The sink has to be two bytes, and the first cut of it was one
+
+The first build of vis3 shipped with `batSink: .byte 0`, and the owner found the consequence within a
+minute of playing: after the first transition the top of **both** rooms had regular notches cut into the
+ceiling, and they stayed.
+
+The stores are **indexed** - `sta writeX: $ffff, y` with `ldy #0` for the left bat and `iny` for the
+right - so the sink is written at base+0 *and* base+1. A one-byte sink sent the right bat's three stores
+one byte past it, onto **`muralRowA`**, the label that immediately follows, whose low byte is the base of
+the mural's first row. That base became `$C006` - row 0, column 6 - so the back wall stamped itself
+across the ceiling at every even column from 6 to 32, and because it is written during the draw it came
+back on every redraw of either room. The same bug shape as the one being fixed, one label further along.
+
+It is `.fill 2, 0` now, and the diagnosis was not guesswork: with the guard's code present but its
+branch inverted so it never fired - identical layout, no redirection - the notches were gone, which
+isolated it to the runtime redirection rather than the 31 bytes of code the guard adds.
+
+**The gate did not catch it, and that was the real failure.** `roomdata` checked the packed map and the
+ceiling on a *fresh draw*, and both were correct; nothing looked at the ceiling after a **round trip**,
+which is the only place the damage shows. That check exists now: draw the room, go up, come back, and
+require the whole top of the room to be unchanged. It fails on the one-byte build and passes on this one.
 
 ---
 
