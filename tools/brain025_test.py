@@ -368,10 +368,24 @@ def drain(m, b, saved_slot, log, teaching=True, batches=None):
             base = b["lessonData"] + (sq % cap) * LS
             recs.append(bytes(m.do("".join(f"peek:{base + i:X}," for i in range(LS)))))
         total = sum(sum(r) for r in recs) & 0xffff
-        m.do(po(b["lessonAckSeq"], w16(st["write"])) + po(b["lessonAckSum"], w16(total)) + f"poke:{b['lessonAckRequest']:X}:01,wait:2")
+        # The machine services lessonAckRequest from its main loop, so the request needs frames, not one
+        # frame. This used to be wait:2 and that was too few: on a build where the clone can be crouched
+        # when the session ends the main loop runs long enough that the request was still sitting there
+        # unread, and the gate scored a refusal the machine had never made - status $80 with no error bit,
+        # the sums in agreement, and read and drains simply untouched. Six frames, the same number the
+        # golden and migration gates needed for the same reason, and a retry while it is still pending.
+        m.do(po(b["lessonAckSeq"], w16(st["write"])) + po(b["lessonAckSum"], w16(total)) + f"poke:{b['lessonAckRequest']:X}:01,wait:6")
         st2 = ring_state(m, b)
+        pending = m.do(pk(b["lessonAckRequest"]))[0]
         accepted = (st2["status"] & 0x80) != 0 and st2["read"] == st["write"] and st2["drains"] == st["drains"] + 1 and (st2["status"] & 0x0e) == 0
-        if accepted or not (st2["status"] & 0x02): break
+        if not accepted:
+            print(f"       acknowledgement not accepted on attempt {attempt + 1}: asked {st['read']}..{st['write']} sum ${total:04X};"
+                  f" status ${st2['status']:02X}, read {st2['read']} (wanted {st['write']}),"
+                  f" drains {st2['drains']} (wanted {st['drains'] + 1}), machine's own sum"
+                  f" ${(st['cumWrite'] - st['cumRead']) & 0xffff:04X}, request byte ${pending:02X}"
+                  f" ({'still pending' if pending else 'consumed'})")
+        # retry on a stale range, and on a request the machine has not got to yet
+        if accepted or not ((st2["status"] & 0x02) or pending): break
     if teaching: m.do(f"poke:{b['teachMode']:X}:01")
     p = ref.parse_slot(saved_slot); W = [row[:] for row in p["weights"]]; edu = p["education"]; entries = ref.table_T1()
     divergent = 0
@@ -720,8 +734,14 @@ def gate_session(b, outdir):
     session wraps and has to be drained several times: the ordered stream then spans reuse cycles, which
     is the case a replay is most likely to get wrong."""
     global ok
-    d = os.path.join(outdir, "replay", "session-1"); os.makedirs(d, exist_ok=True)
-    print(f"{b.name}: recording a session into deliverables/brain025/replay/session-1")
+    # session-1 is the canonical recorded session and REPLAY.md pins its hashes and the build it came
+    # from. Running this gate on any other build used to overwrite it in place - it silently replaced a
+    # hash-pinned artifact with a recording from a different PRG. Only the build session-1 was recorded
+    # on may write there; every other build records under its own name, next to it.
+    CANONICAL = "tony-b025-a"
+    d = os.path.join(outdir, "replay", "session-1" if b.name == CANONICAL else f"session-{b.name}")
+    os.makedirs(d, exist_ok=True)
+    print(f"{b.name}: recording a session into {os.path.relpath(d, ROOT)}")
     CAP = 40
     m = Machine(b); m.do(SETUP_WALK + po(b["lessonCap"], w16(CAP)) + f"poke:{b['brainKind']:X}:01,poke:{b['teachMode']:X}:01,wait:1")
     start = slot(m, b)
@@ -799,12 +819,15 @@ def gate_visual(b, outdir):
     os.makedirs(outdir, exist_ok=True)
     print(f"{b.name}: the clone's visual state language")
     rec = {}
-    # 1. idle: white, dropping out to black one frame in thirty-two
+    # 1. idle: white, dropping out to black. vis3 made the dropout's PERIOD a function of brainEducation,
+    # so an untaught clone (education 0, which is what a fresh boot has) drops out one frame in sixteen.
+    # vis1 and vis2 had a fixed one in thirty-two and this gate asserted 2 or 3 of 64; the expectation
+    # moved with the behaviour, deliberately, and sub-check 6 below is what pins the new rule.
     idle = _frames_of_colour(b, "wait:300,", 64); h = _hist(idle)
     human = {c for _, c in idle}
     rec["idle"] = h
-    check(h.get(1, 0) >= 58 and h.get(0, 0) in (2, 3) and set(h) <= {0, 1},
-          f"idle: {_show(h, len(idle))} over 64 frames, and nothing else")
+    check(h.get(1, 0) >= 56 and h.get(0, 0) in (3, 4, 5) and set(h) <= {0, 1},
+          f"idle, untaught: {_show(h, len(idle))} over 64 frames, and nothing else")
     check(human == {15}, f"and the human Tony stays light grey throughout: {sorted(human)}")
     # 2. TEACH on: a slow cyan pulse over white
     on = _frames_of_colour(b, f"wait:300,key:{KEY_T}:6,wait:6,", 48); h = _hist(on)
@@ -835,10 +858,157 @@ def gate_visual(b, outdir):
     rec["teach_off"] = h
     check(h.get(3, 0) == 0 and h.get(1, 0) >= 58 and set(h) <= {0, 1},
           f"TEACH off: {_show(h, len(off))}, no cyan and no flash left behind")
+    # 6. vis3, the trained state: education changes the dropout's FREQUENCY and nothing else, it gets
+    # rarer as he learns, and it never reaches zero however much he is taught.
+    cad = {}
+    for edu in (0, 8, 33, 96, 300, 1000):
+        poke = po(b["brainEducation"], w16(edu))
+        s = "wait:300," + poke + "".join("wait:1,sync," + pk(SPR5_COLOUR) + pk(SPR0_COLOUR) + poke for _ in range(256))
+        v, _ = b.run(s)
+        seen = [v[2 * k] & 15 for k in range(min(256, len(v) // 2))]
+        cad[edu] = dict(dropout=seen.count(0), white=seen.count(1), other=sorted(set(seen) - {0, 1}), frames=len(seen))
+    rec["cadence"] = cad
+    drops = [cad[e]["dropout"] for e in (0, 8, 33, 96, 300, 1000)]
+    check(all(d > 0 for d in drops), f"the dropout survives every education: {drops} of 256 frames at 0, 8, 33, 96, 300, 1000 lessons")
+    check(drops[0] > drops[1] > drops[2] > drops[3] and drops[3] == drops[4] == drops[5],
+          f"and it gets rarer as he learns, down to a floor: one frame in {[cad[e]['frames'] // cad[e]['dropout'] for e in (0, 8, 33, 96, 300, 1000)]}")
+    check(all(not cad[e]["other"] for e in cad), "with no colour but white and the dropout while he runs on his own")
     json.dump(dict(name=b.name, sha256=b.sha, states=rec,
                    palette={"white": 1, "cyan": 3, "green": 5, "red": 2, "dropout": 0, "human_tony": 15},
-                   design="a pure function of bodyFrames, teachMode and the existing flash counter; only sprites 5 and 6 are written"),
+                   design="a pure function of bodyFrames, teachMode, brainEducation and the existing flash counter;"
+                          " only sprites 5 and 6 are written. Education modulates the dropout's period only: 16, 32,"
+                          " 64, 128 frames, and 128 is a floor - the dropout never goes away."),
               open(os.path.join(outdir, f"visual-{b.name}.json"), "w"), indent=1)
     return ok
+
+# -------------------------------------------------------- the transition effect, and the two fixes (vis3)
+def gate_transit(b, outdir):
+    """THE GUARD FOR THE TRANSITION EFFECT. The redraw between rooms is meant to be seen: while a room
+    change runs the background holds COL_TRANSIT and the fade cannot reach the screen. That works only
+    because the roomChange override is the LAST write to A before "sta c64lib.BG_COL_0" in
+    doEachFrameTop, and nothing in the assembler can enforce it. This gate can, and does."""
+    global ok
+    os.makedirs(outdir, exist_ok=True)
+    print(f"{b.name}: the room-transition effect, both directions")
+    rec = {}
+    def bg_across(chamber, direction, pre=""):
+        s = ("wait:400," + pre + po(b["roomChangeDirection"], [direction]) + po(b["roomChange"], [chamber]) +
+             "".join("wait:1,sync," + pk(0xD021) + pk(b["roomChange"]) + pk(b["bodyOverruns"]) + pk(b["brainThinks"], 2) for _ in range(20)))
+        v, _ = b.run(s)
+        n = min(20, len(v) // 5)
+        return ([v[5 * k] & 15 for k in range(n)], [v[5 * k + 1] for k in range(n)],
+                [v[5 * k + 2] for k in range(n)], [v[5 * k + 3] | v[5 * k + 4] << 8 for k in range(n)])
+    up, rc_up, ov_up, th_up = bg_across(1, 1)
+    down, rc_dn, ov_dn, th_dn = bg_across(0, 2, po(b["roomChangeDirection"], [1]) + po(b["roomChange"], [1]) + "wait:60,")
+    rec["up"] = dict(bg=up, overruns=ov_up, thinks=th_up)
+    rec["down"] = dict(bg=down, overruns=ov_dn, thinks=th_dn)
+    COL_TRANSIT = 11
+    for way, bg, rc in (("up   (0 -> 1)", up, rc_up), ("down (1 -> 0)", down, rc_dn)):
+        held = [c for c, r in zip(bg, rc) if r != 0xff]
+        check(held and set(held) == {COL_TRANSIT},
+              f"{way}: the background holds {COL_TRANSIT} for all {len(held)} frames of the change ({bg})")
+        check(0 not in bg, f"{way}: and never dips to black, so the fade never hides the redraw")
+    # the brain must stay blocked while the room is redrawn: changeRoomIfNeeded holds the main loop
+    for way, th in (("up", th_up), ("down", th_dn)):
+        spent = th[-1] - th[0]
+        rec[f"thinks_{way}"] = spent
+        check(spent <= 6, f"{way}: the brain thought {spent} times across the 20 frames of the change, not the ~5 a free main loop would manage each four frames")
+    check(not any(ov_up) and not any(ov_dn), f"no raster overruns either way: {max(ov_up + ov_dn)}")
+    # and the fades that are NOT room changes must be untouched
+    s = "sync," + "".join("wait:4,sync," + pk(0xD021) + pk(b["roomChange"]) for _ in range(60))
+    v, _ = b.run(s)
+    boot = [v[2 * k] & 15 for k in range(min(60, len(v) // 2))]
+    boot_rc = {v[2 * k + 1] for k in range(min(60, len(v) // 2))}
+    rec["boot"] = boot
+    check(boot_rc == {0xff}, f"level start is not a room change (roomChange stayed $ff), so its own fade is untouched")
+    check(0 in boot and 15 in boot, f"and it still fades: the level-start background goes through black to the room's colour")
+    json.dump(dict(name=b.name, sha256=b.sha, transit_colour=COL_TRANSIT, states=rec,
+                   design="doEachFrameTop pins BG_COL_0 to COL_TRANSIT while roomChange != $ff. It must be the LAST"
+                          " override before the store; this gate fails if a later write or a reordering takes it back."),
+              open(os.path.join(outdir, f"transit-{b.name}.json"), "w"), indent=1)
+    return ok
+
+def gate_crouch(b, outdir):
+    """human/clone parity around the build action. Down with fire lays a brick; the player keeps his
+    crouch while down is held, and before --build-parity the routed clone stood straight back up because
+    teachRoute replaced the whole stick with the verb bit. His published ducking sense read 0 where the
+    same stick on the player's body reads non-zero, and that is what the lesson recorded. The taught
+    action must NOT move: actionOf tests bits 5-6 before any direction, so a build frame is 8 or 9."""
+    global ok
+    os.makedirs(outdir, exist_ok=True)
+    print(f"{b.name}: the build action, human against clone")
+    DUCK = {0x03, 0x83}
+    def hold(pre, addr, extra=()):
+        s = ("wait:400," + pre + "sync,hold:18," +
+             "".join("wait:2,sync," + pk(addr) + "".join(pk(a) for a in extra) for _ in range(24)) +
+             "release:18,wait:6,sync," + pk(addr))
+        v, _ = b.run(s)
+        w = 1 + len(extra)
+        n = (len(v) - 1) // w
+        return [v[w * k] for k in range(n)], [[v[w * k + 1 + i] for k in range(n)] for i in range(len(extra))], v[-1]
+    human, _, human_after = hold("", b["physPlayerState"])
+    clone, extra, clone_after = hold(f"key:{KEY_T}:6,wait:20,", b["cloneState"],
+                                     (b["cloneSenses"] + 7, b["cloneSenses"] + 16, b["cloneJoy"]))
+    duck, last, joy = extra
+    hd = sum(1 for s in human if s in DUCK); cd = sum(1 for s in clone if s in DUCK)
+    check(hd >= 20, f"the player holds his crouch: {hd} of {len(human)} samples ducking while down is held")
+    check(cd >= 20, f"and so does the routed clone: {cd} of {len(clone)} samples ducking (this is the fix)")
+    check(human_after not in DUCK and clone_after not in DUCK, "both stand up when down is let go, and only then")
+    settled = [d for d in duck[2:]]
+    check(all(d > 0 for d in settled), f"his published ducking sense follows his body: nibble 7 = {sorted(set(settled))} while he is crouched")
+    acts = {a for a in last[2:]}
+    check(acts <= {8, 9} and acts, f"and the taught action of a build frame is unchanged: sense 16 = {sorted(acts)} (8 and 9 are build-left and build-right)")
+    check({j for j in joy[2:]} and all(j & 0b100000 for j in joy[2:]) and all(j & 0b10 for j in joy[2:]),
+          f"the clone's stick carries the verb AND the direction: cloneJoy = {sorted({j for j in joy[2:]})}")
+    json.dump(dict(name=b.name, sha256=b.sha, human_states=[f"${s:02X}" for s in human], clone_states=[f"${s:02X}" for s in clone],
+                   ducking_sense=duck, last_action_sense=last, clone_joy=joy,
+                   design="teachRoute ORs the build verb onto the teaching stick instead of substituting for it,"
+                          " matching buildVerb, which passes the player's stick through untouched."),
+              open(os.path.join(outdir, f"crouch-{b.name}.json"), "w"), indent=1)
+    return ok
+
+def gate_roomdata(b, outdir):
+    """the packed level data must survive play. muralBatsStamp patches its six parameter stores from the
+    room's static-object array pointers and writes through them whether the room has objects or not; a
+    room with none has ZERO-LENGTH arrays, and for chamber 0 of this two-room level every one of those
+    pointers is the address of chamber 1's compressed map. Two map bytes were being overwritten at level
+    start, which is the "75" that appeared in the room above's top-left corner."""
+    global ok
+    os.makedirs(outdir, exist_ok=True)
+    print(f"{b.name}: the packed level data, after a round trip through both rooms")
+    prg = open(b.prg, "rb").read(); load = prg[0] | prg[1] << 8
+    v, _ = b.run("wait:400,sync," + pk(b["level_roomPtr"], 2) + pk(b["level_roomPtr"] + 2, 2) +
+                 pk(b["level_objectControlPtr"], 2) + pk(b["level_objectControlPtr"] + 2, 2) + pk(b["level_objectSizes"], 2))
+    rooms = [v[0] | v[2] << 8, v[1] | v[3] << 8]
+    objs = [v[4] | v[6] << 8, v[5] | v[7] << 8]
+    sizes = [v[8], v[9]]
+    print(f"  rooms at ${rooms[0]:04X} ${rooms[1]:04X}; object arrays at ${objs[0]:04X} ${objs[1]:04X}; sizes {sizes}")
+    check(sizes == [0, 0] and objs[0] == rooms[1],
+          f"the shape that causes it is still here: chamber 0 has no static objects and its arrays alias chamber 1's map at ${rooms[1]:04X}")
+    dump = os.path.join(outdir, f"roomdata-{b.name}.bin")
+    b.run("wait:400," + po(b["roomChangeDirection"], [1]) + po(b["roomChange"], [1]) + "wait:40," +
+          po(b["roomChangeDirection"], [2]) + po(b["roomChange"], [0]) + f"wait:40,sync,dump:{rooms[1]:X}:20:{dump},")
+    now = open(dump, "rb").read(); want = prg[2 + rooms[1] - load:2 + rooms[1] - load + 32]
+    bad = [i for i in range(min(len(now), len(want))) if now[i] != want[i]]
+    check(not bad, f"chamber 1's packed map is byte-identical to the load image after both transitions"
+                   + (f"; differs at {bad}: " + " ".join(f"${want[i]:02X}->${now[i]:02X}" for i in bad) if bad else ""))
+    # both rooms pack the same build-room.bin and decode the same charset, so their ceiling must agree.
+    # These are the DRAWN codes, after translateRoom, not the map bytes: before the guard the room above
+    # showed $2A $28 here (the map's damaged $08 $06 translated) where the room below shows $06 $09.
+    v, _ = b.run("wait:400,sync," + pk(0xC000, 2) + po(b["roomChangeDirection"], [1]) + po(b["roomChange"], [1]) +
+                 "wait:40,sync," + pk(0xC000, 2))
+    below, above = v[0:2], v[2:4]
+    check(above == below,
+          f"and the two rooms draw the same ceiling: below ${below[0]:02X} ${below[1]:02X}, above ${above[0]:02X} ${above[1]:02X}"
+          f" (the map's ${want[0]:02X} ${want[1]:02X} through the room charset)")
+    json.dump(dict(name=b.name, sha256=b.sha, room_ptrs=[f"${a:04X}" for a in rooms], object_ptrs=[f"${a:04X}" for a in objs],
+                   object_sizes=sizes, intact=not bad,
+                   design="muralBatsStamp sends its parameter stores to a sink byte when the room carries no static objects."),
+              open(os.path.join(outdir, f"roomdata-{b.name}.json"), "w"), indent=1)
+    return ok
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "transit": sys.exit(0 if gate_transit(Build(sys.argv[2]), OUT) else 1)
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "crouch": sys.exit(0 if gate_crouch(Build(sys.argv[2]), OUT) else 1)
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "roomdata": sys.exit(0 if gate_roomdata(Build(sys.argv[2]), OUT) else 1)
 
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "visual": sys.exit(0 if gate_visual(Build(sys.argv[2]), OUT) else 1)

@@ -440,9 +440,25 @@ VISUAL_COLOUR_ASM = """    lda cloneFlash                  // vis1: a lesson eve
             lda #COL_TEACH
             jmp haveColour
     idleGlitch:
-        lda bodyFrames              // the dropout runs in both states: one frame in thirty-two
-        and #31
-        cmp #16
+        lda brainEducation + 1      // vis3: the trained state. Education changes ONE thing - how often the
+        bne steadiest               // dropout comes - and nothing else: not the colour, not the duration.
+        lda brainEducation          // An untaught clone flickers; every lesson steadies the image a little.
+        ldx #15                     // nothing taught yet: one frame in sixteen, the least steady he gets
+        cmp #8
+        bcc haveCadence
+        ldx #31                     // a few lessons in
+        cmp #32
+        bcc haveCadence
+        ldx #63                     // taught enough to be worth watching
+        cmp #96
+        bcc haveCadence
+        steadiest:
+        ldx #127                    // the floor, and it is a floor: one frame in a hundred and twenty-eight.
+        haveCadence:                // However much he learns the dropout never goes away - he is still a copy.
+        stx cadence                 // the period as a mask, patched into the immediate below (decodeRoom's
+        lda bodyFrames              // own comparePrt idiom), so the state language costs no extra byte
+        and cadence:#31
+        cmp #8
         bne whiteNow
             lda #COL_DROPOUT
             jmp haveColour
@@ -459,6 +475,40 @@ VISUAL_LABELS_ASM = """
 .label COL_ACCEPT  = 5              // green
 .label COL_REFUSE  = 2              // red
 .label COL_DROPOUT = 0              // black, for one frame
+
+// vis3: the room's own colour while a room change is running. See ROOM_TRANSIT_ASM: this is the one
+// byte that decides whether the redraw between rooms is watched or hidden.
+.label COL_TRANSIT = 11             // dark grey
+"""
+
+
+# ------------------------------------------------------- the transition effect (vis3)
+# The room change was always this: write the new chamber number, fade out, redraw, reposition Tony,
+# fade in. The redraw (drawPlayfieldFading) writes straight into the live screen at $C000 with the
+# display never blanked and no raster sync, so for eight frames the raster catches the room being
+# rebuilt - first in raw untranslated map codes, then stamped over by the wall, then translated back
+# into real characters. What hid it was the fade: playboardFadeOut walks currentColor down to black
+# and doEachFrameTop copies currentColor into BG_COL_0 every frame, so the screen went dark for
+# exactly those frames. vis1 pinned the room above to dark grey, which outranked the fade and left
+# the redraw in plain sight one way only. The owner asked for it both ways and on purpose.
+#
+# So: while a room change is running, the background holds COL_TRANSIT and the fade is a no-op.
+# Nothing else changes. The brain still cannot think during the redraw - changeRoomIfNeeded blocks
+# the main loop, and bodyThink is called from it - and the death, game-over and level-start fades
+# are untouched, because roomChange is $ff for all of them (initRoom sets it, checkForRoomChange is
+# the only routine that ever sets a real room number).
+#
+# LOAD-BEARING, AND SILENTLY BREAKABLE. The effect exists only because this override is the LAST
+# write to A before "sta c64lib.BG_COL_0". Anything inserted after it, or any reordering of the
+# colour chain above, removes the effect with no error and no visible difference outside a room
+# change. brain025_test.py's "transit" gate measures BG_COL_0 across a transition in both
+# directions and fails if the background dips instead of holding: that gate, not this comment, is
+# what keeps the effect alive.
+ROOM_TRANSIT_ASM = """    ldy roomChange              // vis3: THE TRANSITION EFFECT, and it must stay last in this chain.
+    iny                         // roomChange is $ff unless a room change is running: $ff + 1 sets Z.
+    beq !+                      // While one is running the room holds its own colour, the fade cannot
+        lda #COL_TRANSIT        // reach the screen, and the redraw is watched rather than hidden.
+    !:
 """
 
 
@@ -701,6 +751,7 @@ def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, sp
         sub1("    ldy muralDim                // no candle: the stone in medium grey\n    beq !+\n        lda #12\n    !:\n    sta c64lib.BG_COL_0\n",
              "    ldy muralDim                // no candle: the stone in medium grey\n    beq !+\n        lda #12\n    !:\n"
              "    ldy currentChamberNumber    // vis1: the room above is darker stone, the blackout's own grey\n    beq !+\n        lda #11\n    !:\n"
+             + ROOM_TRANSIT_ASM +
              "    sta c64lib.BG_COL_0\n")
     sub1("        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n",
          "        jsr teachKey                // BRAIN02.5: the teaching toggle, its own key\n        jsr terrainTest             // and the probe's own cost, when a test asks for it\n        jsr bodySensePack           // the body: the clone's senses, packed from the last frame's raw values\n")

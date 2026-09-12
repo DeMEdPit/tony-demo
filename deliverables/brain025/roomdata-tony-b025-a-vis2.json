@@ -1,0 +1,18 @@
+{
+ "name": "tony-b025-a-vis2",
+ "sha256": "117559716a3f529d35a887bac8f7e620adf250bbd3841d58edf10f837a614958",
+ "room_ptrs": [
+  "$53AD",
+  "$55BF"
+ ],
+ "object_ptrs": [
+  "$55BF",
+  "$57D1"
+ ],
+ "object_sizes": [
+  0,
+  0
+ ],
+ "intact": false,
+ "design": "muralBatsStamp sends its parameter stores to a sink byte when the room carries no static objects."
+}

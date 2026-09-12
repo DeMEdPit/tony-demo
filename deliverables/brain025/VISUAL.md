@@ -1,6 +1,11 @@
 # BRAIN02.5 vis1 and vis2: the clone's visual state language, and the rooms
 
-**vis2 is the current revision.** It keeps everything vis1 did, makes the cyan of teaching a sprinkle
+> **vis3 supersedes this.** See [VIS3.md](VIS3.md): the room transition became a deliberate effect in
+> both directions, `brainEducation` now modulates how often the clone's dropout comes, and two real
+> defects were traced and fixed - the routed clone standing up out of his crouch mid-lesson, and a
+> write that was landing on the upper room's packed map. This file remains the record of vis1 and vis2.
+
+**vis2 was the current revision through this file.** It keeps everything vis1 did, makes the cyan of teaching a sprinkle
 rather than a pulse, thins the lower room's back wall to the bricks the candle lights, and makes the
 room above bare and darker.
 

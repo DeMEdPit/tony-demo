@@ -1271,3 +1271,36 @@ above the head row was not consequential on its own; and the machine did not hol
 Everything is in `deliverables/brain025/`. The 300-lesson human brain is not in this repository, so the
 one deliverable that needs it stays outstanding with the command and the expected result written down.
 This is a research build: not a production architecture, nothing deployed, nothing merged over BRAIN02.
+
+## E29: vis3 - the transition effect, the trained state, and two defects found on the way
+
+Four changes to the BRAIN02.5 playable candidate, in the order the owner asked for them. Written up in
+`deliverables/brain025/VIS3.md`; the PRG is `tony-b025-a-vis3.prg`, 52,098 bytes, sha256
+`41af4d661d3019cb7582f5f2072f5f40abe37599009fc8331ff4294335e66717`. The frozen research artifact and
+both earlier visual candidates are untouched and still regenerate from the generator byte for byte.
+
+**The room transition is now an effect on purpose.** The redraw between rooms was always visible for
+eight frames - the room being rebuilt in raw map codes, stamped over, then translated - and what hid it
+was the fade dipping the background to black. vis1's dark room above outranked that fade by accident,
+one way only. It is now deliberate in both directions, gated on `roomChange` so the death, game-over and
+level-start fades are provably untouched, and held by a `transit` gate that fails on vis2.
+
+**Two defects were found by measuring rather than by looking.** The routed clone stood back up out of
+his crouch while down was still held, because `teachRoute` substituted the build verb for the whole
+stick where the player's own `buildVerb` adds it - and his published `ducking` sense, input 5 of the
+network, recorded 0 for a pose the player's body reports. The taught action was provably unaffected
+(`actionOf` reads bits 5-6 first, so a build frame is 8 or 9 either way), so this was a fidelity defect
+in the observation only. Separately, the "75" in the upper room's corner turned out not to be level data
+at all: `muralBatsStamp` writes its parameters through the room's static-object array pointers, and a
+room with no objects has zero-length arrays whose pointer is simply the next label - which for chamber 0
+is chamber 1's compressed map. Two bytes of level data were being overwritten at every level start.
+
+**The clone's trained state is legible without a new signal.** `brainEducation` modulates one thing: how
+often the white dropout comes - one frame in 16 untaught, then 32, 64, and 128 as a floor it never
+passes. An untaught copy flickers, a taught one is steady, and it never stops flickering entirely.
+
+Fifteen gates pass, 80 checks, no failures. Two existing gates had to change and both changes are
+recorded rather than quietly made: `visual`'s dropout expectation moved with the behaviour, and
+`drain`'s acknowledgement handshake was given six frames instead of two after it scored a refusal the
+machine had never made. A third hazard was closed: `gate_session` was overwriting the hash-pinned
+canonical replay session with a recording from whatever build it was handed.

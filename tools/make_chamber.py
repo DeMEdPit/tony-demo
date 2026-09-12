@@ -85,6 +85,16 @@ BRAIN02 = None             # --brain02 R0|R1b|R0s|R1s|p128: the research brain i
 VOCAB = "rel"              # --vocab rel|abs: the action vocabulary byte of a --brain02 or --brain025 build
 BRAIN025 = False           # --brain025: the terrain-observability brain (tools/brain025_asm.py); 80 inputs, 27 senses
 BRAIN025_VIS = False       # --brain025-visual: the clone's visual state language (vis1); presentation only
+BAT_STAMP_GUARD = False    # --bat-stamp-guard: muralBatsStamp writes the bats' parameters into the room's
+                           #   static-object arrays. A room with no static objects has ZERO-LENGTH arrays, so
+                           #   every one of those pointers aliases the next label in the image - which here is
+                           #   room 1's compressed map - and six bytes of level data are overwritten at level
+                           #   start. Only --body builds hit it (their rooms carry no bats); tony-build.prg and
+                           #   tony-chamber.prg have real object lists and are unaffected either way. Off by
+                           #   default: the research PRGs are hash-pinned on the unguarded routine.
+BUILD_PARITY = False       # --build-parity: teachRoute adds the build verb to the teaching stick instead of
+                           #   substituting for it, so the routed clone holds his crouch exactly as the player's
+                           #   own body does. Off by default: the research PRGs are hash-pinned on the old path.
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -100,6 +110,8 @@ while _args:
     elif _flag == "--brain02": BRAIN02 = _args.pop(0); assert BRAIN02 in ("R0", "R1b", "R0s", "R1s", "p128")
     elif _flag == "--brain025": BRAIN025 = True
     elif _flag == "--brain025-visual": BRAIN025 = True; BRAIN025_VIS = True
+    elif _flag == "--build-parity": BUILD_PARITY = True
+    elif _flag == "--bat-stamp-guard": BAT_STAMP_GUARD = True
     elif _flag == "--vocab": VOCAB = _args.pop(0); assert VOCAB in ("rel", "abs")
     else: raise SystemExit("unknown option " + _flag)
 assert BUILD_DEMO or not BODY, "--body needs --build-demo"
@@ -3685,6 +3697,46 @@ def body(src):
     j = src.index("\n}\n", src.index("buildColumnWall: {", i)) + 3
     src = src[:i] + src[j:]
     src = sub(src, ".segment Movable\n", BODY_CODE_ASM + "\n.segment Movable\n")
+    if BUILD_PARITY:
+        # The build verb, for the player, is ADDITIVE: buildVerb acts on the chord and hands the stick on
+        # to dispatchPlayerCommand untouched, so down stays pressed and he holds the crouch he took. For the
+        # routed clone it was SUBSTITUTIVE: teachRoute replaced the whole byte with the verb bit, so bits 0-4
+        # reached dispatchPlayerCommand empty and he stood straight back up while down was still held. His
+        # published ducking sense (nibble 7) then read 0 where the same stick on the player's body reads 1,
+        # and that is what the lesson recorded. Adding the verb to the stick instead of replacing it puts the
+        # two bodies on the same rule. actionOf tests bits 5 and 6 before it looks at any direction, so the
+        # taught action of a build frame is 8 or 9 either way: the action vocabulary and byte 14 do not move.
+        src = sub(src, """    and #%00010010                      // fire with down: the lay
+    cmp #%00010010
+    bne !+
+        lda #%00100000
+        sta byte
+        jmp have
+    !:
+    lda byte
+    and #%00010001                      // fire with up: the step up
+    cmp #%00010001
+    bne have
+        lda #%01000000
+        sta byte
+    have:
+""", """    and #%00010010                      // fire with down: the lay
+    cmp #%00010010
+    bne !+
+        lda byte                        // --build-parity: the verb is ADDED to the stick, never substituted
+        ora #%00100000                  // for it, so the clone holds his crouch while down is held, exactly
+        sta byte                        // as the player's own body does (buildVerb passes the stick through).
+        jmp have                        // actionOf reads bits 5-6 first: the taught action is still 8 or 9.
+    !:
+    lda byte
+    and #%00010001                      // fire with up: the step up
+    cmp #%00010001
+    bne have
+        lda byte                        // --build-parity: likewise, up survives the step-up verb
+        ora #%01000000
+        sta byte
+    have:
+""")
     if BRAIN02:
         exec(open("tools/brain02_asm.py").read(), globals())
         src = brain02_apply(src, BRAIN02, VOCAB)
@@ -4163,6 +4215,41 @@ muralRowB1: .lohifill 10, SCREEN_MEM_0 + (3 + 2*i)*40 + 6
 
 nextColorScheme: {"""
 MURAL = MURAL.replace("lda #{GLITCH_INK}", f"lda #{GLITCH_INK}")   # the Glitch's digit ink, an option
+if BAT_STAMP_GUARD:
+    # muralBatsStamp patches its six parameter stores from the room's static-object array pointers and then
+    # writes through them whether the room has any objects or not. _level_pack emits those arrays with
+    # ".fill <size>, ..." - so a room with no static objects gets a zero-length array, and its pointer is the
+    # address of whatever label follows. For chamber 0 of the two-room build demo that label is chamber 1's
+    # compressed map, so the stamp puts two bat bytes over the first two map bytes at level start and every
+    # later draw of the room above decompresses the damaged stream. That is the "75" in its top-left corner:
+    # $31 $32 in the packed room become $08 $06 in RAM, which the room's charset translates to $2A $28.
+    # With no objects there is no bat to carry the parameters, so the stores have no reader: send them to a
+    # sink byte. muralBats and the level_roomStates presence masking below are left exactly as they were.
+    MURAL = MURAL.replace("""    // the left bat: path seed[24] & 7, column 2 + (seed[24] >> 3 & 7), row 2 + (seed[25] & 7)
+    ldy #0
+""", """    lda level_objectSizes           // --bat-stamp-guard: a room with no static objects has zero-length
+    bne haveObjects                 // object arrays, and their pointers alias the next label in the image -
+        lda #<batSink               // for chamber 0 here, chamber 1's packed map. The six stores below have
+        ldy #>batSink               // no reader without a bat, so they go to a sink byte instead of over
+        sta writeX                  // level data. Nothing else in the routine changes.
+        sta writeY
+        sta writeV
+        sta writeX2
+        sta writeY2
+        sta writeV2
+        sty writeX + 1
+        sty writeY + 1
+        sty writeV + 1
+        sty writeX2 + 1
+        sty writeY2 + 1
+        sty writeV2 + 1
+    haveObjects:
+    // the left bat: path seed[24] & 7, column 2 + (seed[24] >> 3 & 7), row 2 + (seed[25] & 7)
+    ldy #0
+""")
+    MURAL = MURAL.replace("    colB: .byte 24, 25, 26, 27, 28, 29, 26, 28\n",
+                          "    colB: .byte 24, 25, 26, 27, 28, 29, 26, 28\n"
+                          "    batSink: .byte 0            // --bat-stamp-guard: where a bat-less room's parameters go\n")
 MURAL = MURAL.replace("{DIM_CANDLE}", ("    bne !+\n        lda #1                      // no candle: remembered for the dim room\n"
                                        "        sta muralDim\n        jmp candleDone\n    !:\n") if DIM_NO_CANDLE else "    beq candleDone\n")
 src = sub(src, "nextColorScheme: {", MURAL)
