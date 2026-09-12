@@ -630,6 +630,71 @@ def gate_resources(b, outdir):
 
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "resources": sys.exit(0 if gate_resources(Build(sys.argv[2]), OUT) else 1)
 
+# --------------------------------------------------------- the world materials, for the descriptor
+def _world_block(b, S):
+    """Where the screen-code-to-semantics table is, what its bytes mean, and why the LIVE one is the
+    only one a host may trust. The table is not moved for the descriptor's benefit; this only says
+    where it already is. The live buffer is read from the machine so the numbers are measured."""
+    MAXC = S["MAX_BG_CHARS"]
+    src = os.path.join(ROOT, "src/level-custom/chamber-materials.bin")
+    src_bytes = open(src, "rb").read() if os.path.exists(src) else b""
+    live = {}
+    with tempfile.TemporaryDirectory() as d:
+        for chamber, direction in ((0, None), (1, 1)):
+            pre = "" if direction is None else po(S["roomChangeDirection"], [direction]) + po(S["roomChange"], [chamber]) + "wait:40,"
+            b.run(f"wait:400,{pre}sync,dump:{S['roomMaterialsBuffer']:X}:100:{d}/m{chamber}.bin,"
+                  f"dump:{S['roomCharsDecodingBuffer']:X}:100:{d}/c{chamber}.bin,")
+            raw = open(f"{d}/m{chamber}.bin", "rb").read()[:MAXC]
+            live[chamber] = dict(sha256=hashlib.sha256(raw).hexdigest(),
+                                 histogram={f"0x{k:02X}": sum(1 for x in raw if x == k) for k in sorted(set(raw))})
+    return dict(
+        note="the host captures the screen matrix; this says how to turn a drawn screen code into terrain"
+             " semantics. Nothing here was moved or renamed for the descriptor - these are the addresses the"
+             " engine already uses.",
+        materials_live=dict(
+            address=S["roomMaterialsBuffer"], length=MAXC, stride=1,
+            index="the DRAWN screen code, exactly as it appears in the screen matrix after translateRoom",
+            rebuilt="per room, by decodeRoom, and then patched at run time",
+            read_this_one="yes - this is the table the engine's own collision code reads",
+            measured=live,
+            why_not_derivable="the source table cannot be remapped into this one by the host: decodeRoom keys"
+                              " it by the room's used-character list, and the build demo then patches the"
+                              " codes it owns. On this build four entries differ that way - drawn codes 0x50"
+                              " to 0x53, the four cells of a brick the player or the clone has laid, which are"
+                              " WALL in the live table and which no original character code maps to at all."),
+        materials_source=dict(
+            address=S["materials"], length=len(src_bytes),
+            index="the ORIGINAL character code, before decodeRoom remaps it",
+            file="src/level-custom/chamber-materials.bin",
+            sha256=hashlib.sha256(src_bytes).hexdigest(),
+            stable="yes - this one is part of the load image, so the hash is stable for the build"),
+        char_decode=dict(address=S["roomCharsDecodingBuffer"], length=256,
+                         meaning="original character code -> drawn screen code; rebuilt per room by decodeRoom"),
+        row_table=dict(address=S["chamberLines"], rows=25,
+                       layout="lohifill: 25 low bytes at the address, then 25 high bytes",
+                       meaning="the screen address of the first cell of each character row"),
+        semantics=dict(
+            kind="a bitfield, one byte per character",
+            bits={f"0x{S['BG_CLSN_WALL']:02X}": "WALL - solid; the box and the feet both collide",
+                  f"0x{S['BG_CLSN_LADDER']:02X}": "LADDER - climbable",
+                  f"0x{S['BG_CLSN_KILLING']:02X}": "KILLING - deadly on contact",
+                  f"0x{S['BG_CLSN_COLLECTIBLE']:02X}": "COLLECTIBLE - a pickup, not terrain"},
+            none=f"0x{S['BG_CLSN_NONE']:02X} - no material; decoration, and NOT terrain",
+            masks={f"0x{S['BG_CLSN_FLOOR_MASK']:02X}": "FLOOR_MASK - what counts underfoot",
+                   f"0x{S['BG_CLSN_FAR_MASK']:02X}": "FAR_MASK - wall or ladder, for the far column",
+                   f"0x{S['BG_CLSN_BOX_MASK']:02X}": "BOX_MASK - what the body box reports",
+                   f"0x{S['BG_CLSN_BOX_NK_MASK']:02X}": "BOX_NK_MASK - the same without the killing bit",
+                   f"0x{S['BG_CLSN_OBJ_MASK']:02X}": "OBJ_MASK - object rather than terrain"}),
+        in_this_level=dict(
+            values_present="only 0x00, 0x01 and 0x02 occur in the live table on this build",
+            deadly="KILLING (0x04) is in the schema and in the source table, but none of the characters"
+                   " carrying it are in this room's used-character list, so no cell of this level is deadly",
+            collectible="COLLECTIBLE (0x40) likewise does not occur: the candle is drawn but this build's"
+                        " rooms carry no static objects, so the object-materials pass has nothing to patch",
+            mural="the seeded back wall's bricks are material 0x00 - verified on the machine, not assumed -"
+                  " so the terrain probe, the senses and the brain cannot see any of them",
+            chambers="both chambers produce the same live table, because they share one used-character list"))
+
 # --------------------------------------------------------------------------- the workbench descriptor
 def descriptor(b, commit):
     """a machine-readable descriptor of the BRAIN02.5 study build, in the shape BRAIN02's descriptor has,
@@ -711,6 +776,7 @@ def descriptor(b, commit):
                         test_output=S["brainTestOutput"], test_action=S["brainTestAction"], test_h=S["brainTestH"], learn_run=S["brainLearnRun"], learn_t=S["brainLearnTestT"],
                         learn_p=S["brainLearnTestP"], learn_took=S["brainLearnTestTook"], terrain_test_run=S["terrainTestRun"],
                         note="research only: the hooks run the machine's own retina, forward pass, rule and terrain probe on supplied inputs"),
+        world=_world_block(b, S),
         access=dict(observation="everything above may be read at any time; read write_seq before and after a read of the weights to know no lesson intervened",
                     research_control=dict(teach_mode="0/1, the same as the key", ack_fields="ack_seq, ack_sum, ack_request", capacity="may be lowered at boot before any lesson",
                                           slot="the whole slot may be written at boot to load a saved brain", test_hooks="research only"),
