@@ -653,11 +653,23 @@ def descriptor(b, commit):
                   predicted_at_lesson=S["brainPredicted"], lesson_taken=S["brainLearned"], kind_now=S["brainKindNow"], think_count=S["brainThinks"], accumulators=S["brainAcc"],
                   score_gap=S["brainGap"], think_input=S["brainIn"], clone_x=S["cloneX"], clone_y=S["cloneY"], clone_state=S["cloneState"],
                   player_x=S["physPlayerX"], player_y=S["physPlayerY"], player_state=S["physPlayerState"], bricks=S["buildCount"],
-                  flash_frames=S["cloneFlash"], flash_colour=S["cloneFlashColour"], flash_colours={1: "white: a lesson", 2: "red: a lesson refused, the ring is full"},
+                  flash_frames=S["cloneFlash"], flash_colour=S["cloneFlashColour"],
+                  flash_colours=({5: "green: a lesson was accepted", 2: "red: a lesson was refused, the ring is full"} if "COL_CLONE" in S
+                                 else {1: "white: a lesson", 2: "red: a lesson refused, the ring is full"}),
                   teach_mode=S["teachMode"], teach_key="T (keyboard matrix row 2, column bit 6); the toggle acts on the press edge",
                   teach_key_edges=S["teachKeyEdges"], teach_key_state=S["teachKeyWas"],
                   shadow_request=S["shadowRequest"], shadow_restore_request=S["shadowRestoreRequest"], shadow_valid=S["shadowValid"], shadow_at=S["TEACH_SHADOW"], shadow_bytes=10 * n,
                   raster_max=S["bodyRasterMax"], overruns=S.get("bodyOverruns"), frames=S["bodyFrames"], spawn=dict(x=72, columns=[7, 8], note="the study spawn, by the far left pillar, clear of the ladder at columns 33-34")),
+        visual=(dict(revision="vis1", scope="presentation only",
+                     clone_sprites=[5, 6], clone_colour_registers=[0xD02C, 0xD02D], backdrop_sprite=7,
+                     human_tony="untouched: sprites 0, 1, 3 and 4 stay light grey (15)",
+                     palette=dict(identity=1, teaching=3, accepted=5, refused=2, dropout=0),
+                     grammar=["a lesson event outranks everything: the six-frame flash is green when one was accepted and red when one was refused",
+                              "teaching: a slow cyan pulse over white, six frames of every sixteen",
+                              "otherwise: white, dropping out to black for one frame in thirty-two",
+                              "leaving teaching returns to white and the dropout with nothing left over"],
+                     determinism="a pure function of bodyFrames, teachMode and the existing flash counter; no new mutable state, no random draw, and only the clone's own two sprite colour registers are written, so nothing here reaches the senses, the brain, the body, the lesson record or a replay")
+                if "COL_CLONE" in S else None),
         profiler=dict(think=S["profThink"], think_max=S["profThinkMax"], lesson=S["profLesson"], lesson_max=S["profLessonMax"], shadow=S["profShadow"], shadow_max=S["profShadowMax"],
                       drain=S["profDrain"], drain_max=S["profDrainMax"], think_pure=S["profThinkPure"], think_pure_max=S["profThinkPureMax"],
                       lesson_pure=S["profLessonPure"], lesson_pure_max=S["profLessonPureMax"], terrain=S["profTerrain"], terrain_max=S["profTerrainMax"],
@@ -763,3 +775,70 @@ def gate_session(b, outdir):
     return ok
 
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "session": sys.exit(0 if gate_session(Build(sys.argv[2]), OUT) else 1)
+
+# ------------------------------------------------------------------- the visual state language (vis1)
+SPR5_COLOUR, SPR0_COLOUR = 0xD02C, 0xD027       # the clone's own sprite colour, and the human Tony's
+COLNAME = {0: "black", 1: "white", 2: "red", 3: "cyan", 5: "green", 15: "light grey"}
+
+def _frames_of_colour(b, prefix, frames):
+    """the clone's sprite colour and the human's, one sample a frame"""
+    s = prefix + "".join("wait:1,sync," + pk(SPR5_COLOUR) + pk(SPR0_COLOUR) for _ in range(frames))
+    v, out = b.run(s)
+    return [(v[2 * k] & 15, v[2 * k + 1] & 15) for k in range(min(frames, len(v) // 2))]
+
+def _hist(samples): 
+    h = {}
+    for c, _ in samples: h[c] = h.get(c, 0) + 1
+    return h
+def _show(h, n): return ", ".join(f"{COLNAME.get(c, c)} {v}/{n}" for c, v in sorted(h.items(), key=lambda kv: -kv[1]))
+
+def gate_visual(b, outdir):
+    """what the clone actually wears, frame by frame, in each of the five states. Presentation only, so
+    what is checked is the colour register and that nothing else moved."""
+    global ok
+    os.makedirs(outdir, exist_ok=True)
+    print(f"{b.name}: the clone's visual state language")
+    rec = {}
+    # 1. idle: white, dropping out to black one frame in thirty-two
+    idle = _frames_of_colour(b, "wait:300,", 64); h = _hist(idle)
+    human = {c for _, c in idle}
+    rec["idle"] = h
+    check(h.get(1, 0) >= 58 and h.get(0, 0) in (2, 3) and set(h) <= {0, 1},
+          f"idle: {_show(h, len(idle))} over 64 frames, and nothing else")
+    check(human == {15}, f"and the human Tony stays light grey throughout: {sorted(human)}")
+    # 2. TEACH on: a slow cyan pulse over white
+    on = _frames_of_colour(b, f"wait:300,key:{KEY_T}:6,wait:6,", 48); h = _hist(on)
+    rec["teach_on"] = h
+    cyan = h.get(3, 0)
+    check(0.25 * len(on) <= cyan <= 0.45 * len(on) and h.get(1, 0) > 0 and not (set(h) - {1, 3}),
+          f"TEACH on: {_show(h, len(on))}, so the pulse is cyan for about three eighths of the time and white the rest")
+    check({c for _, c in on} == {15}, "and the human Tony is untouched while teaching")
+    # 3. an accepted lesson: a brief green flash
+    m = Machine(b); m.do(f"wait:300,key:{KEY_T}:6,wait:6,hold:8")
+    seen = []
+    for _ in range(30): seen.append(m.do("wait:1,sync," + pk(SPR5_COLOUR) + pk(b["brainEducation"], 2))[0] & 15)
+    m.do("release:8"); edu = m.do("sync," + pk(b["brainEducation"], 2)); m.close()
+    green = seen.count(5); rec["accepted"] = dict(green_frames=green, education=edu[0] | edu[1] << 8, seen=seen)
+    check(green >= 4 and (edu[0] | edu[1] << 8) > 0, f"an accepted lesson flashes green for {green} frames (education {edu[0] | edu[1] << 8}); the flash is 6 frames long by design")
+    # 4. a refused lesson: red, and never green
+    m = Machine(b); m.do(SETUP_WALK + po(b["lessonCap"], w16(6)) + f"poke:{b['brainKind']:X}:01,poke:{b['teachMode']:X}:01,wait:1")
+    drv = cu.PortDriver(m); chatter_frames(m, b, drv, 160)
+    st = ring_state(m, b)
+    reds = []
+    for _ in range(40): reds.append(m.do("wait:1,sync," + pk(SPR5_COLOUR))[0] & 15)
+    fc = m.do("sync," + pk(b["cloneFlashColour"]))[0]; m.close()
+    rec["refused"] = dict(ring_full=bool(st["status"] & 1), flash_colour=fc, red_frames=reds.count(2), green_frames=reds.count(5), seen=reds)
+    check((st["status"] & 1) and fc == 2 and reds.count(2) > 0 and reds.count(5) == 0,
+          f"with the ring full (status ${st['status']:02x}) a refused lesson flashes red on {reds.count(2)} of 40 frames and never green")
+    # 5. leaving TEACH: back to white and the dropout, with no cyan left over
+    off = _frames_of_colour(b, f"wait:300,key:{KEY_T}:6,wait:30,key:{KEY_T}:6,wait:20,", 64); h = _hist(off)
+    rec["teach_off"] = h
+    check(h.get(3, 0) == 0 and h.get(1, 0) >= 58 and set(h) <= {0, 1},
+          f"TEACH off: {_show(h, len(off))}, no cyan and no flash left behind")
+    json.dump(dict(name=b.name, sha256=b.sha, states=rec,
+                   palette={"white": 1, "cyan": 3, "green": 5, "red": 2, "dropout": 0, "human_tony": 15},
+                   design="a pure function of bodyFrames, teachMode and the existing flash counter; only sprites 5 and 6 are written"),
+              open(os.path.join(outdir, f"visual-{b.name}.json"), "w"), indent=1)
+    return ok
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "visual": sys.exit(0 if gate_visual(Build(sys.argv[2]), OUT) else 1)

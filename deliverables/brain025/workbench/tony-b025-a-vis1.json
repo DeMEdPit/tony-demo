@@ -1,7 +1,7 @@
 {
  "schema": "tony-brain025-descriptor/1",
- "filename": "tony-b025-a.prg",
- "sha256": "2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423",
+ "filename": "tony-b025-a-vis1.prg",
+ "sha256": "4e22961ef55a5e29a80bdf65f8773301ced5e68904fc5417108bb543f1a7a708",
  "prg_size": 52092,
  "engine_commit": "cc06dbfbcde42babcf4c88187c3a44531e009c04",
  "study": "BRAIN02.5: BRAIN02's learner with seven local terrain quantities added to the sensed state and sixteen inputs appended at 64..79",
@@ -218,8 +218,8 @@
   "flash_frames": 33362,
   "flash_colour": 33363,
   "flash_colours": {
-   "1": "white: a lesson",
-   "2": "red: a lesson refused, the ring is full"
+   "5": "green: a lesson was accepted",
+   "2": "red: a lesson was refused, the ring is full"
   },
   "teach_mode": 33342,
   "teach_key": "T (keyboard matrix row 2, column bit 6); the toggle acts on the press edge",
@@ -242,7 +242,34 @@
    "note": "the study spawn, by the far left pillar, clear of the ladder at columns 33-34"
   }
  },
- "visual": null,
+ "visual": {
+  "revision": "vis1",
+  "scope": "presentation only",
+  "clone_sprites": [
+   5,
+   6
+  ],
+  "clone_colour_registers": [
+   53292,
+   53293
+  ],
+  "backdrop_sprite": 7,
+  "human_tony": "untouched: sprites 0, 1, 3 and 4 stay light grey (15)",
+  "palette": {
+   "identity": 1,
+   "teaching": 3,
+   "accepted": 5,
+   "refused": 2,
+   "dropout": 0
+  },
+  "grammar": [
+   "a lesson event outranks everything: the six-frame flash is green when one was accepted and red when one was refused",
+   "teaching: a slow cyan pulse over white, six frames of every sixteen",
+   "otherwise: white, dropping out to black for one frame in thirty-two",
+   "leaving teaching returns to white and the dropout with nothing left over"
+  ],
+  "determinism": "a pure function of bodyFrames, teachMode and the existing flash counter; no new mutable state, no random draw, and only the clone's own two sprite colour registers are written, so nothing here reaches the senses, the brain, the body, the lesson record or a replay"
+ },
  "profiler": {
   "think": 31463,
   "think_max": 31465,

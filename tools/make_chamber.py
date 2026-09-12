@@ -84,6 +84,7 @@ BRAIN_KIND = None          # --brain-kind: the slot's kind byte as assembled (to
 BRAIN02 = None             # --brain02 R0|R1b|R0s|R1s|p128: the research brain in place of BRAIN01 (tools/brain02_asm.py)
 VOCAB = "rel"              # --vocab rel|abs: the action vocabulary byte of a --brain02 or --brain025 build
 BRAIN025 = False           # --brain025: the terrain-observability brain (tools/brain025_asm.py); 80 inputs, 27 senses
+BRAIN025_VIS = False       # --brain025-visual: the clone's visual state language (vis1); presentation only
 _args = sys.argv[1:]
 while _args:
     _flag = _args.pop(0)
@@ -98,6 +99,7 @@ while _args:
     elif _flag == "--brain-kind": BRAIN_KIND = int(_args.pop(0)); assert 0 <= BRAIN_KIND <= 2
     elif _flag == "--brain02": BRAIN02 = _args.pop(0); assert BRAIN02 in ("R0", "R1b", "R0s", "R1s", "p128")
     elif _flag == "--brain025": BRAIN025 = True
+    elif _flag == "--brain025-visual": BRAIN025 = True; BRAIN025_VIS = True
     elif _flag == "--vocab": VOCAB = _args.pop(0); assert VOCAB in ("rel", "abs")
     else: raise SystemExit("unknown option " + _flag)
 assert BUILD_DEMO or not BODY, "--body needs --build-demo"
@@ -3689,7 +3691,7 @@ def body(src):
     if BRAIN025:
         import importlib.util as _ilu
         _s = _ilu.spec_from_file_location("brain025_asm", "tools/brain025_asm.py"); _m = _ilu.module_from_spec(_s); _s.loader.exec_module(_m)
-        src = _m.brain025_apply(src, VOCAB)
+        src = _m.brain025_apply(src, VOCAB, visual=BRAIN025_VIS)
     kind = BRAIN_KIND if BRAIN_KIND is not None else (1 if BRAIN025 else 0)
     src = sub(src, "brainKind:      .byte 0                 // +8\n", f"brainKind:      .byte {kind}                 // +8  (--brain-kind)\n")
     return src

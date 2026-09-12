@@ -410,6 +410,56 @@ terrainTest: {
 }
 """
 
+
+# ------------------------------------------------------------------ the visual state language (vis1)
+# Presentation only. The colour the clone wears this frame is a pure function of three things that
+# already exist: bodyFrames, which the main loop increments anyway; teachMode; and the lesson flash
+# counter BRAIN02 already keeps. No new mutable state, no random draw, and nothing written but the
+# clone's own two sprite colour registers, which are per-sprite. So nothing here can reach the senses,
+# the brain, the body, the lesson record or a replay.
+#
+#   a lesson event   the flash counts down: green when one was accepted, red when one was refused
+#   TEACH mode on    a slow cyan pulse over white, six frames of every sixteen
+#   otherwise        white, dropping out to black for one frame in thirty-two
+#
+# The human Tony is light grey and is not touched. White against light grey is a close pair on two
+# identically shaped sprites, so the dropout is what actually reads as "this one is synthetic", not the
+# base colour.
+VISUAL_COLOUR_ASM = """    lda cloneFlash                  // vis1: a lesson event outranks everything
+    beq noFlash
+        dec cloneFlash
+        lda cloneFlashColour
+        jmp haveColour
+    noFlash:
+    lda teachMode
+    beq idleGlitch
+        lda bodyFrames              // teaching: a slow cyan pulse, six frames of every sixteen
+        and #15
+        cmp #6
+        bcs whiteNow
+            lda #COL_TEACH
+            jmp haveColour
+    idleGlitch:
+        lda bodyFrames              // otherwise: one frame of dropout every thirty-two
+        and #31
+        bne whiteNow
+            lda #COL_DROPOUT
+            jmp haveColour
+    whiteNow:
+    lda #COL_CLONE
+    haveColour:
+"""
+
+VISUAL_LABELS_ASM = """
+// vis1: the clone's palette. White is his identity, cyan says he is receptive, green says a lesson
+// landed, red says one could not be taken, and a black frame is the dropout that marks him synthetic.
+.label COL_CLONE   = 1              // white
+.label COL_TEACH   = 3              // cyan
+.label COL_ACCEPT  = 5              // green
+.label COL_REFUSE  = 2              // red
+.label COL_DROPOUT = 0              // black, for one frame
+"""
+
 # ------------------------------------------------------------------------------ the block transforms
 def _slot_asm(vocab):
     s = b02asm.BRAIN02_SLOT_ASM
@@ -450,7 +500,7 @@ def _think_asm():
     s = s.replace('    markerText: .text "BRAIN02"\n                .byte 0\n', '    markerText: .text "BRAIN025"\n')
     return s
 
-def _teach_vars_asm(shadow, lesson, cap):
+def _teach_vars_asm(shadow, lesson, cap, visual=False):
     s = b02asm.BRAIN02_TEACH_VARS_ASM
     s = s.replace("// the LESSON2 ring, in the memory the level tune vacates once it is copied",
                   "// the LESSON25 ring, in the memory the level tune vacates once it is copied")
@@ -466,13 +516,20 @@ def _teach_vars_asm(shadow, lesson, cap):
     s = s.replace("teachHold:   .byte 0                 // frames the chord has been held; 255 once it toggled, until released",
                   "teachHold:   .byte 0                 // BRAIN02.5: no chord, so this stays zero; the checks that read it are left alone")
     s = s.replace("lessonWriteSlot: .word 0             // the slot of the next lesson, 0..299", f"lessonWriteSlot: .word 0             // the slot of the next lesson, 0..{cap - 1}")
-    return s.replace("{{SHADOW}}", shadow).replace("{{LESSON}}", lesson) + TEACHKEY_ASM
+    return s.replace("{{SHADOW}}", shadow).replace("{{LESSON}}", lesson) + TEACHKEY_ASM + (VISUAL_LABELS_ASM if visual else "")
 
-def _lesson_init_asm():
-    return b02asm.BRAIN02_LESSON_INIT_ASM.replace('    lessonText: .text "LESSON2"\n                .byte 0\n', '    lessonText: .text "LESSON25"\n')
+def _lesson_init_asm(visual=False):
+    s = b02asm.BRAIN02_LESSON_INIT_ASM.replace('    lessonText: .text "LESSON2"\n                .byte 0\n', '    lessonText: .text "LESSON25"\n')
+    if visual: s = s.replace("    lda #1\n    sta cloneFlashColour\n", "    lda #COL_ACCEPT                     // vis1\n    sta cloneFlashColour\n")
+    return s
 
-def _teach_lesson_asm():
+def _teach_lesson_asm(visual=False):
     s = b02asm.BRAIN02_TEACH_LESSON_ASM
+    if visual:
+        s = s.replace("    lda #6                              // the flash\n    sta cloneFlash\n    lda #1\n    sta cloneFlashColour\n",
+                      "    lda #6                              // vis1: the flash of an accepted lesson is green\n    sta cloneFlash\n    lda #COL_ACCEPT\n    sta cloneFlashColour\n")
+        s = s.replace("        lda #6\n        sta cloneFlash\n        lda #2\n        sta cloneFlashColour\n",
+                      "        lda #6\n        sta cloneFlash\n        lda #COL_REFUSE          // vis1: a refused lesson stays red\n        sta cloneFlashColour\n")
     s = s.replace("    lda lessonWritePtr                  // the record: the twenty nibbles packed, then taught | predicted << 4\n    sta wr + 1\n    sta wr2 + 1\n    lda lessonWritePtr + 1\n    sta wr + 2\n    sta wr2 + 2\n",
                   f"    lda lessonWritePtr                  // the record: the {SC} nibbles packed, then taught | predicted << 4\n"
                   "    sta wr + 1\n    sta wr2 + 1\n    sta wr3 + 1\n    lda lessonWritePtr + 1\n    sta wr + 2\n    sta wr2 + 2\n    sta wr3 + 2\n")
@@ -489,7 +546,7 @@ def _span(src, start, end_marker, include_end=True):
     i = src.index(start); j = src.index(end_marker, i) + (len(end_marker) if include_end else 0)
     return i, j
 
-def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, spawn_x=72):
+def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, spawn_x=72, visual=False):
     """BRAIN02's substitutions at eighty inputs, then what BRAIN02.5 adds"""
     def rep(start, end_marker, new, include_end=True):
         nonlocal src
@@ -539,13 +596,13 @@ def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, sp
     rep('.align 256\nbrainMarker:    .text "BRAIN01"', "brainMul:       .fill 256, ((((i >> 4) >= 8) ? (i >> 4) - 16 : (i >> 4)) * (((i & 15) >= 8) ? (i & 15) - 16 : (i & 15))) & 255\n", _slot_asm(vocab))
     rep("bodyThink: {\n", '    markerText: .text "BRAIN01"\n                .byte 0\n}\n', _think_asm())
     rep("// ===================================================================== learning\n", "        byte:   .byte 0\n        nib:    .byte 0\n    }\n}\n", b02asm.BRAIN02_LEARN_ASM)
-    rep(".label LESSON_BLOCK = $8a00", "lessonPtr:   .word 0                 // where the next lesson goes\n", _teach_vars_asm(shadow, lesson, cap))
-    rep("lessonInit: {\n", '    lessonText: .text "LESSON1"\n                .byte 0\n}\n', _lesson_init_asm())
+    rep(".label LESSON_BLOCK = $8a00", "lessonPtr:   .word 0                 // where the next lesson goes\n", _teach_vars_asm(shadow, lesson, cap, visual))
+    rep("lessonInit: {\n", '    lessonText: .text "LESSON1"\n                .byte 0\n}\n', _lesson_init_asm(visual))
     # (BRAIN02's two chord-driven shadow substitutions have nothing to patch here: the chord is gone.
     #  The atomic snapshot and restore stay exactly as BRAIN02 built them, driven by shadowRequest and
     #  shadowRestoreRequest, which the main loop honours before any lesson and the workbench can set.)
     rep("teachShadowSave: {\n", "    lda shadowPtr + 1\n    sta lessonPtr + 1\n    rts\n}\n", b02asm.BRAIN02_SHADOW_ASM)
-    rep("teachLesson: {\n", "    pair:    .byte 0\n    wr2byte: .byte 0\n    nextLo:  .byte 0\n}\n", _teach_lesson_asm())
+    rep("teachLesson: {\n", "    pair:    .byte 0\n    wr2byte: .byte 0\n    nextLo:  .byte 0\n}\n", _teach_lesson_asm(visual))
     sub1("    lda bodyFrames\n    sta rawFrame\n    lda bodyFrames + 1\n    sta rawFrame + 1\n    lda sensePacked\n    bne !+\n        rts\n    !:\n",
          "    lda bodyFrames\n    sta rawFrame\n    lda bodyFrames + 1\n    sta rawFrame + 1\n"
          "    lda bodyFrames                  // this frame's joystick byte and state, by frame, for the lesson pairing\n    and #7\n    tax\n"
@@ -554,5 +611,6 @@ def brain025_apply(src, vocab="rel", shadow="$9200", lesson="$9540", cap=180, sp
     sub1("cloneDecode: {\n    lda macroStep\n    bne macro\n",
          "cloneDecode: {\n    lda shadowRestoreRequest            // a restore pending: nothing until the next think decides with the restored weights\n    beq !+\n        lda #0\n        sta macroStep\n        jmp emit\n    !:\n    lda macroStep\n    bne macro\n")
     sub1("    lda muralColour                 // the clone's colour: the parameter block's, white for a lesson's flash\n    ldx cloneFlash\n    beq !+\n        dec cloneFlash\n        lda #1\n    !:\n",
+         VISUAL_COLOUR_ASM if visual else
          "    lda muralColour                 // the clone's colour: the parameter block's; a lesson's flash white, a refused one red\n    ldx cloneFlash\n    beq !+\n        dec cloneFlash\n        lda cloneFlashColour\n    !:\n")
     return src
