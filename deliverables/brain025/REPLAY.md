@@ -38,13 +38,15 @@ and both hashes.
 
 ## The invocation
 
-    python3 tools/brain025_ref.py replay START.slot LESSONS.bin --out FINAL.slot [--expect MACHINE.slot]
+    python3 tools/brain025_ref.py replay START.slot LESSONS.bin --out FINAL.slot [--expect MACHINE.slot] [--check-predictions]
 
 * `START.slot` — the 834-byte BRAIN025 slot the session began from. **Required and explicit.**
 * `LESSONS.bin` — the ordered LESSON25 entries, 15 bytes each, concatenated in sequence order.
 * `--out` — where to write the resulting 834-byte slot. Optional.
 * `--expect` — an exported machine slot to compare against. Exits non-zero on any difference and names
   the first differing byte.
+* `--check-predictions` — also verify the prediction the machine recorded at each lesson against the
+  reference's own recomputation, and fail on disagreement. See below.
 
 It prints the input count, the retina id, the vocabulary, the lessons applied, the education count
 before and after, and the behavioural hash before and after.
@@ -71,6 +73,38 @@ Entries must be in **sequence order**, the order the machine wrote them, concate
 and no separators. The drain hands them over in that order within each batch: read the range
 `[read_seq, write_seq)` ascending, and concatenate successive batches. The stream may span ring reuse
 cycles, and the proof below deliberately does.
+
+## The prediction cross-check
+
+The weights are not the whole record. Each entry's last byte also carries the prediction the machine
+made at lesson time, and a replay that only reproduces the weights leaves that field unverified. Ask for
+it explicitly:
+
+    python3 tools/brain025_ref.py replay START.slot LESSONS.bin --check-predictions
+
+The count is always reported. It **fails**, exit 1, when verification was requested, meaning
+`--check-predictions` or `--expect` was given. A bare replay reports the count and still exits 0.
+
+**Mind the asymmetry inside that last byte.** The low nibble is the taught action in **absolute** terms.
+The high nibble is the machine's mood-free prediction as a **raw output index**, which under the
+reference-relative vocabulary is the *relative* one. Comparing it against the resolved absolute action is
+wrong, and quietly so: on the 244-lesson session below, the raw relative reading matches 244 of 244
+while the absolute reading matches only 171.
+
+Why it is worth asking for: on that same session, stripping every prediction nibble out of the stream
+leaves the final slot **byte-for-byte identical** and the brain hash unchanged, while 178 of 244
+predictions no longer agree. The weights passing does not verify the record. The check names that case
+specifically rather than reporting 178 ordinary disagreements:
+
+    predictions  66 of 244 recomputed predictions match the recorded nibble; 178 disagree
+      every recorded nibble is zero while the recomputed ones are not: this stream looks repacked
+      without the high nibble of the last byte, rather than genuinely disagreeing
+    against final.slot: IDENTICAL byte for byte
+    FAILED: verification was requested and 178 recorded prediction(s) do not match
+
+A single corrupted nibble is reported with its lesson index and both values:
+
+    lesson 3: recorded 9, recomputed 3 (taught 1 absolute, 2 raw)
 
 ## It fails closed
 
@@ -115,9 +149,21 @@ Replayed:
       applied         244 lessons; 0 left the weights alone
       education       0 -> 244
       brain hash      f88f9b61ba509825 -> 5a6ce11734830cc76f091615576528dfb499c4e4e11beb402e85c35c8a95202e
+      predictions     244 of 244 recomputed predictions match the recorded nibble
       against final.slot: IDENTICAL byte for byte
 
-Exit 0. All 244 applied, none inert, and the behavioural hash equals the machine's.
+Exit 0. All 244 applied, none inert, every recorded prediction independently reproduced, and the
+behavioural hash equal to the machine's.
+
+## Independently confirmed
+
+The manager session pulled this reference from the pushed tree and replayed the owner's own first human
+BRAIN02.5 session, which is a different session from the one recorded here. Their second machine epoch
+began from the same blank behavioural hash as the reference's, `f88f9b61ba509825`, and its 56 recorded
+entries, repacked from the workbench JSON, replayed to
+`523193cf6ea1fb41c8bec67d15ae4a520ad997343eece7ded38e287cf91b3d74` with all 834 bytes identical to the
+brain the C64 exported. They also recomputed the prediction at every lesson across both machine lives,
+163 of 163 matching, which is the check this tool now performs on request.
 
 ## What this does not cover
 

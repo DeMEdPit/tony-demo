@@ -3,7 +3,7 @@
  "filename": "tony-b025-a.prg",
  "sha256": "2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423",
  "prg_size": 52092,
- "engine_commit": "348798faa32fc8a9a704c72b71f3f149539e8fbe",
+ "engine_commit": "25c5c7791228877e37854cc3617ce7b1fa052590",
  "study": "BRAIN02.5: BRAIN02's learner with seven local terrain quantities added to the sensed state and sixteen inputs appended at 64..79",
  "derived_from": {
   "brain": "BRAIN02 Candidate A",
@@ -308,10 +308,11 @@
     "tools/brain025_ref.py",
     "tools/brain02_ref.py"
    ],
-   "invocation": "python3 tools/brain025_ref.py replay START.slot LESSONS.bin --out FINAL.slot [--expect MACHINE.slot]",
+   "invocation": "python3 tools/brain025_ref.py replay START.slot LESSONS.bin --out FINAL.slot [--expect MACHINE.slot] [--check-predictions]",
    "manifest": "deliverables/brain025/replay/MANIFEST.json",
    "document": "deliverables/brain025/REPLAY.md",
-   "note": "both files together: brain025_ref.py holds the retina table, the formats and the replay; brain02_ref.py holds the rule, the forward pass, the vocabulary and the first sixty-four retina entries"
+   "note": "both files together: brain025_ref.py holds the retina table, the formats and the replay; brain02_ref.py holds the rule, the forward pass, the vocabulary and the first sixty-four retina entries",
+   "prediction_nibble": "the high nibble of the last byte is the machine's mood-free prediction as a RAW output index, which under the reference-relative vocabulary is the relative one, while the low nibble is the taught action in ABSOLUTE terms. replay --check-predictions recomputes it per lesson and fails on disagreement"
   }
  },
  "test_hooks": {

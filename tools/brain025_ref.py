@@ -302,24 +302,34 @@ def replay(start_slot, lesson_bytes):
     Returns (the final slot, a record of what happened)."""
     entries = check_slot(start_slot); lessons = check_lessons(lesson_bytes)
     p = parse_slot(start_slot); W = [row[:] for row in p["weights"]]; edu = p["education"]
-    applied = 0; no_change = 0; predictions = []
-    for x, t_abs, _pred in lessons:
+    applied = 0; no_change = 0; predictions = []; recorded = []; mismatches = []
+    for k, (x, t_abs, pred) in enumerate(lessons):
         z = flags(entries, x)
         t = to_relative(t_abs, h_of(x[:20])) if p["vocabulary"] else t_abs
         pr, took = learn(W, z, t, LO, HI)
-        predictions.append(pr)
+        # The recomputed prediction against the one the machine recorded. Note the asymmetry inside the
+        # last byte: the LOW nibble is the taught action in ABSOLUTE terms, the HIGH nibble is the
+        # machine's mood-free prediction as a RAW output index, which under the reference-relative
+        # vocabulary is the relative one. Comparing it to the resolved absolute action would be wrong.
+        predictions.append(pr); recorded.append(pred)
+        if pr != pred: mismatches.append(dict(lesson=k, recorded=pred, recomputed=pr, taught_absolute=t_abs, taught_raw=t))
         if took: applied += 1; edu += 1
         else: no_change += 1
     final = slot_bytes(p["kind"], p["vocabulary"], W, education=edu, mood=p["mood"], period=p["period"],
                        lineage=p["lineage"], rule=p["rule"], retina_id=p["retina_id"])
     return final, dict(inputs=p["inputs"], retina_id=p["retina_id"], vocabulary=p["vocabulary"], lessons=len(lessons),
                        applied=applied, no_change=no_change, education_before=p["education"], education_after=edu,
-                       hash_before=brain_hash(start_slot), hash_after=brain_hash(final), predictions=predictions)
+                       hash_before=brain_hash(start_slot), hash_after=brain_hash(final),
+                       predictions=predictions, predictions_recorded=recorded,
+                       prediction_matches=len(lessons) - len(mismatches), prediction_mismatches=len(mismatches),
+                       prediction_mismatch_detail=mismatches[:8],
+                       prediction_nibbles_all_zero=(bool(lessons) and set(recorded) == {0}))
 
 def _cmd_replay(argv):
     start_path, lessons_path = argv[0], argv[1]
     out_path = next((argv[i + 1] for i, a in enumerate(argv) if a == "--out"), None)
     expect_path = next((argv[i + 1] for i, a in enumerate(argv) if a == "--expect"), None)
+    check_pred = "--check-predictions" in argv
     start = open(start_path, "rb").read(); raw = open(lessons_path, "rb").read()
     try:
         final, r = replay(start, raw)
@@ -330,6 +340,16 @@ def _cmd_replay(argv):
     print(f"  applied         {r['applied']} lessons; {r['no_change']} left the weights alone")
     print(f"  education       {r['education_before']} -> {r['education_after']}")
     print(f"  brain hash      {r['hash_before'][:16]} -> {r['hash_after']}")
+    # the last field of the record that the weights alone do not verify: the machine's own prediction
+    verifying = check_pred or bool(expect_path)
+    print(f"  predictions     {r['prediction_matches']} of {r['lessons']} recomputed predictions match the recorded nibble"
+          + ("" if not r["prediction_mismatches"] else f"; {r['prediction_mismatches']} disagree"))
+    if r["prediction_mismatches"]:
+        for d in r["prediction_mismatch_detail"]:
+            print(f"    lesson {d['lesson']}: recorded {d['recorded']}, recomputed {d['recomputed']} (taught {d['taught_absolute']} absolute, {d['taught_raw']} raw)")
+        if r["prediction_nibbles_all_zero"]:
+            print("    every recorded nibble is zero while the recomputed ones are not: this stream looks repacked"
+                  " without the high nibble of the last byte, rather than genuinely disagreeing")
     if out_path: open(out_path, "wb").write(final); print(f"  written         {out_path}: {len(final)} bytes")
     if expect_path:
         want = open(expect_path, "rb").read()
@@ -344,6 +364,10 @@ def _cmd_replay(argv):
     if r["no_change"]:
         print(f"  NOTE: {r['no_change']} entries changed nothing. The machine records a lesson only when it takes one,"
               f" so a stream straight off the machine should show zero here.")
+    if verifying and r["prediction_mismatches"]:
+        print(f"  FAILED: verification was requested and {r['prediction_mismatches']} recorded prediction(s) do not match"
+              f" the reference's own. The weights may still agree; the record does not.")
+        return 1
     return 0
 
 # ---------------------------------------------------------------------- the provenance manifest
@@ -386,7 +410,7 @@ if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "check"
     if cmd == "replay":
         if len(sys.argv) < 4:
-            print("usage: brain025_ref.py replay START.slot LESSONS.bin [--out FINAL.slot] [--expect MACHINE.slot]"); sys.exit(2)
+            print("usage: brain025_ref.py replay START.slot LESSONS.bin [--out FINAL.slot] [--expect MACHINE.slot] [--check-predictions]"); sys.exit(2)
         sys.exit(_cmd_replay(sys.argv[2:]))
     if cmd == "manifest": sys.exit(_cmd_manifest(sys.argv[2:]))
     if cmd == "verify": sys.exit(_cmd_verify(sys.argv[2:]))
