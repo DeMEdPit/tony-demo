@@ -793,6 +793,79 @@ if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "descriptor":
     d = descriptor(b, commit); json.dump(d, open(os.path.join(OUT, "workbench", f"{b.name}.json"), "w"), indent=1)
     print(f"wrote deliverables/brain025/workbench/{b.name}.json ({len(json.dumps(d))} bytes of JSON)")
 
+
+def gate_shadow(b, outdir):
+    """The teaching shadow's restore, both ways. A restore with a valid snapshot must put the whole
+    canonical brain back exactly; a restore with NO snapshot must change nothing at all. The second half
+    is the guard: teachShadowRestore used to copy TEACH_SHADOW over the brain whatever was in it, and at
+    $9200 the load image holds relocated music data, so a host poking shadowRestoreRequest replaced a
+    trained brain with 781 nonzero bytes of tune. Unreachable from play - nothing sets the request byte -
+    but the host interface could reach it."""
+    global ok
+    os.makedirs(outdir, exist_ok=True)
+    print(f"{b.name}: the teaching shadow's restore")
+    SLOT = b["lessonMarker"] - b["brainMarker"] if b["lessonMarker"] > b["brainMarker"] else 834
+    def slot_of(m, tag):
+        m.do(f"sync,dump:{b['brainMarker']:X}:{ref.SLOT_BYTES if hasattr(ref,'SLOT_BYTES') else 834:X}:{outdir}/shadow-{b.name}-{tag}.bin")
+        return open(f"{outdir}/shadow-{b.name}-{tag}.bin", "rb").read()
+    def fields(m):
+        v = m.do("sync," + pk(b["brainEducation"], 2) + pk(b["lessonWriteSeq"], 2) + pk(b["lessonCumWrite"], 2)
+                 + pk(b["brainKind"]) + pk(b["brainKindNow"]) + pk(b["shadowValid"]) + pk(b["shadowRestoreRequest"])
+                 + pk(b["brainMood"], 10))
+        return dict(education=v[0] | v[1] << 8, write_seq=v[2] | v[3] << 8, cum_write=v[4] | v[5] << 8,
+                    kind=v[6], kind_now=v[7], valid=v[8], request=v[9], mood=v[10:20])
+    def teach(m, n):
+        m.do(po(b["teachMode"], [1]))
+        for _ in range(n): m.do("hold:8"); m.do("wait:4"); m.do("release:8"); m.do("wait:2")
+        m.do(po(b["teachMode"], [0])); m.do("wait:4")
+    rec = {}
+    # --- 1. a valid snapshot: the restore must be exact
+    m = Machine(b); m.do("wait:400"); m.do(po(b["brainKind"], [1]))
+    teach(m, 6); m.do(po(b["shadowRequest"], [1])); m.do("wait:8")
+    snap, fsnap = slot_of(m, "snap"), fields(m)
+    teach(m, 6); grown, fgrown = slot_of(m, "grown"), fields(m)
+    m.do(po(b["shadowRestoreRequest"], [1])); m.do("wait:8")
+    back, fback = slot_of(m, "back"), fields(m)
+    m.close()
+    rec["valid"] = dict(snapshot=fsnap, grown=fgrown, restored=fback,
+                        snap_sha=hashlib.sha256(snap).hexdigest(), back_sha=hashlib.sha256(back).hexdigest())
+    check(fsnap["valid"] == 1, f"the snapshot request takes one: shadowValid {fsnap['valid']}")
+    check(grown != snap and fgrown["education"] > fsnap["education"],
+          f"teaching moves the brain on: education {fsnap['education']} -> {fgrown['education']}, slot differs")
+    check(back == snap, f"a VALID restore puts the whole {len(snap)}-byte slot back byte for byte "
+                        f"({hashlib.sha256(snap).hexdigest()[:16]})")
+    check(fback["education"] == fsnap["education"] and fback["write_seq"] == fsnap["write_seq"]
+          and fback["cum_write"] == fsnap["cum_write"] and fback["kind"] == fsnap["kind"],
+          f"and the counters with it: education {fback['education']}, write_seq {fback['write_seq']}, "
+          f"cum_write {fback['cum_write']}, kind {fback['kind']}")
+    # --- 2. NO snapshot: the restore must be a no-op
+    m = Machine(b); m.do("wait:400"); m.do(po(b["brainKind"], [1]))
+    teach(m, 8); before, fbefore = slot_of(m, "before"), fields(m)
+    m.do(po(b["shadowRestoreRequest"], [1])); m.do("wait:10")
+    after = slot_of(m, "after")
+    fafter = fields(m)
+    v = m.do("sync," + pk(b["cloneX"], 2)); cx = v[0] | v[1] << 8
+    m.do("wait:200"); v = m.do("sync," + pk(b["cloneX"], 2) + pk(b["bodyOverruns"]))
+    m.close()
+    rec["invalid"] = dict(before=fbefore, after=fafter, before_sha=hashlib.sha256(before).hexdigest(),
+                          after_sha=hashlib.sha256(after).hexdigest(), moved_after=(v[0] | v[1] << 8) - cx)
+    check(fbefore["valid"] == 0, "no snapshot was ever taken: shadowValid 0")
+    diff = [i for i in range(min(len(before), len(after))) if before[i] != after[i]]
+    check(not diff, f"an INVALID restore leaves all {len(before)} slot bytes untouched"
+                    + (f"; {len(diff)} bytes changed, first at offset {diff[0]}" if diff else
+                       f" ({hashlib.sha256(before).hexdigest()[:16]})"))
+    for k in ("education", "write_seq", "cum_write", "kind", "kind_now"):
+        check(fafter[k] == fbefore[k], f"  {k} untouched: {fbefore[k]}")
+    check(fafter["mood"] == fbefore["mood"], f"  mood untouched: {list(fbefore['mood'])}")
+    check(fafter["request"] == 0, "the request byte is still consumed, so a host cannot spin on it")
+    check(fafter["kind_now"] != 0, f"and the brain still runs: brainKindNow {fafter['kind_now']}, overruns {v[2]}")
+    json.dump(dict(name=b.name, sha256=b.sha, states=rec,
+                   design="teachShadowRestore returns before its first write unless shadowValid is 1."),
+              open(os.path.join(outdir, f"shadow-{b.name}.json"), "w"), indent=1)
+    return ok
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "shadow": sys.exit(0 if gate_shadow(Build(sys.argv[2]), OUT) else 1)
+
 # ------------------------------------------------------------- recording a session for the replay
 def gate_session(b, outdir):
     """Record one real teaching session as three files, so the canonical replay can be proved against

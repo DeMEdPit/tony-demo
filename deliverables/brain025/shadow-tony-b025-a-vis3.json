@@ -1,0 +1,121 @@
+{
+ "name": "tony-b025-a-vis3",
+ "sha256": "a9efe9d00afd0cfc9453acbcb0fe6b0faa8fe6f7f83f43635c2bd4ee80ef12ec",
+ "states": {
+  "valid": {
+   "snapshot": {
+    "education": 4,
+    "write_seq": 4,
+    "cum_write": 1521,
+    "kind": 1,
+    "kind_now": 1,
+    "valid": 1,
+    "request": 0,
+    "mood": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "grown": {
+    "education": 10,
+    "write_seq": 10,
+    "cum_write": 3458,
+    "kind": 1,
+    "kind_now": 1,
+    "valid": 1,
+    "request": 0,
+    "mood": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "restored": {
+    "education": 4,
+    "write_seq": 4,
+    "cum_write": 1521,
+    "kind": 1,
+    "kind_now": 1,
+    "valid": 0,
+    "request": 0,
+    "mood": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "snap_sha": "96a63feb4b15cce1aa928cfa6fb10ebd5508af03b45f45a24bdeb3ca750104e8",
+   "back_sha": "96a63feb4b15cce1aa928cfa6fb10ebd5508af03b45f45a24bdeb3ca750104e8"
+  },
+  "invalid": {
+   "before": {
+    "education": 4,
+    "write_seq": 4,
+    "cum_write": 1521,
+    "kind": 1,
+    "kind_now": 1,
+    "valid": 0,
+    "request": 0,
+    "mood": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "after": {
+    "education": 0,
+    "write_seq": 0,
+    "cum_write": 0,
+    "kind": 0,
+    "kind_now": 0,
+    "valid": 0,
+    "request": 0,
+    "mood": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "before_sha": "96a63feb4b15cce1aa928cfa6fb10ebd5508af03b45f45a24bdeb3ca750104e8",
+   "after_sha": "533ef52cc5836626b936d3635123eb0e5605b61d3fc1c358e6c68ff1a9b3155e",
+   "moved_after": 0
+  }
+ },
+ "design": "teachShadowRestore returns before its first write unless shadowValid is 1."
+}

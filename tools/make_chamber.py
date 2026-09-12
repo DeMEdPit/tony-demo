@@ -85,6 +85,12 @@ BRAIN02 = None             # --brain02 R0|R1b|R0s|R1s|p128: the research brain i
 VOCAB = "rel"              # --vocab rel|abs: the action vocabulary byte of a --brain02 or --brain025 build
 BRAIN025 = False           # --brain025: the terrain-observability brain (tools/brain025_asm.py); 80 inputs, 27 senses
 BRAIN025_VIS = False       # --brain025-visual: the clone's visual state language (vis1); presentation only
+SHADOW_GUARD = False       # --shadow-guard: teachShadowRestore refuses to restore unless a snapshot was
+                           #   actually taken. Without it a restore request with shadowValid 0 copies whatever
+                           #   happens to be in TEACH_SHADOW over the canonical brain - at $9200 in the load
+                           #   image that is relocated music data. Unreachable from play (nothing sets the
+                           #   request byte), but a host can poke it. Off by default: the research PRGs are
+                           #   hash-pinned on the unguarded routine.
 BAT_STAMP_GUARD = False    # --bat-stamp-guard: muralBatsStamp writes the bats' parameters into the room's
                            #   static-object arrays. A room with no static objects has ZERO-LENGTH arrays, so
                            #   every one of those pointers aliases the next label in the image - which here is
@@ -112,6 +118,7 @@ while _args:
     elif _flag == "--brain025-visual": BRAIN025 = True; BRAIN025_VIS = True
     elif _flag == "--build-parity": BUILD_PARITY = True
     elif _flag == "--bat-stamp-guard": BAT_STAMP_GUARD = True
+    elif _flag == "--shadow-guard": SHADOW_GUARD = True
     elif _flag == "--vocab": VOCAB = _args.pop(0); assert VOCAB in ("rel", "abs")
     else: raise SystemExit("unknown option " + _flag)
 assert BUILD_DEMO or not BODY, "--body needs --build-demo"
@@ -3744,6 +3751,25 @@ def body(src):
         import importlib.util as _ilu
         _s = _ilu.spec_from_file_location("brain025_asm", "tools/brain025_asm.py"); _m = _ilu.module_from_spec(_s); _s.loader.exec_module(_m)
         src = _m.brain025_apply(src, VOCAB, visual=BRAIN025_VIS)
+    if SHADOW_GUARD:
+        # teachShadowRestore copies TEACH_SHADOW over the canonical brain - weights, kind, education,
+        # writeSeq, writeSlot, writePtr and cumWrite - and it never asked whether a snapshot had been
+        # taken. The chord that used to request it checked shadowValid first, so play was safe; a host
+        # poking shadowRestoreRequest directly was not, and at $9200 the load image holds relocated
+        # music data. Fail closed: with no valid shadow the routine returns before its first write, so
+        # the whole slot stays byte-identical. The caller still consumes the request byte, so a host
+        # cannot spin on it, and shadowValid staying 0 with an unchanged slot is how it can tell.
+        src = sub(src, """teachShadowRestore: {
+    lda #0
+    sta shadowValid
+""", """teachShadowRestore: {
+    lda shadowValid                     // --shadow-guard: no snapshot, no restore. Returning here, before
+    bne haveShadow                      // the first write, leaves every canonical byte untouched: the
+        rts                             // weights, the kind, the education, the ring's write side and the
+    haveShadow:                         // mood the shadow never covered.
+    lda #0
+    sta shadowValid
+""")
     kind = BRAIN_KIND if BRAIN_KIND is not None else (1 if BRAIN025 else 0)
     src = sub(src, "brainKind:      .byte 0                 // +8\n", f"brainKind:      .byte {kind}                 // +8  (--brain-kind)\n")
     return src

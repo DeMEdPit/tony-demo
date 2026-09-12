@@ -1,0 +1,19 @@
+{
+ "name": "tony-b025-a-vis4",
+ "sha256": "355645a687dc244257a6e53be2a652b19a9f81a8ad9d6abc4e042a9e5ca4ea62",
+ "room_ptrs": [
+  "$53AD",
+  "$55BF"
+ ],
+ "object_ptrs": [
+  "$55BF",
+  "$57D1"
+ ],
+ "object_sizes": [
+  0,
+  0
+ ],
+ "intact": true,
+ "ceiling_stable": true,
+ "design": "muralBatsStamp sends its parameter stores to a two-byte sink when the room carries no static objects. Two bytes because the stores are indexed by y: 0 for the left bat, 1 for the right."
+}
