@@ -11,7 +11,7 @@ and a check fails if either moves.
 
 | path | sha256 | git blob |
 |---|---|---|
-| `tools/brain025_ref.py` | `10d74f01f6ad370827c2cf25a4386d2c9addc17bb33b0d7bac0689136bc02255` | `c47cc523b4610974eb059fcbb677be132f0832a8` |
+| `tools/brain025_ref.py` | `5a94e05ccf7886d0d1b97282d1eec8e5f1e79b0ffd7b239b689b11f51b4434ae` | `dba2ad2b04939aac03ad30598e1490a8245a95ce` |
 | `tools/brain02_ref.py` | `625e27296851ec4f55a2b610b0162879560d823d08a2dcf7d25560002c8ad59d` | `ee2e42e071ff0ca830634a6ea01a4f42c29c69fc` |
 
 Both are required. `brain025_ref.py` holds the retina table, the slot and lesson formats and the replay
@@ -24,7 +24,7 @@ so the two together are the whole dependency.
 
 | | |
 |---|---|
-| reference pinned at commit | `b6872ee2a8abd4aa730b7bcd848cc05c5523d865` |
+| reference pinned at commit | `e8c11a91a3910feb5b4ea8d2adb13668caf57f42` |
 | build the session was recorded on | `tony-b025-a.prg`, 52,092 bytes, sha256 `2a547ebfe77bebb6b6174729af05a2ebb4dc2a8e558359f615cbdf34d6bfb423` |
 | that PRG first committed at | `348798f` |
 | manifest | `deliverables/brain025/replay/MANIFEST.json`, schema `tony-brain025-replay-manifest/1` |

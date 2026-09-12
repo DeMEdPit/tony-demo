@@ -1,12 +1,12 @@
 {
  "schema": "tony-brain025-replay-manifest/1",
- "pinned_commit": "b6872ee2a8abd4aa730b7bcd848cc05c5523d865",
+ "pinned_commit": "e8c11a91a3910feb5b4ea8d2adb13668caf57f42",
  "note": "tools/ is canonical. These two files together are the BRAIN02.5 replay reference: brain025_ref.py holds the retina table, the slot and lesson formats and the replay; brain02_ref.py holds the rule, the forward pass, the vocabulary, the nine pseudo-senses and the first sixty-four retina entries.",
  "files": [
   {
    "path": "tools/brain025_ref.py",
-   "sha256": "10d74f01f6ad370827c2cf25a4386d2c9addc17bb33b0d7bac0689136bc02255",
-   "git_blob": "c47cc523b4610974eb059fcbb677be132f0832a8"
+   "sha256": "5a94e05ccf7886d0d1b97282d1eec8e5f1e79b0ffd7b239b689b11f51b4434ae",
+   "git_blob": "dba2ad2b04939aac03ad30598e1490a8245a95ce"
   },
   {
    "path": "tools/brain02_ref.py",
